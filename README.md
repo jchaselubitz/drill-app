@@ -1,6 +1,15 @@
 # drill-app
 
-This mobile app will use content users generate to offer continuous testing and feedback for language learning.
+This mobile app will use content users generate to offer continuous testing and feedback for language
+learning. The repository now includes:
+
+- An Expo + React Native (TypeScript) scaffold with tab navigation
+- Mocked contexts for lesson progress and library management
+- Placeholder Supabase Edge Functions that store lesson metadata and return mock responses
+- Documentation for the provisional database schema and setup assumptions
+
+Refer to `docs/assumptions-and-setup.md` for local development instructions and
+`docs/database-mock.md` for the mocked schema that the current front end expects.
 
 ## User flow
 The user will request content by indicating his or her language, level, and the topic or subject they want to study. Each request will be considered a "lesson". An example of a user request might be: "German, B1, Verb adjective agreement". The app will then use OpenAI or Google to generate a batch of study content based on the user's requests. This content will be presented to the user one item at a time in the user's native language. The user will have to enter a translation of the content into the language they are studying. The app will then review each entry, present a corrected version of the user's translation (as similar to the original as possible). The software will maintain separate scores for spelling and grammatical correctness. These scores will be per lesson, and an average of the last 10 entries. The user can then select words, phrases, or concepts from each correction they want presented more often. These words and phrases will go into their library, where they can configure the frequency of presentation. There will be a similar library of grammatical concepts. 
