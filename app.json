@@ -1,0 +1,23 @@
+{
+  "expo": {
+    "name": "Drill App",
+    "slug": "drill-app",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "drillapp",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": false,
+    "sdkVersion": "50.0.0",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.drillapp.mobile"
+    },
+    "android": {
+      "package": "com.drillapp.mobile"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static"
+    }
+  }
+}
