@@ -1,0 +1,34 @@
+{
+  "expo": {
+    "name": "Drill App",
+    "slug": "drill-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "drillapp",
+    "userInterfaceStyle": "light",
+    "platforms": ["ios", "android", "web"],
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#111827"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.example.drillapp"
+    },
+    "android": {
+      "package": "com.example.drillapp"
+    },
+    "web": {
+      "bundler": "metro",
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "replace-with-your-project-id"
+      }
+    }
+  }
+}
