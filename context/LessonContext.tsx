@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useContext, useMemo, useReducer } from 'react';
-import { LessonItem, LessonRequest, LessonSessionState } from '@types/lesson';
+import { LessonItem, LessonRequest, LessonSessionState } from '@/types/lesson';
 
 const initialState: LessonSessionState = {
   status: 'idle',
@@ -7,14 +7,20 @@ const initialState: LessonSessionState = {
   recentScores: [],
   library: {
     terms: [],
-    concepts: []
-  }
+    concepts: [],
+  },
 };
 
 type LessonAction =
   | { type: 'START_LESSON'; payload: { request: LessonRequest; items: LessonItem[] } }
-  | { type: 'ADVANCE_ITEM'; payload: { index: number; scores: { spelling: number; grammar: number } } }
-  | { type: 'ADD_LIBRARY_ITEM'; payload: { category: 'terms' | 'concepts'; value: string; translation?: string } }
+  | {
+      type: 'ADVANCE_ITEM';
+      payload: { index: number; scores: { spelling: number; grammar: number } };
+    }
+  | {
+      type: 'ADD_LIBRARY_ITEM';
+      payload: { category: 'terms' | 'concepts'; value: string; translation?: string };
+    }
   | { type: 'RESET_LESSON' };
 
 function lessonReducer(state: LessonSessionState, action: LessonAction): LessonSessionState {
@@ -26,9 +32,9 @@ function lessonReducer(state: LessonSessionState, action: LessonAction): LessonS
         activeLesson: {
           request: action.payload.request,
           items: action.payload.items,
-          currentIndex: 0
+          currentIndex: 0,
         },
-        recentScores: []
+        recentScores: [],
       };
     case 'ADVANCE_ITEM': {
       if (!state.activeLesson) return state;
@@ -36,16 +42,16 @@ function lessonReducer(state: LessonSessionState, action: LessonAction): LessonS
       const nextIndex = Math.min(action.payload.index, state.activeLesson.items.length);
       const updatedScores = [
         { spelling: action.payload.scores.spelling, grammar: action.payload.scores.grammar },
-        ...state.recentScores
+        ...state.recentScores,
       ].slice(0, 10);
       return {
         ...state,
         activeLesson: {
           ...state.activeLesson,
-          currentIndex: nextIndex
+          currentIndex: nextIndex,
         },
         status: isComplete ? 'complete' : state.status,
-        recentScores: updatedScores
+        recentScores: updatedScores,
       };
     }
     case 'ADD_LIBRARY_ITEM': {
@@ -62,17 +68,17 @@ function lessonReducer(state: LessonSessionState, action: LessonAction): LessonS
             {
               value: action.payload.value,
               translation: action.payload.translation,
-              focusLevel: 1
-            }
-          ]
-        }
+              focusLevel: 1,
+            },
+          ],
+        },
       };
     }
     case 'RESET_LESSON':
       return {
         ...state,
         status: 'idle',
-        activeLesson: undefined
+        activeLesson: undefined,
       };
     default:
       return state;
@@ -121,7 +127,7 @@ export const LessonProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       startLesson,
       advanceLesson,
       addLibraryItem,
-      resetLesson
+      resetLesson,
     }),
     [state, startLesson, advanceLesson, addLibraryItem, resetLesson]
   );

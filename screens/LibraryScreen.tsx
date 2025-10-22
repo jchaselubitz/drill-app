@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { colors, spacing, typography } from '@theme/colors';
-import { useLessonContext } from '@context/LessonContext';
+import { colors, spacing, typography } from '@/theme/colors';
+import { useLessonContext } from '@/context/LessonContext';
 
 const LibraryScreen: React.FC = () => {
   const { library } = useLessonContext();

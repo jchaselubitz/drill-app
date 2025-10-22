@@ -1,11 +1,11 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import LessonRequestScreen from '@screens/LessonRequestScreen';
-import LessonSessionScreen from '@screens/LessonSessionScreen';
-import LibraryScreen from '@screens/LibraryScreen';
-import SettingsScreen from '@screens/SettingsScreen';
-import { colors } from '@theme/colors';
+import LessonRequestScreen from '@/screens/LessonRequestScreen';
+import LessonSessionScreen from '@/screens/LessonSessionScreen';
+import LibraryScreen from '@/screens/LibraryScreen';
+import SettingsScreen from '@/screens/SettingsScreen';
+import { colors } from '@/theme/colors';
 import { Ionicons } from '@expo/vector-icons';
 
 export type RootStackParamList = {
@@ -16,13 +16,13 @@ export type RootStackParamList = {
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator();
 
-function LessonStack(): JSX.Element {
+function LessonStack() {
   return (
     <Stack.Navigator
       screenOptions={{
         headerStyle: { backgroundColor: colors.surface },
         headerTintColor: colors.textPrimary,
-        contentStyle: { backgroundColor: colors.background }
+        contentStyle: { backgroundColor: colors.background },
       }}
     >
       <Stack.Screen
@@ -39,18 +39,19 @@ function LessonStack(): JSX.Element {
   );
 }
 
-const tabBarIcon = (name: keyof typeof Ionicons.glyphMap) => ({ color, size }: any) => (
-  <Ionicons name={name} size={size} color={color} />
-);
+const tabBarIcon =
+  (name: keyof typeof Ionicons.glyphMap) =>
+  ({ color, size }: any) =>
+    <Ionicons name={name} size={size} color={color} />;
 
-export default function RootNavigator(): JSX.Element {
+export default function RootNavigator() {
   return (
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
         tabBarStyle: { backgroundColor: colors.surface },
         tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textSecondary
+        tabBarInactiveTintColor: colors.textSecondary,
       }}
     >
       <Tab.Screen
@@ -58,7 +59,7 @@ export default function RootNavigator(): JSX.Element {
         component={LessonStack}
         options={{
           tabBarLabel: 'Lesson',
-          tabBarIcon: tabBarIcon('school-outline')
+          tabBarIcon: tabBarIcon('school-outline'),
         }}
       />
       <Tab.Screen
@@ -66,7 +67,7 @@ export default function RootNavigator(): JSX.Element {
         component={LibraryScreen}
         options={{
           tabBarLabel: 'Library',
-          tabBarIcon: tabBarIcon('library-outline')
+          tabBarIcon: tabBarIcon('library-outline'),
         }}
       />
       <Tab.Screen
@@ -74,7 +75,7 @@ export default function RootNavigator(): JSX.Element {
         component={SettingsScreen}
         options={{
           tabBarLabel: 'Settings',
-          tabBarIcon: tabBarIcon('settings-outline')
+          tabBarIcon: tabBarIcon('settings-outline'),
         }}
       />
     </Tab.Navigator>

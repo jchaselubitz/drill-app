@@ -1,10 +1,10 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '@navigation/RootNavigator';
-import { colors, spacing, typography } from '@theme/colors';
-import { useLessonSession } from '@hooks/useLessonSession';
-import { LessonRequest, ProficiencyLevel } from '@types/lesson';
+import { RootStackParamList } from '@/navigation/RootNavigator';
+import { colors, spacing, typography } from '@/theme/colors';
+import { useLessonSession } from '@/hooks/useLessonSession';
+import { LessonRequest, ProficiencyLevel } from '@/types/lesson';
 
 const languages = ['German', 'Spanish', 'French', 'Japanese', 'Mandarin'];
 const levels: ProficiencyLevel[] = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
@@ -40,7 +40,9 @@ const LessonRequestScreen: React.FC<Props> = ({ navigation }) => {
               style={[styles.chip, language === item && styles.chipActive]}
               onPress={() => setLanguage(item)}
             >
-              <Text style={[styles.chipText, language === item && styles.chipTextActive]}>{item}</Text>
+              <Text style={[styles.chipText, language === item && styles.chipTextActive]}>
+                {item}
+              </Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -86,7 +88,9 @@ const LessonRequestScreen: React.FC<Props> = ({ navigation }) => {
           onPress={handleSubmit}
           disabled={!isValid || isGenerating}
         >
-          <Text style={styles.buttonText}>{isGenerating ? 'Creating lesson…' : 'Start lesson'}</Text>
+          <Text style={styles.buttonText}>
+            {isGenerating ? 'Creating lesson…' : 'Start lesson'}
+          </Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -97,28 +101,28 @@ const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
     backgroundColor: colors.background,
-    padding: spacing.lg
+    padding: spacing.lg,
   },
   card: {
     backgroundColor: colors.surface,
     borderRadius: 20,
     padding: spacing.lg,
-    gap: spacing.md
+    gap: spacing.md,
   },
   heading: {
     fontSize: typography.header,
     color: colors.textPrimary,
-    fontWeight: '600'
+    fontWeight: '600',
   },
   label: {
     fontSize: typography.subheader,
     color: colors.textSecondary,
-    marginTop: spacing.md
+    marginTop: spacing.md,
   },
   selectionRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: spacing.sm
+    gap: spacing.sm,
   },
   chip: {
     borderRadius: 18,
@@ -126,19 +130,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     backgroundColor: colors.surfaceAlt,
     borderWidth: 1,
-    borderColor: colors.border
+    borderColor: colors.border,
   },
   chipActive: {
     backgroundColor: colors.primary,
-    borderColor: colors.primary
+    borderColor: colors.primary,
   },
   chipText: {
     color: colors.textSecondary,
-    fontSize: typography.body
+    fontSize: typography.body,
   },
   chipTextActive: {
     color: colors.background,
-    fontWeight: '600'
+    fontWeight: '600',
   },
   input: {
     borderRadius: 12,
@@ -146,23 +150,23 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     padding: spacing.md,
     backgroundColor: colors.surfaceAlt,
-    color: colors.textPrimary
+    color: colors.textPrimary,
   },
   button: {
     marginTop: spacing.lg,
     backgroundColor: colors.primary,
     paddingVertical: spacing.md,
     borderRadius: 12,
-    alignItems: 'center'
+    alignItems: 'center',
   },
   buttonDisabled: {
-    backgroundColor: colors.border
+    backgroundColor: colors.border,
   },
   buttonText: {
     fontSize: typography.subheader,
     color: colors.background,
-    fontWeight: '600'
-  }
+    fontWeight: '600',
+  },
 });
 
 export default LessonRequestScreen;

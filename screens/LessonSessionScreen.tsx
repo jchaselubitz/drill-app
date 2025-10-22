@@ -1,14 +1,14 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '@navigation/RootNavigator';
-import { colors, spacing, typography } from '@theme/colors';
-import LessonPromptCard from '@components/LessonPromptCard';
-import TranslationInputCard from '@components/TranslationInputCard';
-import CorrectionCard from '@components/CorrectionCard';
-import ScoreSummary from '@components/ScoreSummary';
-import { useLessonContext } from '@context/LessonContext';
-import { useLessonSession } from '@hooks/useLessonSession';
+import { RootStackParamList } from '@/navigation/RootNavigator';
+import { colors, spacing, typography } from '@/theme/colors';
+import LessonPromptCard from '@/components/LessonPromptCard';
+import TranslationInputCard from '@/components/TranslationInputCard';
+import CorrectionCard from '@/components/CorrectionCard';
+import ScoreSummary from '@/components/ScoreSummary';
+import { useLessonContext } from '@/context/LessonContext';
+import { useLessonSession } from '@/hooks/useLessonSession';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'LessonSession'>;
 
@@ -17,9 +17,10 @@ const LessonSessionScreen: React.FC<Props> = () => {
   const { submitAnswer } = useLessonSession();
   const [translation, setTranslation] = useState('');
   const [isSubmitted, setSubmitted] = useState(false);
-  const [lastCorrection, setLastCorrection] = useState<{ original: string; corrected: string } | null>(
-    null
-  );
+  const [lastCorrection, setLastCorrection] = useState<{
+    original: string;
+    corrected: string;
+  } | null>(null);
 
   const currentItem = useMemo(() => {
     if (!activeLesson) return undefined;
@@ -39,7 +40,7 @@ const LessonSessionScreen: React.FC<Props> = () => {
     const item = currentItem;
     await submitAnswer({
       spelling: Math.floor(Math.random() * 20) + 80,
-      grammar: Math.floor(Math.random() * 20) + 75
+      grammar: Math.floor(Math.random() * 20) + 75,
     });
     if (item) {
       setLastCorrection({ original: translation, corrected: item.suggestedAnswer });
@@ -67,7 +68,8 @@ const LessonSessionScreen: React.FC<Props> = () => {
           </Text>
         </View>
         <Text style={styles.counter}>
-          {Math.min(activeLesson.currentIndex + 1, activeLesson.items.length)} / {activeLesson.items.length}
+          {Math.min(activeLesson.currentIndex + 1, activeLesson.items.length)} /{' '}
+          {activeLesson.items.length}
         </Text>
       </View>
 
@@ -119,25 +121,25 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     backgroundColor: colors.background,
     padding: spacing.lg,
-    gap: spacing.lg
+    gap: spacing.lg,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center'
+    alignItems: 'center',
   },
   title: {
     fontSize: typography.header,
     color: colors.textPrimary,
-    fontWeight: '700'
+    fontWeight: '700',
   },
   subtitle: {
     color: colors.textSecondary,
-    marginTop: spacing.xs
+    marginTop: spacing.xs,
   },
   counter: {
     color: colors.textSecondary,
-    fontSize: typography.subheader
+    fontSize: typography.subheader,
   },
   emptyState: {
     flex: 1,
@@ -145,16 +147,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: spacing.lg,
-    gap: spacing.md
+    gap: spacing.md,
   },
   emptyTitle: {
     color: colors.textPrimary,
     fontSize: typography.header,
-    fontWeight: '600'
+    fontWeight: '600',
   },
   emptySubtitle: {
     color: colors.textSecondary,
-    textAlign: 'center'
+    textAlign: 'center',
   },
   completionCard: {
     backgroundColor: colors.surface,
@@ -162,17 +164,17 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     gap: spacing.sm,
     borderWidth: 1,
-    borderColor: colors.border
+    borderColor: colors.border,
   },
   completionTitle: {
     color: colors.textPrimary,
     fontSize: typography.subheader,
-    fontWeight: '600'
+    fontWeight: '600',
   },
   completionSubtitle: {
     color: colors.textSecondary,
-    lineHeight: 20
-  }
+    lineHeight: 20,
+  },
 });
 
 export default LessonSessionScreen;

@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { colors, spacing, typography } from '@theme/colors';
+import { colors, spacing, typography } from '@/theme/colors';
 
 interface LessonPromptCardProps {
   prompt: string;
@@ -15,7 +15,7 @@ const LessonPromptCard: React.FC<LessonPromptCardProps> = ({
   focusTerms,
   focusConcepts,
   onAddTerm,
-  onAddConcept
+  onAddConcept,
 }) => {
   return (
     <View style={styles.card}>
@@ -49,17 +49,17 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     gap: spacing.md,
     borderWidth: 1,
-    borderColor: colors.border
+    borderColor: colors.border,
   },
   prompt: {
     fontSize: typography.subheader,
     color: colors.textPrimary,
-    lineHeight: 24
+    lineHeight: 24,
   },
   focusSection: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: spacing.sm
+    gap: spacing.sm,
   },
   badge: {
     backgroundColor: colors.surfaceAlt,
@@ -67,20 +67,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: colors.border
+    borderColor: colors.border,
   },
   conceptBadge: {
-    borderColor: colors.secondary
+    borderColor: colors.secondary,
   },
   badgeLabel: {
     color: colors.textPrimary,
     fontSize: typography.body,
-    fontWeight: '600'
+    fontWeight: '600',
   },
   badgeHint: {
     color: colors.textSecondary,
-    fontSize: typography.caption
-  }
+    fontSize: typography.caption,
+  },
 });
 
 export default LessonPromptCard;
