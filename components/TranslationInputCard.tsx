@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
-import { colors, spacing, typography } from '@theme/colors';
+import { colors, spacing, typography } from '@/theme/colors';
 
 interface TranslationInputCardProps {
   value: string;
@@ -9,7 +9,12 @@ interface TranslationInputCardProps {
   disabled?: boolean;
 }
 
-const TranslationInputCard: React.FC<TranslationInputCardProps> = ({ value, onChange, onSubmit, disabled }) => {
+const TranslationInputCard: React.FC<TranslationInputCardProps> = ({
+  value,
+  onChange,
+  onSubmit,
+  disabled,
+}) => {
   return (
     <View style={styles.card}>
       <Text style={styles.label}>Your translation</Text>
@@ -40,11 +45,11 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     gap: spacing.md,
     borderWidth: 1,
-    borderColor: colors.border
+    borderColor: colors.border,
   },
   label: {
     fontSize: typography.subheader,
-    color: colors.textSecondary
+    color: colors.textSecondary,
   },
   input: {
     minHeight: 120,
@@ -54,22 +59,22 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     color: colors.textPrimary,
     backgroundColor: colors.surfaceAlt,
-    textAlignVertical: 'top'
+    textAlignVertical: 'top',
   },
   button: {
     backgroundColor: colors.secondary,
     paddingVertical: spacing.md,
     borderRadius: 12,
-    alignItems: 'center'
+    alignItems: 'center',
   },
   buttonDisabled: {
-    backgroundColor: colors.border
+    backgroundColor: colors.border,
   },
   buttonText: {
     color: colors.background,
     fontSize: typography.subheader,
-    fontWeight: '600'
-  }
+    fontWeight: '600',
+  },
 });
 
 export default TranslationInputCard;

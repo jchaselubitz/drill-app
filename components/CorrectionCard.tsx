@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { colors, spacing, typography } from '@theme/colors';
+import { colors, spacing, typography } from '@/theme/colors';
 
 interface CorrectionCardProps {
   original: string;
@@ -32,32 +32,32 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     gap: spacing.sm,
     borderWidth: 1,
-    borderColor: colors.border
+    borderColor: colors.border,
   },
   label: {
     color: colors.textSecondary,
-    fontSize: typography.caption
+    fontSize: typography.caption,
   },
   row: {
-    gap: spacing.xs
+    gap: spacing.xs,
   },
   caption: {
     color: colors.textSecondary,
-    fontSize: typography.caption
+    fontSize: typography.caption,
   },
   original: {
     color: colors.textPrimary,
-    fontSize: typography.body
+    fontSize: typography.body,
   },
   corrected: {
     color: colors.success,
     fontSize: typography.body,
-    fontWeight: '600'
+    fontWeight: '600',
   },
   hint: {
     color: colors.accent,
-    fontSize: typography.caption
-  }
+    fontSize: typography.caption,
+  },
 });
 
 export default CorrectionCard;

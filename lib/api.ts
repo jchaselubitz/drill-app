@@ -1,14 +1,14 @@
-import { LessonRequest } from '@types/lesson';
+import { LessonRequest } from '@/types/lesson';
 
 const FUNCTION_HEADERS = {
-  'Content-Type': 'application/json'
+  'Content-Type': 'application/json',
 };
 
 export async function requestLessonGeneration(request: LessonRequest) {
   const response = await fetch(`${process.env.EXPO_PUBLIC_OPENAI_PROXY_URL}/generate-lesson`, {
     method: 'POST',
     headers: FUNCTION_HEADERS,
-    body: JSON.stringify(request)
+    body: JSON.stringify(request),
   });
   if (!response.ok) {
     throw new Error('Failed to request lesson generation');
@@ -26,7 +26,7 @@ export async function submitAttempt(payload: {
   const response = await fetch(`${process.env.EXPO_PUBLIC_OPENAI_PROXY_URL}/score-attempt`, {
     method: 'POST',
     headers: FUNCTION_HEADERS,
-    body: JSON.stringify(payload)
+    body: JSON.stringify(payload),
   });
   if (!response.ok) {
     throw new Error('Failed to score attempt');

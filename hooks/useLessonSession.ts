@@ -1,8 +1,8 @@
 import { useCallback, useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { generateMockLessonItems } from '@lib/mockLessonGenerator';
-import { LessonRequest } from '@types/lesson';
-import { useLessonContext } from '@context/LessonContext';
+import { generateMockLessonItems } from '@/lib/mockLessonGenerator';
+import { LessonRequest } from '@/types/lesson';
+import { useLessonContext } from '@/context/LessonContext';
 
 interface LessonMutationVariables {
   request: LessonRequest;
@@ -14,20 +14,23 @@ export function useLessonSession() {
   const { startLesson, advanceLesson, resetLesson, activeLesson } = useLessonContext();
   const [isGenerating, setGenerating] = useState(false);
 
-  const generateLesson = useCallback(async ({ request }: LessonMutationVariables) => {
-    setGenerating(true);
-    try {
-      await delay(600); // simulate network
-      const items = generateMockLessonItems(request);
-      startLesson(request, items);
-      return items;
-    } finally {
-      setGenerating(false);
-    }
-  }, [startLesson]);
+  const generateLesson = useCallback(
+    async ({ request }: LessonMutationVariables) => {
+      setGenerating(true);
+      try {
+        await delay(600); // simulate network
+        const items = generateMockLessonItems(request);
+        startLesson(request, items);
+        return items;
+      } finally {
+        setGenerating(false);
+      }
+    },
+    [startLesson]
+  );
 
   const { mutateAsync: createLesson } = useMutation({
-    mutationFn: generateLesson
+    mutationFn: generateLesson,
   });
 
   const submitAnswer = useCallback(
@@ -43,6 +46,6 @@ export function useLessonSession() {
     isGenerating,
     createLesson,
     submitAnswer,
-    resetLesson
+    resetLesson,
   };
 }

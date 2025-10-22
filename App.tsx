@@ -17,11 +17,11 @@ const navigationTheme = {
     background: colors.background,
     text: colors.textPrimary,
     primary: colors.primary,
-    border: colors.border
-  }
+    border: colors.border,
+  },
 };
 
-export default function App(): JSX.Element {
+export default function App() {
   return (
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>

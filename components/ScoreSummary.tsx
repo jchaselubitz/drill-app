@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { colors, spacing, typography } from '@theme/colors';
+import { colors, spacing, typography } from '@/theme/colors';
 
 interface ScoreSummaryProps {
   recentScores: { spelling: number; grammar: number }[];
@@ -26,7 +26,9 @@ const ScoreSummary: React.FC<ScoreSummaryProps> = ({ recentScores }) => {
       </View>
       <View style={styles.column}>
         <Text style={styles.label}>10-response avg</Text>
-        <Text style={styles.average}>{`${averageSpelling.toFixed(0)} / ${averageGrammar.toFixed(0)}`}</Text>
+        <Text style={styles.average}>{`${averageSpelling.toFixed(0)} / ${averageGrammar.toFixed(
+          0
+        )}`}</Text>
       </View>
     </View>
   );
@@ -40,25 +42,25 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: colors.border
+    borderColor: colors.border,
   },
   column: {
-    alignItems: 'center'
+    alignItems: 'center',
   },
   label: {
     color: colors.textSecondary,
-    fontSize: typography.caption
+    fontSize: typography.caption,
   },
   score: {
     color: colors.textPrimary,
     fontSize: typography.header,
-    fontWeight: '600'
+    fontWeight: '600',
   },
   average: {
     color: colors.primary,
     fontSize: typography.subheader,
-    fontWeight: '600'
-  }
+    fontWeight: '600',
+  },
 });
 
 export default ScoreSummary;
