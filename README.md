@@ -29,3 +29,13 @@ The user will request content by indicating his or her language, level, and the 
 5. It will do version control with github
 
 
+
+## Repository map
+- `App.tsx` – navigation container and providers.
+- `src/screens` – layout scaffolding for lesson request, active session, library, and settings.
+- `src/components` – reusable UI primitives used across screens.
+- `src/context` – temporary state container for lesson progress and library entries.
+- `src/lib/mockLessonGenerator.ts` – mocked content generation aligned with the database blueprint in `docs/mock-database.md`.
+- `supabase/functions` – edge function scaffolds for generating lessons, scoring attempts, and syncing the library.
+- `docs/assumptions.md` – setup instructions and explicit assumptions.
+- `docs/mock-database.md` – mock Supabase schema for implementation reference.
