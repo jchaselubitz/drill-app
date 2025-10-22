@@ -1,5 +1,12 @@
 import type { ExpoConfig } from '@expo/config-types';
-import 'dotenv/config';
+
+// Load environment variables
+try {
+  require('dotenv/config');
+} catch (error) {
+  // dotenv/config not available, continue without it
+  console.warn('dotenv/config not available, environment variables may not be loaded');
+}
 
 type AppConfig = ExpoConfig & {
   extra: {
@@ -16,23 +23,23 @@ const config: AppConfig = {
   orientation: 'portrait',
   scheme: 'drillapp',
   userInterfaceStyle: 'automatic',
-  newArchEnabled: false,
+  newArchEnabled: true,
   ios: {
     supportsTablet: false,
-    bundleIdentifier: 'com.drillapp.mobile'
+    bundleIdentifier: 'com.drillapp.mobile',
   },
   android: {
-    package: 'com.drillapp.mobile'
+    package: 'com.drillapp.mobile',
   },
   web: {
     bundler: 'metro',
-    output: 'static'
+    output: 'static',
   },
   extra: {
     supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,
     supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
-    openAiProxyUrl: process.env.EXPO_PUBLIC_OPENAI_PROXY_URL
-  } 
+    openAiProxyUrl: process.env.EXPO_PUBLIC_OPENAI_PROXY_URL,
+  },
 };
 
 export default config;
