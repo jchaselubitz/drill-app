@@ -1,0 +1,8 @@
+{
+  "imports": {
+    "jsr:@openai/openai": "https://deno.land/x/openai@v4.69.0/mod.ts",
+    "jsr:@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2",
+    "jsr:@langfuse/langfuse": "https://esm.sh/langfuse",
+    "jsr:@anki-apkg-export/anki-apkg-export": "npm:anki-apkg-export"
+  }
+}

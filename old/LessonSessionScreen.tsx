@@ -1,14 +1,14 @@
-import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '@/navigation/RootNavigator';
-import { colors, spacing, typography } from '@/theme/colors';
-import LessonPromptCard from '@/components/LessonPromptCard';
-import TranslationInputCard from '@/components/TranslationInputCard';
 import CorrectionCard from '@/components/CorrectionCard';
+import LessonPromptCard from '@/components/LessonPromptCard';
 import ScoreSummary from '@/components/ScoreSummary';
+import TranslationInputCard from '@/components/TranslationInputCard';
 import { useLessonContext } from '@/context/LessonContext';
 import { useLessonSession } from '@/hooks/useLessonSession';
+import { RootStackParamList } from '@/old/RootNavigator';
+import { colors, spacing, typography } from '@/theme/colors';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import React, { useMemo, useState } from 'react';
+import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'LessonSession'>;
 

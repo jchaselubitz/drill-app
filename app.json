@@ -11,6 +11,9 @@
     "ios": {
       "supportsTablet": true
     },
+    "infoPlist": {
+      "UIDesignRequiresCompatibility": true,
+    },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",

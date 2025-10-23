@@ -1,19 +1,19 @@
-import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView } from 'react-native';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '@/navigation/RootNavigator';
+import { LanguagesISO639, ProficiencyLevel } from '@/lib/lists';
+import { RootStackParamList } from '@/old/RootNavigator';
 import { colors, spacing, typography } from '@/theme/colors';
-import { useLessonSession } from '@/hooks/useLessonSession';
-import { LessonRequest, ProficiencyLevel } from '@/types/lesson';
+import { LessonRequest } from '@/types/lesson';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import React, { useMemo, useState } from 'react';
+import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
-const languages = ['German', 'Spanish', 'French', 'Japanese', 'Mandarin'];
+const languages = Object.values(LanguagesISO639);
 const levels: ProficiencyLevel[] = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
-const nativeLanguages = ['English', 'Spanish', 'German'];
+const nativeLanguages = Object.values(LanguagesISO639);
 
 type Props = NativeStackScreenProps<RootStackParamList, 'LessonRequest'>;
 
 const LessonRequestScreen: React.FC<Props> = ({ navigation }) => {
-  const { createLesson, isGenerating } = useLessonSession();
+  // const { createLesson, isGenerating } = useLessonSession();
   const [language, setLanguage] = useState(languages[0]);
   const [nativeLanguage, setNativeLanguage] = useState(nativeLanguages[0]);
   const [level, setLevel] = useState<ProficiencyLevel>('B1');
@@ -24,7 +24,7 @@ const LessonRequestScreen: React.FC<Props> = ({ navigation }) => {
   const handleSubmit = async () => {
     if (!isValid) return;
     const request: LessonRequest = { language, nativeLanguage, level, topic };
-    await createLesson({ request });
+    // await createLesson({ request });
     navigation.navigate('LessonSession');
   };
 
@@ -86,10 +86,11 @@ const LessonRequestScreen: React.FC<Props> = ({ navigation }) => {
         <TouchableOpacity
           style={[styles.button, !isValid && styles.buttonDisabled]}
           onPress={handleSubmit}
-          disabled={!isValid || isGenerating}
+          // disabled={!isValid || isGenerating}
         >
           <Text style={styles.buttonText}>
-            {isGenerating ? 'Creating lesson…' : 'Start lesson'}
+            {/* {isGenerating ? 'Creating lesson…' : 'Start lesson'} */}
+            Start lesson
           </Text>
         </TouchableOpacity>
       </View>
