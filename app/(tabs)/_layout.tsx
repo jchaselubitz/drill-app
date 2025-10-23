@@ -1,44 +1,46 @@
-import { Tabs } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { colors } from '@/theme/colors';
+import { useAuth } from '@/context/AuthContext';
+import { Icon, NativeTabs, Label } from 'expo-router/unstable-native-tabs';
 
 export default function TabLayout() {
+  const { session, loading } = useAuth();
+
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarStyle: { backgroundColor: colors.surface },
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textSecondary,
-      }}
-    >
-      <Tabs.Screen
-        name="lesson"
+    <NativeTabs>
+      <NativeTabs.Trigger
+        name="home"
         options={{
-          title: 'Lesson',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="school-outline" size={size} color={color} />
-          ),
+          title: 'Home',
         }}
-      />
-      <Tabs.Screen
+      >
+        <Icon sf="house.fill" drawable="custom_android_drawable" />
+        <Label>Home</Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger
         name="library"
         options={{
           title: 'Library',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="library-outline" size={size} color={color} />
-          ),
         }}
-      />
-      <Tabs.Screen
+      >
+        <Icon sf="books.vertical.fill" drawable="custom_android_drawable" />
+        <Label>Library</Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger
         name="settings"
         options={{
           title: 'Settings',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="settings-outline" size={size} color={color} />
-          ),
         }}
-      />
-    </Tabs>
+      >
+        <Icon sf="gearshape.fill" drawable="custom_android_drawable" />
+        <Label>Settings</Label>
+      </NativeTabs.Trigger>
+    </NativeTabs>
   );
 }
+
+// nativeTabOptions={{
+
+//   tabBarStyle: { backgroundColor: colors.surface },
+//   tabBarActiveTintColor: colors.primary,
+//   tabBarInactiveTintColor: colors.textSecondary,
+// }}
+// >

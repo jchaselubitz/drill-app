@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet, Switch } from 'react-native';
+import { View, Text, StyleSheet, Switch, TouchableOpacity, Button } from 'react-native';
 import { colors, spacing, typography } from '@/theme/colors';
 import Constants from 'expo-constants';
+import { Link } from 'expo-router';
 
 const SettingsScreen: React.FC = () => {
   const [notificationsEnabled, setNotificationsEnabled] = React.useState(true);
@@ -29,6 +30,14 @@ const SettingsScreen: React.FC = () => {
         <Text style={styles.value}>
           {Constants.expoConfig?.extra?.openAiProxyUrl ?? 'Not configured'}
         </Text>
+      </View>
+      <View style={styles.card}>
+        <Text style={styles.label}>Login</Text>
+        <TouchableOpacity>
+          <Link href="/login">
+            <Text style={styles.value}>{false ? 'Logout' : 'Login'}</Text>
+          </Link>
+        </TouchableOpacity>
       </View>
     </View>
   );

@@ -3,7 +3,9 @@
   "main": "expo-router/entry",
   "version": "1.0.0",
   "scripts": {
-    "start": "expo start",
+    "start": "supabase start",
+    "stop": "supabase stop",
+    "start:expo": "expo start",
     "new": "rm -rf node_modules && rm -rf .next && rm -rf .expo && yarn cache clean && yarn install",
     "reset-project": "node ./scripts/reset-project.js",
     "android": "expo run:android",
@@ -14,6 +16,7 @@
   "dependencies": {
     "@expo/config-types": "^54.0.8",
     "@expo/vector-icons": "^15.0.2",
+    "@react-native-async-storage/async-storage": "^2.2.0",
     "@react-navigation/bottom-tabs": "^7.4.0",
     "@react-navigation/elements": "^2.6.3",
     "@react-navigation/native": "^7.1.8",
@@ -24,6 +27,7 @@
     "expo-constants": "~18.0.10",
     "expo-dev-client": "^6.0.16",
     "expo-font": "~14.0.9",
+    "expo-glass-effect": "^0.1.4",
     "expo-haptics": "~15.0.7",
     "expo-image": "~3.0.10",
     "expo-linking": "~8.0.8",
@@ -49,5 +53,6 @@
     "eslint-config-expo": "~10.0.0",
     "typescript": "~5.9.2"
   },
-  "private": true
+  "private": true,
+  "packageManager": "yarn@4.10.3"
 }

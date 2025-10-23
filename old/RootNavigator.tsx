@@ -1,12 +1,11 @@
-import React from 'react';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import LessonRequestScreen from '@/screens/LessonRequestScreen';
-import LessonSessionScreen from '@/screens/LessonSessionScreen';
-import LibraryScreen from '@/screens/LibraryScreen';
-import SettingsScreen from '@/screens/SettingsScreen';
+import LibraryScreen from '@/app/(tabs)/library';
+import LessonRequestScreen from '@/old/LessonRequestScreen';
+import LessonSessionScreen from '@/old/LessonSessionScreen';
+import SettingsScreen from '@/screens/HomeScreen';
 import { colors } from '@/theme/colors';
 import { Ionicons } from '@expo/vector-icons';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 export type RootStackParamList = {
   LessonRequest: undefined;
