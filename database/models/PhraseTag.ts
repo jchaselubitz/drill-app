@@ -6,13 +6,10 @@ import { Phrase, Tag } from '.';
 
 export default class PhraseTag extends Model {
   static table = PHRASE_TAG_TABLE;
-
   @field('created_at') createdAt!: number;
   @field('updated_at') updatedAt!: number;
-
   @relation('phrase', 'id')
   phrase!: Phrase;
-
   @relation('tag', 'id')
   tag!: Tag;
 }

@@ -11,5 +11,4 @@ export default class Translation extends Model {
   @field('lesson_id') lessonId!: string | null;
   @field('phrase_primary_id') phrasePrimaryId!: string;
   @field('phrase_secondary_id') phraseSecondaryId!: string;
-  @field('user_id') userId!: string | null;
 }
