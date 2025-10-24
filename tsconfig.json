@@ -5,6 +5,7 @@
   "compilerOptions": {
     "strict": true,
     "jsx": "react-jsx",
+    "experimentalDecorators": true,
 
     "baseUrl": ".",
     "paths": {

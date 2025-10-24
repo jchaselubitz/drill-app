@@ -1,30 +1,36 @@
-import { getPhrases } from '@/lib/actions/libraryActions';
-import { Phrase } from '@/supabase/functions/_shared/types';
+import PhraseForm from '@/components/PhraseForm';
+import database from '@/database';
+import Phrase from '@/database/models/Phrase';
+import { PHRASE_TABLE } from '@/database/schema';
 import { colors, spacing, typography } from '@/theme/colors';
-import React, { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-// import { useLessonContext } from '@/context/LessonContext';
+import { withObservables } from '@nozbe/watermelondb/react';
+
+import { FlatList, StyleSheet, Text, View } from 'react-native';
+
+// Plain component that receives phrases as props
+const PhraseListComponent = ({ phrases }: { phrases: Phrase[] }) => {
+  return (
+    <FlatList
+      data={phrases}
+      renderItem={({ item }) => (
+        <View style={styles.entry}>
+          <Text style={styles.entryValue}>{item.text}</Text>
+          <Text style={styles.entryTranslation}>{item.lang}</Text>
+        </View>
+      )}
+      keyExtractor={(item) => item.id}
+    />
+  );
+};
+
+// Enhanced version with observables
+const EnhancedPhraseList = withObservables([], () => ({
+  phrases: database.get<Phrase>(PHRASE_TABLE).query().observe(),
+}))(PhraseListComponent);
 
 const LibraryScreen: React.FC = () => {
-  // const { library } = useLessonContext();
-  const [phrases, setPhrases] = useState<Phrase[]>([]);
-  useEffect(() => {
-    getPhrases({
-      pastDays: 30,
-    }).then((phrases) => {
-      setPhrases(phrases);
-    });
-  }, []);
-
-  console.log('Phrases', phrases);
-
-  const library = {
-    terms: phrases.filter((phrase) => phrase.type === 'word'),
-    concepts: phrases.filter((phrase) => phrase.type === 'concept'),
-  };
-
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <View style={styles.container}>
       <Text style={styles.title}>Library</Text>
       <Text style={styles.subtitle}>
         Manage the vocabulary and grammar concepts you want to review.
@@ -32,41 +38,15 @@ const LibraryScreen: React.FC = () => {
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Words & phrases</Text>
-        {library.terms.length === 0 ? (
-          <Text style={styles.empty}>Save new words from lesson corrections to see them here.</Text>
-        ) : (
-          library.terms.map((item) => (
-            <TouchableOpacity key={item.value} style={styles.entry}>
-              <View>
-                <Text style={styles.entryValue}>{item.value}</Text>
-                {item.translation ? (
-                  <Text style={styles.entryTranslation}>{item.translation}</Text>
-                ) : null}
-              </View>
-              <View style={styles.pill}>
-                <Text style={styles.pillLabel}>Focus ×{item.focusLevel}</Text>
-              </View>
-            </TouchableOpacity>
-          ))
-        )}
+        <PhraseForm />
+        <EnhancedPhraseList />
       </View>
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Concepts</Text>
-        {library.concepts.length === 0 ? (
-          <Text style={styles.empty}>Add tricky grammar patterns to practice them more often.</Text>
-        ) : (
-          library.concepts.map((item) => (
-            <TouchableOpacity key={item.value} style={styles.entry}>
-              <Text style={styles.entryValue}>{item.value}</Text>
-              <View style={styles.pill}>
-                <Text style={styles.pillLabel}>Focus ×{item.focusLevel}</Text>
-              </View>
-            </TouchableOpacity>
-          ))
-        )}
+        <Text style={styles.empty}>Add tricky grammar patterns to practice them more often.</Text>
       </View>
-    </ScrollView>
+    </View>
   );
 };
 

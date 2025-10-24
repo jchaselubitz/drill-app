@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabaseClient';
 
 export const signIn = async ({ email, password }: { email: string; password: string }) => {
   if (!email || !password) {
@@ -8,14 +8,11 @@ export const signIn = async ({ email, password }: { email: string; password: str
     email,
     password,
   });
-
   if (error) {
     console.error(error);
-    throw error;
+    throw `Could not sign in: ${error.message}`;
   }
-
   console.log('signIn success');
-
   return true;
 };
 

@@ -13,7 +13,7 @@ export default function TabLayout() {
         }}
       >
         <Icon sf="house.fill" drawable="custom_android_drawable" />
-        <Label>Home</Label>
+        <Label>Lesson</Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger
         name="library"

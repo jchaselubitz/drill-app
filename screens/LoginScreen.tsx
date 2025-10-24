@@ -1,5 +1,5 @@
 import { signIn } from '@/lib/actions/userActions';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabaseClient';
 import { colors, spacing, typography } from '@/theme/colors';
 import { router } from 'expo-router';
 import React from 'react';
