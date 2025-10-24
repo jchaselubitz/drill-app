@@ -11,7 +11,7 @@ try {
 type AppConfig = ExpoConfig & {
   extra: {
     supabaseUrl?: string;
-    supabaseAnonKey?: string;
+    supabasePublishableKey?: string;
     openAiProxyUrl?: string;
   };
 };
@@ -37,7 +37,7 @@ const config: AppConfig = {
   },
   extra: {
     supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,
-    supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
+    supabasePublishableKey: process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
     openAiProxyUrl: process.env.EXPO_PUBLIC_OPENAI_PROXY_URL,
   },
 };
