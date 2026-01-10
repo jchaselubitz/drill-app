@@ -1,27 +1,17 @@
-import { AuthProvider } from '@/context/AuthContext';
-import database from '@/database';
-import { DatabaseProvider } from '@nozbe/watermelondb/DatabaseProvider';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import 'react-native-gesture-handler';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { useColorScheme } from '@/hooks';
 
 export default function RootLayout() {
+  const colorScheme = useColorScheme();
+
   return (
-    <SafeAreaProvider>
-      <DatabaseProvider database={database}>
-        <AuthProvider>
-          <StatusBar style="light" />
-          <Stack
-            screenOptions={{
-              headerStyle: { backgroundColor: '#1a1a1a' },
-              headerTintColor: '#ffffff',
-              contentStyle: { backgroundColor: '#000000' },
-              headerShown: false,
-            }}
-          />
-        </AuthProvider>
-      </DatabaseProvider>
-    </SafeAreaProvider>
+    <>
+      <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="+not-found" />
+      </Stack>
+    </>
   );
 }
