@@ -1,18 +1,11 @@
-
-
 {
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
-    "jsx": "react-jsx",
-    "experimentalDecorators": true,
-
     "baseUrl": ".",
     "paths": {
       "@/*": ["./*"]
     }
   },
-  "include": ["**/*.ts", "**/*.tsx", "supabase/functions/**/*.ts"],
-  "exclude": ["node_modules", "babel.config.js", "metro.config.js"]
-
+  "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts"]
 }

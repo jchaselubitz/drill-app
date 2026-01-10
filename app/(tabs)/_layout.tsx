@@ -1,46 +1,54 @@
-import { useAuth } from '@/context/AuthContext';
+import { Ionicons } from '@expo/vector-icons';
 import { Icon, NativeTabs, Label } from 'expo-router/unstable-native-tabs';
+import { useColors } from '@/hooks';
 
 export default function TabLayout() {
-  const { session, loading } = useAuth();
+  const colors = useColors();
 
   return (
-    <NativeTabs>
-      <NativeTabs.Trigger
-        name="home"
+    <NativeTabs
+      screenOptions={{
+        headerShown: true,
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.textSecondary,
+      }}
+    >
+      <NativeTabs.Screen
+        name="index"
         options={{
-          title: 'Home',
+          title: 'Practice',
+          tabBarIcon: ({ color, size }) => (
+            <Icon>
+              <Ionicons name="create-outline" size={size} color={color} />
+            </Icon>
+          ),
+          tabBarLabel: ({ color }) => <Label style={{ color }}>Practice</Label>,
         }}
-      >
-        <Icon sf="house.fill" drawable="custom_android_drawable" />
-        <Label>Lesson</Label>
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger
-        name="library"
+      />
+      <NativeTabs.Screen
+        name="review"
         options={{
-          title: 'Library',
+          title: 'Review',
+          tabBarIcon: ({ color, size }) => (
+            <Icon>
+              <Ionicons name="checkmark-circle-outline" size={size} color={color} />
+            </Icon>
+          ),
+          tabBarLabel: ({ color }) => <Label style={{ color }}>Review</Label>,
         }}
-      >
-        <Icon sf="books.vertical.fill" drawable="custom_android_drawable" />
-        <Label>Library</Label>
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger
+      />
+      <NativeTabs.Screen
         name="settings"
         options={{
           title: 'Settings',
+          tabBarIcon: ({ color, size }) => (
+            <Icon>
+              <Ionicons name="settings-outline" size={size} color={color} />
+            </Icon>
+          ),
+          tabBarLabel: ({ color }) => <Label style={{ color }}>Settings</Label>,
         }}
-      >
-        <Icon sf="gearshape.fill" drawable="custom_android_drawable" />
-        <Label>Settings</Label>
-      </NativeTabs.Trigger>
+      />
     </NativeTabs>
   );
 }
-
-// nativeTabOptions={{
-
-//   tabBarStyle: { backgroundColor: colors.surface },
-//   tabBarActiveTintColor: colors.primary,
-//   tabBarInactiveTintColor: colors.textSecondary,
-// }}
-// >
