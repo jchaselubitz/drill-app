@@ -1,20 +1,20 @@
-import { useState } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  StyleSheet,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
 import { Button, Card, TextInput } from '@/components';
 import { useColors, useSettings } from '@/hooks';
 import { reviewParagraph } from '@/lib/ai/review';
 import type { ReviewResponse } from '@/types';
-
+import { Ionicons } from '@expo/vector-icons';
+import { useState } from 'react';
+import {
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+const GEMINI_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
 export default function ReviewScreen() {
   const colors = useColors();
   const { settings } = useSettings();
@@ -29,8 +29,11 @@ export default function ReviewScreen() {
       return;
     }
 
-    if (!settings.apiKey) {
-      Alert.alert('API Key Required', 'Please add your Gemini API key in Settings');
+    if (!GEMINI_KEY) {
+      Alert.alert(
+        'API Key Required',
+        'Please set the EXPO_PUBLIC_GEMINI_API_KEY environment variable'
+      );
       return;
     }
 
@@ -112,21 +115,15 @@ export default function ReviewScreen() {
                     Corrected Version
                   </Text>
                 </View>
-                <Text style={[styles.resultText, { color: colors.text }]}>
-                  {review.correction}
-                </Text>
+                <Text style={[styles.resultText, { color: colors.text }]}>{review.correction}</Text>
               </Card>
 
               <Card style={styles.resultCard}>
                 <View style={styles.resultHeader}>
                   <Ionicons name="chatbubble-ellipses" size={20} color={colors.primary} />
-                  <Text style={[styles.resultLabel, { color: colors.text }]}>
-                    Feedback
-                  </Text>
+                  <Text style={[styles.resultLabel, { color: colors.text }]}>Feedback</Text>
                 </View>
-                <Text style={[styles.resultText, { color: colors.text }]}>
-                  {review.feedback}
-                </Text>
+                <Text style={[styles.resultText, { color: colors.text }]}>{review.feedback}</Text>
               </Card>
             </View>
           )}

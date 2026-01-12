@@ -1,19 +1,20 @@
+import { Button, Card, TextInput } from '@/components';
+import { useColors, useSettings } from '@/hooks';
+import { changePromptLength, generateTutorPrompt } from '@/lib/ai/tutor';
+import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import {
-  View,
-  Text,
-  ScrollView,
-  StyleSheet,
   Alert,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { Button, Card, TextInput } from '@/components';
-import { useColors, useSettings } from '@/hooks';
-import { generateTutorPrompt, changePromptLength } from '@/lib/ai/tutor';
 
+const GEMINI_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
 export default function PracticeScreen() {
   const colors = useColors();
   const { settings } = useSettings();
@@ -29,15 +30,21 @@ export default function PracticeScreen() {
       return;
     }
 
-    if (!settings.apiKey) {
-      Alert.alert('API Key Required', 'Please add your Gemini API key in Settings');
+    if (!GEMINI_KEY) {
+      Alert.alert(
+        'API Key Required',
+        'Please set the EXPO_PUBLIC_GEMINI_API_KEY environment variable'
+      );
       return;
     }
 
     setIsLoading(true);
     try {
       const result = await generateTutorPrompt({
-        relatedPhrases: phrases.split(',').map((p) => p.trim()).filter(Boolean),
+        relatedPhrases: phrases
+          .split(',')
+          .map((p) => p.trim())
+          .filter(Boolean),
         userLanguage: settings.userLanguage,
         topicLanguage: settings.topicLanguage,
         level: settings.level,
@@ -116,9 +123,7 @@ export default function PracticeScreen() {
                   Your Writing Prompt
                 </Text>
               </View>
-              <Text style={[styles.promptText, { color: colors.text }]}>
-                {prompt}
-              </Text>
+              <Text style={[styles.promptText, { color: colors.text }]}>{prompt}</Text>
               <View style={styles.promptActions}>
                 <Button
                   title="Shorter"

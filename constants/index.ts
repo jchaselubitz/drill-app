@@ -1,4 +1,11 @@
-import type { LanguageCode, CEFRLevel } from '@/types';
+import type { CEFRLevel, LanguageCode } from '@/types';
+
+export const models = [
+  { label: '3-flash', value: 'gemini-3-flash-preview' },
+  { label: '2.5-flash', value: 'gemini-2.5-flash' },
+  { label: '2.0-flash', value: 'gemini-2.0-flash' },
+  { label: '1.5-flash', value: 'gemini-1.5-flash' },
+];
 
 export const LANGUAGES: { code: LanguageCode; name: string }[] = [
   { code: 'en', name: 'English' },
@@ -32,7 +39,6 @@ export const DEFAULT_SETTINGS = {
   userLanguage: 'en' as LanguageCode,
   topicLanguage: 'es' as LanguageCode,
   level: 'A2' as CEFRLevel,
-  apiKey: '',
 };
 
 export const Colors = {

@@ -42,5 +42,4 @@ export type UserSettings = {
   userLanguage: LanguageCode;
   topicLanguage: LanguageCode;
   level: CEFRLevel;
-  apiKey: string;
 };
