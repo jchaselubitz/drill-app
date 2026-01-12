@@ -7,8 +7,10 @@ export const SUBJECT_TABLE = 'subject';
 export const TAG_TABLE = 'tag';
 export const TRANSLATION_TABLE = 'translation';
 export const PHRASE_TAG_TABLE = 'phrase_tag';
+export const LESSON_TABLE = 'lesson';
+export const ATTEMPT_TABLE = 'attempt';
 const schema = appSchema({
-  version: 1,
+  version: 2,
   tables: [
     tableSchema({
       name: PHRASE_TABLE,
@@ -86,6 +88,29 @@ const schema = appSchema({
         { name: 'lesson_id', type: 'string', isOptional: true },
         { name: 'phrase_primary_id', type: 'string' },
         { name: 'phrase_secondary_id', type: 'string' },
+      ],
+    }),
+    tableSchema({
+      name: LESSON_TABLE,
+      columns: [
+        { name: 'created_at', type: 'number' },
+        { name: 'updated_at', type: 'number' },
+        { name: 'topic', type: 'string' },
+        { name: 'phrases', type: 'string', isOptional: true },
+        { name: 'prompt', type: 'string' },
+        { name: 'lang', type: 'string' },
+        { name: 'level', type: 'string' },
+      ],
+    }),
+    tableSchema({
+      name: ATTEMPT_TABLE,
+      columns: [
+        { name: 'created_at', type: 'number' },
+        { name: 'updated_at', type: 'number' },
+        { name: 'lesson_id', type: 'string' },
+        { name: 'paragraph', type: 'string' },
+        { name: 'correction', type: 'string' },
+        { name: 'feedback', type: 'string' },
       ],
     }),
   ],

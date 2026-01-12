@@ -3,7 +3,7 @@ import { Platform } from 'react-native';
 import Database from '@nozbe/watermelondb/Database';
 import SQLiteAdapter from '@nozbe/watermelondb/adapters/sqlite';
 
-import { Media, Phrase, PhraseTag, Profile, Subject, Tag, Translation } from './models';
+import { Attempt, Lesson, Media, Phrase, PhraseTag, Profile, Subject, Tag, Translation } from './models';
 import schema from './schema';
 
 const adapter = new SQLiteAdapter({
@@ -15,7 +15,7 @@ const adapter = new SQLiteAdapter({
 
 const database = new Database({
   adapter,
-  modelClasses: [Phrase, Media, Profile, Subject, Tag, Translation, PhraseTag],
+  modelClasses: [Attempt, Lesson, Media, Phrase, PhraseTag, Profile, Subject, Tag, Translation],
 });
 
 export default database;

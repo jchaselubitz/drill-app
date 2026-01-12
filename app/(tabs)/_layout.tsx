@@ -1,29 +1,39 @@
-import { useAuth } from '@/context/AuthContext';
-import { Icon, NativeTabs, Label } from 'expo-router/unstable-native-tabs';
+import { useColors } from '@/hooks';
+import { Icon, Label, NativeTabs } from 'expo-router/unstable-native-tabs';
 
 export default function TabLayout() {
-  const { session, loading } = useAuth();
+  const colors = useColors();
 
   return (
-    <NativeTabs>
+    <NativeTabs
+      iconColor={{
+        default: colors.textSecondary,
+        selected: colors.primary,
+      }}
+      labelStyle={{
+        default: { color: colors.textSecondary },
+        selected: { color: colors.primary },
+      }}
+    >
       <NativeTabs.Trigger
-        name="home"
+        name="index"
         options={{
-          title: 'Home',
+          title: 'Practice',
         }}
       >
         <Icon sf="house.fill" drawable="custom_android_drawable" />
         <Label>Lesson</Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger
-        name="library"
+        name="review"
         options={{
-          title: 'Library',
+          title: 'Review',
         }}
       >
         <Icon sf="books.vertical.fill" drawable="custom_android_drawable" />
         <Label>Library</Label>
       </NativeTabs.Trigger>
+
       <NativeTabs.Trigger
         name="settings"
         options={{
@@ -36,11 +46,3 @@ export default function TabLayout() {
     </NativeTabs>
   );
 }
-
-// nativeTabOptions={{
-
-//   tabBarStyle: { backgroundColor: colors.surface },
-//   tabBarActiveTintColor: colors.primary,
-//   tabBarInactiveTintColor: colors.textSecondary,
-// }}
-// >
