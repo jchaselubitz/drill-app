@@ -34,6 +34,12 @@ const config: AppConfig = {
   },
   extra: {
     geminiApiKey: process.env.EXPO_PUBLIC_GEMINI_API_KEY,
+    supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,
+    supabasePublishableKey: process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+    openAiProxyUrl: process.env.EXPO_PUBLIC_OPENAI_PROXY_URL,
+    eas: {
+      projectId: process.env.EXPO_PUBLIC_EAS_PROJECT_ID,
+    },
   },
 };
 
