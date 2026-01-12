@@ -1,6 +1,5 @@
 import database from '@/database';
 import Phrase from '@/database/models/Phrase';
-import { PHRASE_TABLE } from '@/database/schema';
 import { colors, spacing, typography } from '@/theme/colors';
 import React, { useState } from 'react';
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -17,21 +16,17 @@ const PhraseForm: React.FC = () => {
 
     setLoading(true);
     try {
-      await database.write(async () => {
-        await database.get<Phrase>(PHRASE_TABLE).create((phrase) => {
-          phrase.text = text;
-          phrase.lang = lang;
-          phrase.source = source;
-          phrase.type = type;
-          phrase.favorite = false;
-          phrase.partSpeech = null;
-          phrase.filename = null;
-          phrase.note = null;
-          phrase.difficulty = null;
-          phrase.historyId = null;
-          phrase.createdAt = Date.now();
-          phrase.updatedAt = Date.now();
-        });
+      await Phrase.addPhrase(database, {
+        text,
+        lang,
+        source,
+        type,
+        favorite: false,
+        partSpeech: null,
+        filename: null,
+        note: null,
+        difficulty: null,
+        historyId: null,
       });
 
       // Reset form

@@ -1,4 +1,5 @@
 import { Model } from '@nozbe/watermelondb';
+import Database from '@nozbe/watermelondb/Database';
 import { field, writer } from '@nozbe/watermelondb/decorators';
 
 import { PHRASE_TABLE } from '../schema';
@@ -35,31 +36,44 @@ export default class Phrase extends Model {
   @field('difficulty') difficulty!: number | null;
   @field('history_id') historyId!: string | null;
 
-  @writer async addPhrase({
-    text,
-    lang,
-    source,
-    partSpeech,
-    favorite,
-    filename,
-    type,
-    note,
-    difficulty,
-    historyId,
-  }: Omit<PhraseProps, 'id' | 'createdAt' | 'updatedAt'>): Promise<Phrase> {
-    return await this.collections.get<Phrase>(PHRASE_TABLE).create((phrase) => {
-      phrase.text = text;
-      phrase.lang = lang;
-      phrase.source = source;
-      phrase.partSpeech = partSpeech;
-      phrase.favorite = favorite;
-      phrase.filename = filename;
-      phrase.type = type;
-      phrase.note = note;
-      phrase.difficulty = difficulty;
-      phrase.historyId = historyId;
-      phrase.createdAt = Date.now();
+  static async addPhrase(
+    db: Database,
+    {
+      text,
+      lang,
+      source,
+      partSpeech,
+      favorite,
+      filename,
+      type,
+      note,
+      difficulty,
+      historyId,
+    }: Omit<PhraseProps, 'id' | 'createdAt' | 'updatedAt'>
+  ): Promise<Phrase> {
+    return await db.write(async () => {
+      return await db.collections.get<Phrase>(PHRASE_TABLE).create((phrase) => {
+        phrase.text = text;
+        phrase.lang = lang;
+        phrase.source = source;
+        phrase.partSpeech = partSpeech;
+        phrase.favorite = favorite;
+        phrase.filename = filename;
+        phrase.type = type;
+        phrase.note = note;
+        phrase.difficulty = difficulty;
+        phrase.historyId = historyId;
+        phrase.createdAt = Date.now();
+        phrase.updatedAt = Date.now();
+      });
+    });
+  }
+
+  @writer async updateFavorite(isFavorite: boolean): Promise<Phrase> {
+    const updatedPhrase = await this.update((phrase) => {
+      phrase.favorite = isFavorite;
       phrase.updatedAt = Date.now();
     });
+    return updatedPhrase;
   }
 }

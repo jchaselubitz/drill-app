@@ -14,5 +14,5 @@ export default function Index() {
     );
   }
 
-  return <Redirect href={session ? '/home' : '/login'} />;
+  return <Redirect href={session ? '/home' : '/home'} />;
 }
