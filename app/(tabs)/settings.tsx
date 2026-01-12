@@ -1,6 +1,6 @@
-import { View, Text, ScrollView, StyleSheet, Alert } from 'react-native';
+import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button, Card, TextInput, Select } from '@/components';
+import { Card, Select } from '@/components';
 import { useColors, useSettings } from '@/hooks';
 import { LANGUAGES, CEFR_LEVELS } from '@/constants';
 import type { LanguageCode, CEFRLevel } from '@/types';
@@ -8,17 +8,6 @@ import type { LanguageCode, CEFRLevel } from '@/types';
 export default function SettingsScreen() {
   const colors = useColors();
   const { settings, updateSettings, isLoading } = useSettings();
-
-  const handleSaveApiKey = async (apiKey: string) => {
-    try {
-      await updateSettings({ apiKey });
-      if (apiKey) {
-        Alert.alert('Success', 'API key saved');
-      }
-    } catch {
-      Alert.alert('Error', 'Failed to save API key');
-    }
-  };
 
   const languageOptions = LANGUAGES.map((lang) => ({
     value: lang.code,
@@ -46,26 +35,6 @@ export default function SettingsScreen() {
       edges={['bottom']}
     >
       <ScrollView contentContainerStyle={styles.content}>
-        <Card>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            API Configuration
-          </Text>
-          <Text style={[styles.sectionDescription, { color: colors.textSecondary }]}>
-            Enter your Google Gemini API key to enable AI features
-          </Text>
-          <View style={styles.apiKeyForm}>
-            <TextInput
-              label="Gemini API Key"
-              placeholder="Enter your API key"
-              value={settings.apiKey}
-              onChangeText={(text) => updateSettings({ apiKey: text })}
-              secureTextEntry
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-          </View>
-        </Card>
-
         <Card>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>
             Language Settings
@@ -139,9 +108,6 @@ const styles = StyleSheet.create({
   sectionDescription: {
     fontSize: 14,
     marginBottom: 16,
-  },
-  apiKeyForm: {
-    gap: 12,
   },
   settingsForm: {
     gap: 16,

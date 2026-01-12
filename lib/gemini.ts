@@ -1,11 +1,11 @@
-import { GoogleGenerativeAI, GenerativeModel } from '@google/generative-ai';
+import { GenerativeModel, GoogleGenerativeAI } from '@google/generative-ai';
 
 let genAI: GoogleGenerativeAI | null = null;
 let model: GenerativeModel | null = null;
 
 export function initializeGemini(apiKey: string): void {
   genAI = new GoogleGenerativeAI(apiKey);
-  model = genAI.getGenerativeModel({ model: 'gemini-3.0-flash' });
+  model = genAI.getGenerativeModel({ model: 'gemini-3-flash-preview' });
 }
 
 export function getModel(): GenerativeModel {

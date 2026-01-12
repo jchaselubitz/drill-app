@@ -1,54 +1,37 @@
-import { Ionicons } from '@expo/vector-icons';
-import { Icon, NativeTabs, Label } from 'expo-router/unstable-native-tabs';
 import { useColors } from '@/hooks';
+import { Icon, Label, NativeTabs } from 'expo-router/unstable-native-tabs';
 
 export default function TabLayout() {
-  const colors = useColors();
-
   return (
-    <NativeTabs
-      screenOptions={{
-        headerShown: true,
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textSecondary,
-      }}
-    >
-      <NativeTabs.Screen
+    <NativeTabs>
+      <NativeTabs.Trigger
         name="index"
         options={{
           title: 'Practice',
-          tabBarIcon: ({ color, size }) => (
-            <Icon>
-              <Ionicons name="create-outline" size={size} color={color} />
-            </Icon>
-          ),
-          tabBarLabel: ({ color }) => <Label style={{ color }}>Practice</Label>,
         }}
-      />
-      <NativeTabs.Screen
+      >
+        <Icon sf="house.fill" drawable="custom_android_drawable" />
+        <Label>Lesson</Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger
         name="review"
         options={{
           title: 'Review',
-          tabBarIcon: ({ color, size }) => (
-            <Icon>
-              <Ionicons name="checkmark-circle-outline" size={size} color={color} />
-            </Icon>
-          ),
-          tabBarLabel: ({ color }) => <Label style={{ color }}>Review</Label>,
         }}
-      />
-      <NativeTabs.Screen
+      >
+        <Icon sf="books.vertical.fill" drawable="custom_android_drawable" />
+        <Label>Library</Label>
+      </NativeTabs.Trigger>
+
+      <NativeTabs.Trigger
         name="settings"
         options={{
           title: 'Settings',
-          tabBarIcon: ({ color, size }) => (
-            <Icon>
-              <Ionicons name="settings-outline" size={size} color={color} />
-            </Icon>
-          ),
-          tabBarLabel: ({ color }) => <Label style={{ color }}>Settings</Label>,
         }}
-      />
+      >
+        <Icon sf="gearshape.fill" drawable="custom_android_drawable" />
+        <Label>Settings</Label>
+      </NativeTabs.Trigger>
     </NativeTabs>
   );
 }

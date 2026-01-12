@@ -5,8 +5,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useCallback, useEffect, useState } from 'react';
 
 const SETTINGS_KEY = '@drill_settings';
-const GEMINI_KEY = process.env.GEMINI_API_KEY;
-console.log('GEMINI_KEY', GEMINI_KEY);
+const GEMINI_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
+
 export function useSettings() {
   const [settings, setSettings] = useState<UserSettings>(DEFAULT_SETTINGS);
   const [isLoading, setIsLoading] = useState(true);
@@ -21,14 +21,9 @@ export function useSettings() {
       if (stored) {
         const parsed = JSON.parse(stored) as UserSettings;
         setSettings(parsed);
-        if (GEMINI_KEY) {
-          initializeGemini(GEMINI_KEY);
-        } else {
-          initializeGemini(parsed.apiKey);
-        }
-        if (parsed.apiKey) {
-          initializeGemini(parsed.apiKey);
-        }
+      }
+      if (GEMINI_KEY) {
+        initializeGemini(GEMINI_KEY);
       }
     } catch (error) {
       console.error('Failed to load settings:', error);
@@ -43,9 +38,6 @@ export function useSettings() {
         const newSettings = { ...settings, ...updates };
         await AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify(newSettings));
         setSettings(newSettings);
-        if (updates.apiKey) {
-          initializeGemini(updates.apiKey);
-        }
       } catch (error) {
         console.error('Failed to save settings:', error);
         throw error;
