@@ -11,6 +11,11 @@
     "ios": {
       "supportsTablet": true
     },
+    "extra": {
+      "eas": {
+        "projectId": "EXPO_PUBLIC_EAS_PROJECT_ID"
+      }
+    },
     "infoPlist": {
       "UIDesignRequiresCompatibility": true,
     },
