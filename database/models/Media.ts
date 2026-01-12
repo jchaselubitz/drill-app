@@ -1,7 +1,7 @@
 import { Model } from '@nozbe/watermelondb';
 import { field } from '@nozbe/watermelondb/decorators';
 
-import { MEDIA_TABLE } from '../schema';
+import { MEDIA_TABLE } from '@/database/schema';
 
 export default class Media extends Model {
   static table = MEDIA_TABLE;

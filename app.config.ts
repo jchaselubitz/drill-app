@@ -1,44 +1,45 @@
 import type { ExpoConfig } from '@expo/config-types';
 
-// Load environment variables
-try {
-  require('dotenv/config');
-} catch (error) {
-  // dotenv/config not available, continue without it
-  console.warn('dotenv/config not available, environment variables may not be loaded');
-}
-
 type AppConfig = ExpoConfig & {
   extra: {
-    supabaseUrl?: string;
-    supabasePublishableKey?: string;
-    openAiProxyUrl?: string;
+    geminiApiKey?: string;
   };
 };
 
 const config: AppConfig = {
-  name: 'Drill App',
+  name: 'Drill',
   slug: 'drill-app',
-  version: '0.1.0',
+  version: '1.0.0',
   orientation: 'portrait',
   scheme: 'drillapp',
   userInterfaceStyle: 'automatic',
   newArchEnabled: true,
   ios: {
-    supportsTablet: false,
+    supportsTablet: true,
     bundleIdentifier: 'com.drillapp.mobile',
   },
   android: {
     package: 'com.drillapp.mobile',
+    adaptiveIcon: {
+      backgroundColor: '#ffffff',
+    },
   },
   web: {
     bundler: 'metro',
     output: 'static',
   },
+  plugins: ['expo-router'],
+  experiments: {
+    typedRoutes: true,
+  },
   extra: {
+    geminiApiKey: process.env.EXPO_PUBLIC_GEMINI_API_KEY,
     supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,
     supabasePublishableKey: process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
     openAiProxyUrl: process.env.EXPO_PUBLIC_OPENAI_PROXY_URL,
+    eas: {
+      projectId: process.env.EXPO_PUBLIC_EAS_PROJECT_ID,
+    },
   },
 };
 

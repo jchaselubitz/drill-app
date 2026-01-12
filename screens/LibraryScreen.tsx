@@ -1,45 +1,18 @@
 import PhraseForm from '@/components/PhraseForm';
-import database from '@/database';
-import Phrase from '@/database/models/Phrase';
-import { PHRASE_TABLE } from '@/database/schema';
+import PhraseList from '@/components/PhraseList';
 import { colors, spacing, typography } from '@/theme/colors';
-import { withObservables } from '@nozbe/watermelondb/react';
-
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 // Plain component that receives phrases as props
-const PhraseListComponent = ({ phrases }: { phrases: Phrase[] }) => {
-  return (
-    <FlatList
-      data={phrases}
-      renderItem={({ item }) => (
-        <View style={styles.entry}>
-          <Text style={styles.entryValue}>{item.text}</Text>
-          <Text style={styles.entryTranslation}>{item.lang}</Text>
-        </View>
-      )}
-      keyExtractor={(item) => item.id}
-    />
-  );
-};
-
-// Enhanced version with observables
-const EnhancedPhraseList = withObservables([], () => ({
-  phrases: database.get<Phrase>(PHRASE_TABLE).query().observe(),
-}))(PhraseListComponent);
 
 const LibraryScreen: React.FC = () => {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Library</Text>
-      <Text style={styles.subtitle}>
-        Manage the vocabulary and grammar concepts you want to review.
-      </Text>
-
+      <PhraseForm />
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Words & phrases</Text>
-        <PhraseForm />
-        <EnhancedPhraseList />
+
+        <PhraseList />
       </View>
 
       <View style={styles.section}>
