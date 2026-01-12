@@ -1,7 +1,11 @@
 import { Button, Card, TextInput } from '@/components';
+import database from '@/database';
+import { Lesson } from '@/database/models';
 import { useColors, useSettings } from '@/hooks';
 import { changePromptLength, generateTutorPrompt } from '@/lib/ai/tutor';
 import { Ionicons } from '@expo/vector-icons';
+import Constants from 'expo-constants';
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
   Alert,
@@ -14,15 +18,18 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-const GEMINI_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
+const geminiApiKey = Constants.expoConfig?.extra?.geminiApiKey as string | undefined;
+
 export default function PracticeScreen() {
   const colors = useColors();
   const { settings } = useSettings();
+  const router = useRouter();
 
   const [topic, setTopic] = useState('');
   const [phrases, setPhrases] = useState('');
   const [prompt, setPrompt] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const handleGeneratePrompt = async () => {
     if (!topic.trim()) {
@@ -30,11 +37,8 @@ export default function PracticeScreen() {
       return;
     }
 
-    if (!GEMINI_KEY) {
-      Alert.alert(
-        'API Key Required',
-        'Please set the EXPO_PUBLIC_GEMINI_API_KEY environment variable'
-      );
+    if (!geminiApiKey) {
+      Alert.alert('API Key Required', 'Please set the geminiApiKey in app.config.ts');
       return;
     }
 
@@ -74,6 +78,30 @@ export default function PracticeScreen() {
     }
   };
 
+  const handleSaveLesson = async () => {
+    if (!prompt) return;
+
+    setIsSaving(true);
+    try {
+      const lesson = await Lesson.addLesson(database, {
+        topic: topic.trim(),
+        phrases: phrases.trim() || null,
+        prompt,
+        lang: settings.topicLanguage,
+        level: settings.level,
+      });
+      setTopic('');
+      setPhrases('');
+      setPrompt('');
+      router.push(`/lesson/${lesson.id}` as any);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to save lesson');
+      console.error(error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <SafeAreaView
       style={[styles.container, { backgroundColor: colors.background }]}
@@ -108,7 +136,7 @@ export default function PracticeScreen() {
             />
 
             <Button
-              title="Generate Prompt"
+              title="Generate Lesson"
               onPress={handleGeneratePrompt}
               loading={isLoading}
               disabled={!topic.trim()}
@@ -129,15 +157,21 @@ export default function PracticeScreen() {
                   title="Shorter"
                   variant="secondary"
                   onPress={() => handleChangeLength('shorter')}
-                  disabled={isLoading}
+                  disabled={isLoading || isSaving}
                 />
                 <Button
                   title="Longer"
                   variant="secondary"
                   onPress={() => handleChangeLength('longer')}
-                  disabled={isLoading}
+                  disabled={isLoading || isSaving}
                 />
               </View>
+              <Button
+                title="Save to Library"
+                onPress={handleSaveLesson}
+                loading={isSaving}
+                disabled={isLoading}
+              />
             </Card>
           )}
         </ScrollView>

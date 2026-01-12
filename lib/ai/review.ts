@@ -1,9 +1,11 @@
+import { GeminiModel, getModel, Languages } from '@/constants';
+import type { LanguageCode, ReviewResponse } from '@/types';
 import { generateJSON } from '../gemini';
-import type { ReviewResponse, LanguageCode } from '@/types';
-import { LANGUAGES } from '@/constants';
+
+const MODEL = getModel(GeminiModel.FLASH_3);
 
 function getLanguageName(code: LanguageCode): string {
-  return LANGUAGES.find((l) => l.code === code)?.name ?? code;
+  return Languages.find((l) => l.code === code)?.name ?? code;
 }
 
 export async function reviewParagraph({
@@ -35,5 +37,5 @@ Guidelines:
 - Reference specific grammar rules by name when applicable
 - Be encouraging but honest`;
 
-  return generateJSON<ReviewResponse>(prompt);
+  return generateJSON<ReviewResponse>(prompt, MODEL);
 }

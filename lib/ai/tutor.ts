@@ -1,9 +1,11 @@
+import { GeminiModel, getModel, Languages } from '@/constants';
+import type { LanguageCode, TutorPromptParams } from '@/types';
 import { generateText } from '../gemini';
-import type { TutorPromptParams, LanguageCode } from '@/types';
-import { LANGUAGES } from '@/constants';
+
+const MODEL = getModel(GeminiModel.FLASH_2_0);
 
 function getLanguageName(code: LanguageCode): string {
-  return LANGUAGES.find((l) => l.code === code)?.name ?? code;
+  return Languages.find((l) => l.code === code)?.name ?? code;
 }
 
 export async function generateTutorPrompt({
@@ -29,11 +31,15 @@ Guidelines based on level:
 - B1-B2: Moderate complexity. Include a person and a simple situation.
 - C1-C2: More complex. Include a person, a place, and a problem to solve.
 
-${relatedPhraseArray ? `If appropriate, incorporate these phrases the student is learning: ${relatedPhraseArray}` : ''}
+${
+  relatedPhraseArray
+    ? `If appropriate, incorporate these phrases the student is learning: ${relatedPhraseArray}`
+    : ''
+}
 
 Return ONLY the prompt text in ${userLangName}, nothing else.`;
 
-  return generateText(prompt);
+  return generateText(prompt, MODEL);
 }
 
 export async function changePromptLength({
@@ -45,9 +51,11 @@ export async function changePromptLength({
 }): Promise<string> {
   const prompt = `I have this writing prompt: "${promptText}"
 
-Make it ${length === 'shorter' ? 'two sentences shorter' : 'two sentences longer'} while keeping the same structure and subject matter.
+Make it ${
+    length === 'shorter' ? 'two sentences shorter' : 'two sentences longer'
+  } while keeping the same structure and subject matter.
 
 Return ONLY the modified prompt text, nothing else.`;
 
-  return generateText(prompt);
+  return generateText(prompt, MODEL);
 }

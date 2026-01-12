@@ -1,15 +1,15 @@
-import { View, Text, ScrollView, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Card, Select } from '@/components';
+import { CEFR_LEVELS, Languages } from '@/constants';
 import { useColors, useSettings } from '@/hooks';
-import { LANGUAGES, CEFR_LEVELS } from '@/constants';
-import type { LanguageCode, CEFRLevel } from '@/types';
+import type { CEFRLevel, LanguageCode, ThemeMode } from '@/types';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function SettingsScreen() {
   const colors = useColors();
   const { settings, updateSettings, isLoading } = useSettings();
 
-  const languageOptions = LANGUAGES.map((lang) => ({
+  const languageOptions = Languages.map((lang) => ({
     value: lang.code,
     label: lang.name,
   }));
@@ -36,51 +36,56 @@ export default function SettingsScreen() {
     >
       <ScrollView contentContainerStyle={styles.content}>
         <Card>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            Language Settings
-          </Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Appearance</Text>
+
+          <View style={styles.settingsForm}>
+            <Select
+              label="Theme"
+              options={[
+                { value: 'light', label: 'Light' },
+                { value: 'dark', label: 'Dark' },
+                { value: 'system', label: 'System' },
+              ]}
+              value={settings.theme}
+              onValueChange={(value: ThemeMode) => updateSettings({ theme: value })}
+            />
+          </View>
+        </Card>
+
+        <Card>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Language Settings</Text>
 
           <View style={styles.settingsForm}>
             <Select
               label="I speak"
               options={languageOptions}
               value={settings.userLanguage}
-              onValueChange={(value: LanguageCode) =>
-                updateSettings({ userLanguage: value })
-              }
+              onValueChange={(value: LanguageCode) => updateSettings({ userLanguage: value })}
             />
 
             <Select
               label="I'm learning"
               options={languageOptions}
               value={settings.topicLanguage}
-              onValueChange={(value: LanguageCode) =>
-                updateSettings({ topicLanguage: value })
-              }
+              onValueChange={(value: LanguageCode) => updateSettings({ topicLanguage: value })}
             />
 
             <Select
               label="My level"
               options={levelOptions}
               value={settings.level}
-              onValueChange={(value: CEFRLevel) =>
-                updateSettings({ level: value })
-              }
+              onValueChange={(value: CEFRLevel) => updateSettings({ level: value })}
             />
           </View>
         </Card>
 
         <Card>
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            About
-          </Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>About</Text>
           <Text style={[styles.aboutText, { color: colors.textSecondary }]}>
-            Drill helps you improve your writing skills in a new language through
-            AI-powered prompts and feedback.
+            Drill helps you improve your writing skills in a new language through AI-powered prompts
+            and feedback.
           </Text>
-          <Text style={[styles.version, { color: colors.textSecondary }]}>
-            Version 1.0.0
-          </Text>
+          <Text style={[styles.version, { color: colors.textSecondary }]}>Version 1.0.0</Text>
         </Card>
       </ScrollView>
     </SafeAreaView>

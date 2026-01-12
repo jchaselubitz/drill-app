@@ -3,24 +3,14 @@ import { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { useColors } from '@/hooks';
 
-type SelectOption<T> = {
-  value: T;
-  label: string;
-};
-
 type SelectProps<T> = {
   label?: string;
-  options: SelectOption<T>[];
+  options: { value: T; label: string }[];
   value: T;
   onValueChange: (value: T) => void;
 };
 
-export function Select<T extends string>({
-  label,
-  options,
-  value,
-  onValueChange,
-}: SelectProps<T>) {
+export function Select<T extends string>({ label, options, value, onValueChange }: SelectProps<T>) {
   const [visible, setVisible] = useState(false);
   const colors = useColors();
 
@@ -28,14 +18,9 @@ export function Select<T extends string>({
 
   return (
     <View style={styles.container}>
-      {label && (
-        <Text style={[styles.label, { color: colors.text }]}>{label}</Text>
-      )}
+      {label && <Text style={[styles.label, { color: colors.text }]}>{label}</Text>}
       <Pressable
-        style={[
-          styles.trigger,
-          { backgroundColor: colors.card, borderColor: colors.border },
-        ]}
+        style={[styles.trigger, { backgroundColor: colors.card, borderColor: colors.border }]}
         onPress={() => setVisible(true)}
       >
         <Text style={[styles.triggerText, { color: colors.text }]}>
@@ -45,10 +30,7 @@ export function Select<T extends string>({
       </Pressable>
 
       <Modal visible={visible} transparent animationType="fade">
-        <Pressable
-          style={styles.overlay}
-          onPress={() => setVisible(false)}
-        >
+        <Pressable style={styles.overlay} onPress={() => setVisible(false)}>
           <View
             style={[
               styles.dropdown,
@@ -60,18 +42,13 @@ export function Select<T extends string>({
               keyExtractor={(item) => item.value}
               renderItem={({ item }) => (
                 <Pressable
-                  style={[
-                    styles.option,
-                    item.value === value && { backgroundColor: colors.card },
-                  ]}
+                  style={[styles.option, item.value === value && { backgroundColor: colors.card }]}
                   onPress={() => {
                     onValueChange(item.value);
                     setVisible(false);
                   }}
                 >
-                  <Text style={[styles.optionText, { color: colors.text }]}>
-                    {item.label}
-                  </Text>
+                  <Text style={[styles.optionText, { color: colors.text }]}>{item.label}</Text>
                   {item.value === value && (
                     <Ionicons name="checkmark" size={20} color={colors.primary} />
                   )}

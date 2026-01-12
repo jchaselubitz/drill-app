@@ -6,6 +6,7 @@ A React Native mobile app for language learning with AI-powered tutoring.
 
 - **React Native** with Expo SDK 54
 - **Expo Router** with native tabs (`expo-router/unstable-native-tabs`)
+- **WatermelonDB** for local database with reactive queries
 - **Google Gemini Flash** (gemini-3.0-flash) for AI features
 - **Expo Vector Icons** for iconography
 - **TypeScript** for type safety
@@ -15,13 +16,28 @@ A React Native mobile app for language learning with AI-powered tutoring.
 ```
 drill-app/
 ├── app/                    # Expo Router file-based routing
-│   ├── _layout.tsx         # Root layout with native tabs
+│   ├── _layout.tsx         # Root layout with providers
 │   ├── (tabs)/             # Tab-based navigation group
 │   │   ├── _layout.tsx     # Tab bar configuration
-│   │   ├── index.tsx       # Practice tab (writing prompts)
+│   │   ├── index.tsx       # Practice tab (lesson library)
 │   │   ├── review.tsx      # Review tab (paragraph submission)
 │   │   └── settings.tsx    # Settings tab
+│   ├── lesson/
+│   │   └── [id].tsx        # Lesson detail screen (dynamic route)
 │   └── +not-found.tsx      # 404 page
+├── database/
+│   ├── index.ts            # Database initialization
+│   ├── schema.ts           # WatermelonDB schema definitions
+│   └── models/             # Database model classes
+│       ├── Phrase.ts       # Vocabulary phrases
+│       ├── Media.ts        # Media attachments
+│       ├── Profile.ts      # User profile
+│       ├── Subject.ts      # Learning subjects
+│       ├── Tag.ts          # Phrase tags
+│       ├── PhraseTag.ts    # Phrase-tag junction
+│       ├── Translation.ts  # Phrase translations
+│       ├── Lesson.ts       # Writing lessons
+│       └── Attempt.ts      # Lesson attempt history
 ├── lib/
 │   ├── gemini.ts           # Gemini API client
 │   └── ai/
@@ -55,6 +71,12 @@ Provides contextual explanations for:
 - Vocabulary usage
 - Cultural context
 
+### 4. Lesson System (`app/lesson/[id].tsx`)
+Structured writing practice with:
+- Saved prompts with topic, level, and related phrases
+- Attempt history with corrections and feedback
+- Reactive data updates via WatermelonDB
+
 ## Environment Variables
 
 ```bash
@@ -83,19 +105,6 @@ yarn install
 yarn new
 ```
 
-## Language Codes
-
-Uses ISO 639-1 language codes:
-- `en` - English
-- `es` - Spanish
-- `fr` - French
-- `de` - German
-- `it` - Italian
-- `pt` - Portuguese
-- `ja` - Japanese
-- `ko` - Korean
-- `zh` - Chinese
-
 ## CEFR Levels
 
 - **A1** - Beginner
@@ -112,6 +121,9 @@ Uses ISO 639-1 language codes:
 - All AI functions return typed responses
 - Prefer functional components with hooks
 - Use Expo Vector Icons (`@expo/vector-icons`) for all icons
+- Database models extend WatermelonDB's `Model` class with decorators
+- Use `useDatabase()` hook from `@nozbe/watermelondb/react` for queries
+- Static model methods (e.g., `Lesson.addLesson()`) handle write operations
 
 ## API Response Formats
 
@@ -130,3 +142,15 @@ Uses ISO 639-1 language codes:
   data: string;
 }
 ```
+
+## Database Models
+
+Key models and their relationships:
+- **Lesson** - Writing prompts with topic, level, language, and optional phrases
+- **Attempt** - User submissions linked to lessons with AI-generated correction/feedback
+- **Phrase** - Vocabulary items with language, source, part of speech, difficulty
+- **Translation** - Links primary/secondary phrases for translation pairs
+- **Tag/PhraseTag** - Tagging system for organizing phrases
+- **Profile** - User settings (languages, preferences)
+- **Subject** - Learning subjects with language and level
+- **Media** - Media attachments with URLs and metadata
