@@ -6,7 +6,7 @@ A React Native mobile app for language learning with AI-powered tutoring.
 
 - **React Native** with Expo SDK 54
 - **Expo Router** with native tabs (`expo-router/unstable-native-tabs`)
-- **Google Gemini Flash** (gemini-2.0-flash) for AI features
+- **Google Gemini Flash** (gemini-3.0-flash) for AI features
 - **Expo Vector Icons** for iconography
 - **TypeScript** for type safety
 

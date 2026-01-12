@@ -5,7 +5,7 @@ let model: GenerativeModel | null = null;
 
 export function initializeGemini(apiKey: string): void {
   genAI = new GoogleGenerativeAI(apiKey);
-  model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+  model = genAI.getGenerativeModel({ model: 'gemini-3.0-flash' });
 }
 
 export function getModel(): GenerativeModel {
@@ -33,10 +33,7 @@ export async function generateJSON<T>(prompt: string): Promise<T> {
   return JSON.parse(text) as T;
 }
 
-export async function chat(
-  systemPrompt: string,
-  userMessages: string[]
-): Promise<string> {
+export async function chat(systemPrompt: string, userMessages: string[]): Promise<string> {
   const geminiModel = getModel();
   const fullPrompt = `${systemPrompt}\n\n${userMessages.join('\n')}`;
   const result = await geminiModel.generateContent(fullPrompt);
