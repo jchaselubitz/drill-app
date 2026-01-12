@@ -1,9 +1,11 @@
 import { generateJSON } from '../gemini';
 import type { ExplanationResponse, LanguageCode } from '@/types';
-import { LANGUAGES } from '@/constants';
+import { GeminiModel, getModel, Languages } from '@/constants';
+
+const MODEL = getModel(GeminiModel.FLASH_3);
 
 function getLanguageName(code: LanguageCode): string {
-  return LANGUAGES.find((l) => l.code === code)?.name ?? code;
+  return Languages.find((l) => l.code === code)?.name ?? code;
 }
 
 export async function generateExplanation({
@@ -35,5 +37,5 @@ Choose the type based on what best fits the response:
 
 Keep the explanation clear and educational.`;
 
-  return generateJSON<ExplanationResponse>(prompt);
+  return generateJSON<ExplanationResponse>(prompt, MODEL);
 }

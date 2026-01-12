@@ -2,7 +2,7 @@ import { Model } from '@nozbe/watermelondb';
 import Database from '@nozbe/watermelondb/Database';
 import { field, writer } from '@nozbe/watermelondb/decorators';
 
-import { PHRASE_TABLE } from '../schema';
+import { PHRASE_TABLE } from '@/database/schema';
 
 export interface PhraseProps {
   id: string;
