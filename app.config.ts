@@ -14,7 +14,9 @@ const config: AppConfig = {
   scheme: 'drillapp',
   userInterfaceStyle: 'automatic',
   newArchEnabled: true,
+  icon: './assets/images/1024.png',
   ios: {
+    icon: './assets/images/1024.png',
     supportsTablet: true,
     bundleIdentifier: 'com.drillapp.mobile',
   },

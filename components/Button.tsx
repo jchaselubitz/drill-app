@@ -1,10 +1,11 @@
-import { Pressable, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text } from 'react-native';
+
 import { useColors } from '@/hooks';
 
 type ButtonProps = {
   title: string;
   onPress: () => void;
-  variant?: 'primary' | 'secondary';
+  variant?: 'primary' | 'secondary' | 'destructive';
   disabled?: boolean;
   loading?: boolean;
 };
@@ -19,9 +20,13 @@ export function Button({
   const colors = useColors();
 
   const backgroundColor =
-    variant === 'primary' ? colors.primary : colors.card;
+    variant === 'primary' ? colors.primary : variant === 'destructive' ? colors.error : colors.card;
   const textColor =
-    variant === 'primary' ? colors.primaryText : colors.text;
+    variant === 'primary'
+      ? colors.primaryText
+      : variant === 'destructive'
+        ? colors.primaryText
+        : colors.text;
 
   return (
     <Pressable

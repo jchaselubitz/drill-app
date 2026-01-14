@@ -4,11 +4,12 @@
     "slug": "drill-app",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
     "scheme": "drillapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "icon": "./assets/images/1024.png",
     "ios": {
+       "icon": "./assets/images/1024.png",
       "supportsTablet": true
     },
     "extra": {

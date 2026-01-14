@@ -1,2 +1,1 @@
-export { useSettings } from './useSettings';
-export { useColorScheme, useColors } from './useColorScheme';
+export { useColors, useColorScheme } from './useColorScheme';

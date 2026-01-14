@@ -1,11 +1,14 @@
-import database from '@/database';
-import { useColorScheme } from '@/hooks';
+import 'react-native-gesture-handler';
+
 import { DatabaseProvider } from '@nozbe/watermelondb/react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { LogBox } from 'react-native';
-import 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+
+import { SettingsProvider } from '@/contexts/SettingsContext';
+import database from '@/database';
+import { useColorScheme } from '@/hooks';
 
 // Suppress WatermelonDB NONE property warnings (known non-fatal issue with Hermes)
 LogBox.ignoreLogs([
@@ -27,15 +30,23 @@ if (__DEV__) {
   };
 }
 
-export default function RootLayout() {
+function AppContent() {
   const colorScheme = useColorScheme();
 
   return (
+    <DatabaseProvider database={database}>
+      <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+      <Stack screenOptions={{ headerShown: false }} />
+    </DatabaseProvider>
+  );
+}
+
+export default function RootLayout() {
+  return (
     <SafeAreaProvider>
-      <DatabaseProvider database={database}>
-        <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-        <Stack screenOptions={{ headerShown: false }} />
-      </DatabaseProvider>
+      <SettingsProvider>
+        <AppContent />
+      </SettingsProvider>
     </SafeAreaProvider>
   );
 }

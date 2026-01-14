@@ -1,5 +1,6 @@
-import { View, Text, StyleSheet } from 'react-native';
 import { Link, Stack } from 'expo-router';
+import { StyleSheet, Text, View } from 'react-native';
+
 import { useColors } from '@/hooks';
 
 export default function NotFoundScreen() {
@@ -9,9 +10,7 @@ export default function NotFoundScreen() {
     <>
       <Stack.Screen options={{ title: 'Not Found' }} />
       <View style={[styles.container, { backgroundColor: colors.background }]}>
-        <Text style={[styles.title, { color: colors.text }]}>
-          Page not found
-        </Text>
+        <Text style={[styles.title, { color: colors.text }]}>Page not found</Text>
         <Link href="/" style={[styles.link, { color: colors.primary }]}>
           Go to home screen
         </Link>

@@ -1,9 +1,11 @@
-import { Card, Select } from '@/components';
-import { CEFR_LEVELS, Languages } from '@/constants';
-import { useColors, useSettings } from '@/hooks';
-import type { CEFRLevel, LanguageCode, ThemeMode } from '@/types';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
+import { Card, Select } from '@/components';
+import { CEFR_LEVELS, Languages } from '@/constants';
+import { useSettings } from '@/contexts/SettingsContext';
+import { useColors } from '@/hooks';
+import type { CEFRLevel, LanguageCode, ThemeMode } from '@/types';
 
 export default function SettingsScreen() {
   const colors = useColors();

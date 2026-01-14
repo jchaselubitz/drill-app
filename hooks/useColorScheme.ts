@@ -1,6 +1,7 @@
-import { Colors } from '@/constants';
 import { useColorScheme as useRNColorScheme } from 'react-native';
-import { useSettings } from './useSettings';
+
+import { Colors } from '@/constants';
+import { useSettings } from '@/contexts/SettingsContext';
 
 export function useColorScheme() {
   const systemColorScheme = useRNColorScheme() ?? 'light';

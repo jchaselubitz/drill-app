@@ -15,12 +15,12 @@ A React Native mobile app for language learning with AI-powered tutoring.
 
 ```
 drill-app/
+├── .mcp.json               # MCP server configuration
 ├── app/                    # Expo Router file-based routing
 │   ├── _layout.tsx         # Root layout with providers
 │   ├── (tabs)/             # Tab-based navigation group
-│   │   ├── _layout.tsx     # Tab bar configuration
-│   │   ├── index.tsx       # Practice tab (lesson library)
-│   │   ├── review.tsx      # Review tab (paragraph submission)
+│   │   ├── _layout.tsx     # Tab bar configuration (2 tabs)
+│   │   ├── index.tsx       # Lessons tab (library + create modal)
 │   │   └── settings.tsx    # Settings tab
 │   ├── lesson/
 │   │   └── [id].tsx        # Lesson detail screen (dynamic route)
@@ -42,7 +42,6 @@ drill-app/
 │   ├── gemini.ts           # Gemini API client
 │   └── ai/
 │       ├── tutor.ts        # Tutor prompt generation
-│       ├── review.ts       # Paragraph review
 │       └── explain.ts      # Explanation generation
 ├── components/             # Reusable UI components
 ├── hooks/                  # Custom React hooks
@@ -154,3 +153,15 @@ Key models and their relationships:
 - **Profile** - User settings (languages, preferences)
 - **Subject** - Learning subjects with language and level
 - **Media** - Media attachments with URLs and metadata
+
+## MCP Servers
+
+This project includes MCP (Model Context Protocol) server configuration in `.mcp.json`:
+
+- **DeepWiki** - Provides documentation lookup for libraries and frameworks used in this project. Use it to look up Expo, React Native, WatermelonDB, and other dependency documentation.
+
+## Skills
+
+Project-specific patterns and learnings are documented in `.claude/skills/`:
+
+- **[expo-router.md](.claude/skills/expo-router.md)** - Expo Router patterns including Stack configuration, native tabs, and file-based routing best practices

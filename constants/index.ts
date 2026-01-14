@@ -3,6 +3,7 @@ import type { CEFRLevel, LanguageCode } from '@/types';
 export enum GeminiModel {
   FLASH_3 = '3-flash',
   FLASH_2_5 = '2.5-flash',
+  FLASH_2_5_LITE = '2.5-flash-lite',
   FLASH_2_0 = '2.0-flash',
   FLASH_1_5 = '1.5-flash',
 }
@@ -10,6 +11,7 @@ export enum GeminiModel {
 const MODEL_VALUES: Record<GeminiModel, string> = {
   [GeminiModel.FLASH_3]: 'gemini-3-flash-preview',
   [GeminiModel.FLASH_2_5]: 'gemini-2.5-flash',
+  [GeminiModel.FLASH_2_5_LITE]: 'gemini-2.5-flash-lite',
   [GeminiModel.FLASH_2_0]: 'gemini-2.0-flash',
   [GeminiModel.FLASH_1_5]: 'gemini-1.5-flash',
 };
@@ -21,6 +23,7 @@ export const getModel = (model: GeminiModel): string => {
 export const models = [
   { label: GeminiModel.FLASH_3, value: MODEL_VALUES[GeminiModel.FLASH_3] },
   { label: GeminiModel.FLASH_2_5, value: MODEL_VALUES[GeminiModel.FLASH_2_5] },
+  { label: GeminiModel.FLASH_2_5_LITE, value: MODEL_VALUES[GeminiModel.FLASH_2_5_LITE] },
   { label: GeminiModel.FLASH_2_0, value: MODEL_VALUES[GeminiModel.FLASH_2_0] },
   { label: GeminiModel.FLASH_1_5, value: MODEL_VALUES[GeminiModel.FLASH_1_5] },
 ];

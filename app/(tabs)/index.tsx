@@ -1,105 +1,53 @@
-import { Button, Card, TextInput } from '@/components';
-import database from '@/database';
-import { Lesson } from '@/database/models';
-import { useColors, useSettings } from '@/hooks';
-import { changePromptLength, generateTutorPrompt } from '@/lib/ai/tutor';
-import { Ionicons } from '@expo/vector-icons';
-import Constants from 'expo-constants';
+import { Q } from '@nozbe/watermelondb';
+import { useDatabase } from '@nozbe/watermelondb/react';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
-import {
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { useEffect, useState } from 'react';
+import { FlatList, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-const geminiApiKey = Constants.expoConfig?.extra?.geminiApiKey as string | undefined;
+import { GlassAddButton } from '@/components/GlassAddButton';
+import { useNewLessonModal } from '@/contexts/NewLessonModalContext';
+import { Lesson } from '@/database/models';
+import { LESSON_TABLE } from '@/database/schema';
+import { useColors } from '@/hooks';
 
-export default function PracticeScreen() {
+import { LessonCard, LessonsEmptyState, NewLessonModal } from './components';
+
+export default function LessonsScreen() {
   const colors = useColors();
-  const { settings } = useSettings();
   const router = useRouter();
+  const db = useDatabase();
+  const { isVisible: isModalVisible, close: closeModal, open: openModal } = useNewLessonModal();
 
-  const [topic, setTopic] = useState('');
-  const [phrases, setPhrases] = useState('');
-  const [prompt, setPrompt] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
+  const [lessons, setLessons] = useState<Lesson[]>([]);
+  const [attemptCounts, setAttemptCounts] = useState<Record<string, number>>({});
 
-  const handleGeneratePrompt = async () => {
-    if (!topic.trim()) {
-      Alert.alert('Error', 'Please enter a topic');
-      return;
-    }
-
-    if (!geminiApiKey) {
-      Alert.alert('API Key Required', 'Please set the geminiApiKey in app.config.ts');
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const result = await generateTutorPrompt({
-        relatedPhrases: phrases
-          .split(',')
-          .map((p) => p.trim())
-          .filter(Boolean),
-        userLanguage: settings.userLanguage,
-        topicLanguage: settings.topicLanguage,
-        level: settings.level,
-        instructions: topic,
+  useEffect(() => {
+    const subscription = db.collections
+      .get<Lesson>(LESSON_TABLE)
+      .query(Q.sortBy('created_at', Q.desc))
+      .observe()
+      .subscribe((results) => {
+        setLessons(results);
+        Promise.all(
+          results.map(async (lesson) => {
+            const count = await lesson.attempts.fetchCount();
+            return { id: lesson.id, count };
+          })
+        ).then((counts) => {
+          const countsMap: Record<string, number> = {};
+          counts.forEach(({ id, count }) => {
+            countsMap[id] = count;
+          });
+          setAttemptCounts(countsMap);
+        });
       });
-      setPrompt(result);
-    } catch (error) {
-      Alert.alert('Error', 'Failed to generate prompt. Please try again.');
-      console.error(error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
-  const handleChangeLength = async (length: 'shorter' | 'longer') => {
-    if (!prompt) return;
+    return () => subscription.unsubscribe();
+  }, [db]);
 
-    setIsLoading(true);
-    try {
-      const result = await changePromptLength({ promptText: prompt, length });
-      setPrompt(result);
-    } catch (error) {
-      Alert.alert('Error', 'Failed to modify prompt');
-      console.error(error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleSaveLesson = async () => {
-    if (!prompt) return;
-
-    setIsSaving(true);
-    try {
-      const lesson = await Lesson.addLesson(database, {
-        topic: topic.trim(),
-        phrases: phrases.trim() || null,
-        prompt,
-        lang: settings.topicLanguage,
-        level: settings.level,
-      });
-      setTopic('');
-      setPhrases('');
-      setPrompt('');
-      router.push(`/lesson/${lesson.id}` as any);
-    } catch (error) {
-      Alert.alert('Error', 'Failed to save lesson');
-      console.error(error);
-    } finally {
-      setIsSaving(false);
-    }
+  const handleLessonPress = (lessonId: string) => {
+    router.push(`/lesson/${lessonId}` as any);
   };
 
   return (
@@ -107,75 +55,28 @@ export default function PracticeScreen() {
       style={[styles.container, { backgroundColor: colors.background }]}
       edges={['bottom']}
     >
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.flex}
-      >
-        <ScrollView
-          style={styles.flex}
-          contentContainerStyle={styles.content}
-          keyboardShouldPersistTaps="handled"
-        >
-          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-            Get a writing prompt tailored to your level
-          </Text>
-
-          <View style={styles.form}>
-            <TextInput
-              label="What should I write about?"
-              placeholder="e.g., my favorite vacation, a day at work..."
-              value={topic}
-              onChangeText={setTopic}
-            />
-
-            <TextInput
-              label="Related phrases (optional)"
-              placeholder="Comma-separated phrases to practice"
-              value={phrases}
-              onChangeText={setPhrases}
-            />
-
-            <Button
-              title="Generate Lesson"
-              onPress={handleGeneratePrompt}
-              loading={isLoading}
-              disabled={!topic.trim()}
-            />
+      <FlatList
+        data={lessons}
+        renderItem={({ item }) => (
+          <LessonCard
+            lesson={item}
+            attemptCount={attemptCounts[item.id] ?? 0}
+            onPress={handleLessonPress}
+          />
+        )}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={[
+          styles.listContent,
+          lessons.length === 0 && styles.emptyListContent,
+        ]}
+        ListEmptyComponent={() => <LessonsEmptyState onPressCreate={openModal} />}
+        ListFooterComponent={() => (
+          <View style={styles.addButton}>
+            <GlassAddButton />
           </View>
-
-          {prompt && (
-            <Card style={styles.promptCard}>
-              <View style={styles.promptHeader}>
-                <Ionicons name="bulb" size={20} color={colors.primary} />
-                <Text style={[styles.promptLabel, { color: colors.textSecondary }]}>
-                  Your Writing Prompt
-                </Text>
-              </View>
-              <Text style={[styles.promptText, { color: colors.text }]}>{prompt}</Text>
-              <View style={styles.promptActions}>
-                <Button
-                  title="Shorter"
-                  variant="secondary"
-                  onPress={() => handleChangeLength('shorter')}
-                  disabled={isLoading || isSaving}
-                />
-                <Button
-                  title="Longer"
-                  variant="secondary"
-                  onPress={() => handleChangeLength('longer')}
-                  disabled={isLoading || isSaving}
-                />
-              </View>
-              <Button
-                title="Save to Library"
-                onPress={handleSaveLesson}
-                loading={isSaving}
-                disabled={isLoading}
-              />
-            </Card>
-          )}
-        </ScrollView>
-      </KeyboardAvoidingView>
+        )}
+      />
+      <NewLessonModal visible={isModalVisible} onClose={closeModal} />
     </SafeAreaView>
   );
 }
@@ -184,39 +85,16 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  flex: {
+  listContent: {
+    padding: 16,
+    gap: 12,
+  },
+  emptyListContent: {
     flex: 1,
+    justifyContent: 'center',
   },
-  content: {
-    padding: 20,
-    gap: 24,
-  },
-  subtitle: {
-    fontSize: 15,
-    textAlign: 'center',
-  },
-  form: {
-    gap: 16,
-  },
-  promptCard: {
-    gap: 12,
-  },
-  promptHeader: {
-    flexDirection: 'row',
+  addButton: {
+    paddingTop: 16,
     alignItems: 'center',
-    gap: 8,
-  },
-  promptLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  promptText: {
-    fontSize: 17,
-    lineHeight: 26,
-  },
-  promptActions: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 8,
   },
 });

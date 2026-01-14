@@ -1,8 +1,16 @@
-import { generateJSON } from '../gemini';
-import type { ExplanationResponse, LanguageCode } from '@/types';
+import { z } from 'zod';
+
 import { GeminiModel, getModel, Languages } from '@/constants';
+import type { ExplanationResponse, LanguageCode } from '@/types';
+
+import { generateJSON } from '../gemini';
 
 const MODEL = getModel(GeminiModel.FLASH_3);
+
+const explanationSchema = z.object({
+  type: z.enum(['message', 'translation', 'list']),
+  data: z.string(),
+});
 
 function getLanguageName(code: LanguageCode): string {
   return Languages.find((l) => l.code === code)?.name ?? code;
@@ -22,9 +30,9 @@ export async function generateExplanation({
   const prompt = `Explain the following in ${userLangName}:
 
 Subject: "${subjectText}"
-Request: ${request}
+Request: ${request}`;
 
-Provide your response as JSON with this structure:
+  const systemPrompt = `Provide your response as JSON with this structure:
 {
   "type": "message" | "translation" | "list",
   "data": "Your explanation here"
@@ -37,5 +45,11 @@ Choose the type based on what best fits the response:
 
 Keep the explanation clear and educational.`;
 
-  return generateJSON<ExplanationResponse>(prompt, MODEL);
+  const response = await generateJSON({
+    prompt,
+    modelName: MODEL,
+    systemPrompt,
+    schema: explanationSchema,
+  });
+  return JSON.parse(response) as ExplanationResponse;
 }

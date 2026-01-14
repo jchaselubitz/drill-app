@@ -1,9 +1,11 @@
-import { useColors } from '@/hooks';
 import { Icon, Label, NativeTabs } from 'expo-router/unstable-native-tabs';
+import { StyleSheet } from 'react-native';
 
-export default function TabLayout() {
+import { NewLessonModalProvider } from '@/contexts/NewLessonModalContext';
+import { useColors } from '@/hooks';
+
+function TabLayoutContent() {
   const colors = useColors();
-
   return (
     <NativeTabs
       iconColor={{
@@ -14,24 +16,18 @@ export default function TabLayout() {
         default: { color: colors.textSecondary },
         selected: { color: colors.primary },
       }}
+      titlePositionAdjustment={{
+        horizontal: 40,
+      }}
     >
       <NativeTabs.Trigger
         name="index"
         options={{
-          title: 'Practice',
+          title: 'Lessons',
         }}
       >
         <Icon sf="house.fill" drawable="custom_android_drawable" />
-        <Label>Lesson</Label>
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger
-        name="review"
-        options={{
-          title: 'Review',
-        }}
-      >
-        <Icon sf="books.vertical.fill" drawable="custom_android_drawable" />
-        <Label>Library</Label>
+        <Label>Lessons</Label>
       </NativeTabs.Trigger>
 
       <NativeTabs.Trigger
@@ -46,3 +42,23 @@ export default function TabLayout() {
     </NativeTabs>
   );
 }
+
+export default function TabLayout() {
+  return (
+    <NewLessonModalProvider>
+      <TabLayoutContent />
+    </NewLessonModalProvider>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'flex-start',
+  },
+  navContainer: {
+    alignSelf: 'flex-start',
+  },
+});

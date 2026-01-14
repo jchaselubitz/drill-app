@@ -1,7 +1,8 @@
+import { StyleSheet, Text, View } from 'react-native';
+
 import PhraseForm from '@/components/PhraseForm';
 import PhraseList from '@/components/PhraseList';
 import { colors, spacing, typography } from '@/theme/colors';
-import { StyleSheet, Text, View } from 'react-native';
 
 // Plain component that receives phrases as props
 

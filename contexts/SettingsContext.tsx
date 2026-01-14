@@ -1,14 +1,21 @@
-import { DEFAULT_SETTINGS } from '@/constants';
-import { initializeGemini } from '@/lib/gemini';
-import type { UserSettings } from '@/types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Constants from 'expo-constants';
-import { useCallback, useEffect, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
+
+import { DEFAULT_SETTINGS } from '@/constants';
+// import { initializeGemini } from '@/lib/gemini';
+import type { UserSettings } from '@/types';
 
 const SETTINGS_KEY = '@drill_settings';
-const geminiApiKey = Constants.expoConfig?.extra?.geminiApiKey as string | undefined;
 
-export function useSettings() {
+type SettingsContextType = {
+  settings: UserSettings;
+  updateSettings: (updates: Partial<UserSettings>) => Promise<void>;
+  isLoading: boolean;
+};
+
+export const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
+
+export function SettingsProvider({ children }: { children: React.ReactNode }): React.JSX.Element {
   const [settings, setSettings] = useState<UserSettings>(DEFAULT_SETTINGS);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -28,10 +35,6 @@ export function useSettings() {
         if (Object.keys(parsed).length < Object.keys(DEFAULT_SETTINGS).length) {
           await AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify(mergedSettings));
         }
-      }
-
-      if (geminiApiKey) {
-        initializeGemini(geminiApiKey);
       }
     } catch (error) {
       console.error('Failed to load settings:', error);
@@ -54,5 +57,17 @@ export function useSettings() {
     [settings]
   );
 
-  return { settings, updateSettings, isLoading };
+  return (
+    <SettingsContext.Provider value={{ settings, updateSettings, isLoading }}>
+      {children}
+    </SettingsContext.Provider>
+  );
+}
+
+export function useSettings() {
+  const context = useContext(SettingsContext);
+  if (context === undefined) {
+    throw new Error('useSettings must be used within a SettingsProvider');
+  }
+  return context;
 }

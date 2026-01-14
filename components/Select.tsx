@@ -1,6 +1,7 @@
-import { View, Text, Pressable, StyleSheet, Modal, FlatList } from 'react-native';
-import { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
+import { useState } from 'react';
+import { FlatList, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+
 import { useColors } from '@/hooks';
 
 type SelectProps<T> = {

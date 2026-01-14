@@ -1,9 +1,9 @@
-import { Phrase } from '@/database';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-
-import { colors, spacing, typography } from '@/theme/colors';
 import { Ionicons } from '@expo/vector-icons';
 import { withObservables } from '@nozbe/watermelondb/react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+
+import { Phrase } from '@/database';
+import { colors, spacing, typography } from '@/theme/colors';
 
 const PhraseItemInner = ({ phrase }: { phrase: Phrase }) => {
   const toggleFavorite = async () => {

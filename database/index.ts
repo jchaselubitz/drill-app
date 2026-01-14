@@ -1,9 +1,18 @@
+import SQLiteAdapter from '@nozbe/watermelondb/adapters/sqlite';
+import Database from '@nozbe/watermelondb/Database';
 import { Platform } from 'react-native';
 
-import Database from '@nozbe/watermelondb/Database';
-import SQLiteAdapter from '@nozbe/watermelondb/adapters/sqlite';
-
-import { Attempt, Lesson, Media, Phrase, PhraseTag, Profile, Subject, Tag, Translation } from './models';
+import {
+  Attempt,
+  Lesson,
+  Media,
+  Phrase,
+  PhraseTag,
+  Profile,
+  Subject,
+  Tag,
+  Translation,
+} from './models';
 import schema from './schema';
 
 const adapter = new SQLiteAdapter({

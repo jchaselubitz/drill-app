@@ -1,10 +1,11 @@
 import {
-  TextInput as RNTextInput,
-  View,
-  Text,
   StyleSheet,
+  Text,
+  TextInput as RNTextInput,
   TextInputProps as RNTextInputProps,
+  View,
 } from 'react-native';
+
 import { useColors } from '@/hooks';
 
 type TextInputProps = RNTextInputProps & {
@@ -17,9 +18,7 @@ export function TextInput({ label, error, style, ...props }: TextInputProps) {
 
   return (
     <View style={styles.container}>
-      {label && (
-        <Text style={[styles.label, { color: colors.text }]}>{label}</Text>
-      )}
+      {label && <Text style={[styles.label, { color: colors.text }]}>{label}</Text>}
       <RNTextInput
         style={[
           styles.input,
@@ -33,9 +32,7 @@ export function TextInput({ label, error, style, ...props }: TextInputProps) {
         placeholderTextColor={colors.textSecondary}
         {...props}
       />
-      {error && (
-        <Text style={[styles.error, { color: colors.error }]}>{error}</Text>
-      )}
+      {error && <Text style={[styles.error, { color: colors.error }]}>{error}</Text>}
     </View>
   );
 }

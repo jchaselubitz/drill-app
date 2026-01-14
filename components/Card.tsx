@@ -1,4 +1,5 @@
-import { View, StyleSheet, ViewStyle } from 'react-native';
+import { StyleSheet, View, ViewStyle } from 'react-native';
+
 import { useColors } from '@/hooks';
 
 type CardProps = {
@@ -11,11 +12,7 @@ export function Card({ children, style }: CardProps) {
 
   return (
     <View
-      style={[
-        styles.card,
-        { backgroundColor: colors.card, borderColor: colors.border },
-        style,
-      ]}
+      style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }, style]}
     >
       {children}
     </View>

@@ -1,8 +1,9 @@
-import database, { Phrase } from '@/database';
-import { PHRASE_TABLE } from '@/database/schema';
+import { withObservables } from '@nozbe/watermelondb/react';
 import { FlatList } from 'react-native';
 
-import { withObservables } from '@nozbe/watermelondb/react';
+import database, { Phrase } from '@/database';
+import { PHRASE_TABLE } from '@/database/schema';
+
 import PhraseItem from './PhraseItem';
 
 const PhraseList = ({ phrases }: { phrases: Phrase[] }) => {

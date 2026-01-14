@@ -36,13 +36,7 @@ export default class Lesson extends Model {
 
   static async addLesson(
     db: Database,
-    {
-      topic,
-      phrases,
-      prompt,
-      lang,
-      level,
-    }: Omit<LessonProps, 'id' | 'createdAt' | 'updatedAt'>
+    { topic, phrases, prompt, lang, level }: Omit<LessonProps, 'id' | 'createdAt' | 'updatedAt'>
   ): Promise<Lesson> {
     return await db.write(async () => {
       return await db.collections.get<Lesson>(LESSON_TABLE).create((lesson) => {

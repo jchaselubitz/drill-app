@@ -1,4 +1,5 @@
-import { Text, StyleSheet, TextStyle, View } from 'react-native';
+import { StyleSheet, Text, TextStyle, View } from 'react-native';
+
 import { useColors } from '@/hooks';
 
 type MarkdownProps = {

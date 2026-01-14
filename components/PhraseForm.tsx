@@ -1,8 +1,9 @@
+import React, { useState } from 'react';
+import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+
 import database from '@/database';
 import Phrase from '@/database/models/Phrase';
 import { colors, spacing, typography } from '@/theme/colors';
-import React, { useState } from 'react';
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 const PhraseForm: React.FC = () => {
   const [text, setText] = useState('');
