@@ -7,10 +7,12 @@ import { Button } from '@/components/Button';
 import { Select } from '@/components/Select';
 import { TextInput } from '@/components/TextInput';
 import { Languages } from '@/constants';
-import { useSettings } from '@/contexts/SettingsContext';
 import { Phrase } from '@/database/models';
 import { useColors } from '@/hooks';
+import { detectLanguage } from '@/lib/ai/translate';
 import type { LanguageCode } from '@/types';
+
+const AUTO_DETECT = 'auto' as const;
 
 type AddPhrasePanelProps = {
   isExpanded: boolean;
@@ -25,24 +27,28 @@ export function AddPhrasePanel({
 }: AddPhrasePanelProps) {
   const colors = useColors();
   const db = useDatabase();
-  const { settings } = useSettings();
   const [text, setText] = useState('');
-  const [lang, setLang] = useState<LanguageCode>(settings.topicLanguage);
+  const [lang, setLang] = useState<LanguageCode | typeof AUTO_DETECT>(AUTO_DETECT);
   const [isSaving, setIsSaving] = useState(false);
 
-  const languageOptions = Languages.map((l) => ({
-    value: l.code,
-    label: `${l.icon} ${l.name}`,
-  }));
+  const languageOptions = [
+    { value: AUTO_DETECT, label: '✨ Detect automatically' },
+    ...Languages.map((l) => ({
+      value: l.code,
+      label: `${l.icon} ${l.name}`,
+    })),
+  ];
 
   const handleSave = async () => {
     if (!text.trim()) return;
 
     setIsSaving(true);
     try {
+      const detectedLang = lang === AUTO_DETECT ? await detectLanguage(text.trim()) : lang;
+
       await Phrase.addPhrase(db, {
         text: text.trim(),
-        lang,
+        lang: detectedLang as LanguageCode,
         source: 'manual',
         partSpeech: null,
         favorite: false,

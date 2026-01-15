@@ -1,7 +1,7 @@
 import { Icon, Label, NativeTabs } from 'expo-router/unstable-native-tabs';
 import { StyleSheet } from 'react-native';
 
-import { NewLessonModalProvider } from '@/contexts/NewLessonModalContext';
+import { NewLessonModalProvider } from '@/features/lessons/context/NewLessonModalContext';
 import { useColors } from '@/hooks';
 
 function TabLayoutContent() {

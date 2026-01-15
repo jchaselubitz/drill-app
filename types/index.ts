@@ -4,6 +4,10 @@ import { LanguagesISO639 } from '@/constants';
 
 export type LanguageCode = (typeof LanguagesISO639)[keyof typeof LanguagesISO639];
 
+export const languageCodeSchema = z.object({
+  language_code: z.string(),
+});
+
 export type CEFRLevel = 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
 
 export type TutorPromptParams = {

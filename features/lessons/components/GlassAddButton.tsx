@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
 
-import { useNewLessonModal } from '@/contexts/NewLessonModalContext';
+import { useNewLessonModal } from '@/features/lessons/context/NewLessonModalContext';
 import { useColors } from '@/hooks';
 
 export function GlassAddButton() {
