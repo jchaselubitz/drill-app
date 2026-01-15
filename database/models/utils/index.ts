@@ -1,0 +1,1 @@
+export { validateFeedback } from './validateFeedback';

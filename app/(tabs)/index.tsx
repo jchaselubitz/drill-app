@@ -6,12 +6,11 @@ import { FlatList, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { GlassAddButton } from '@/components/GlassAddButton';
+import { LessonCard, LessonsEmptyState, NewLessonModal } from '@/components/lessons';
 import { useNewLessonModal } from '@/contexts/NewLessonModalContext';
 import { Lesson } from '@/database/models';
 import { LESSON_TABLE } from '@/database/schema';
 import { useColors } from '@/hooks';
-
-import { LessonCard, LessonsEmptyState, NewLessonModal } from './components';
 
 export default function LessonsScreen() {
   const colors = useColors();

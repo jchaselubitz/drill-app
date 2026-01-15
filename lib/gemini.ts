@@ -1,7 +1,6 @@
 import { GoogleGenAI } from '@google/genai';
 import Constants from 'expo-constants';
 import { z } from 'zod';
-import { zodToJsonSchema } from 'zod-to-json-schema';
 
 const genAI = new GoogleGenAI({ apiKey: Constants.expoConfig?.extra?.geminiApiKey as string });
 
@@ -39,19 +38,23 @@ export async function generateJSON({
   modelName,
   systemPrompt,
   schema,
+  abortSignal,
 }: {
   prompt: string;
   modelName: string;
   systemPrompt: string;
   schema: z.ZodSchema;
+  abortSignal?: AbortSignal;
 }): Promise<string> {
+  const jsonSchema = z.toJSONSchema(schema);
   const result = await genAI.models.generateContent({
     contents: [{ role: 'user', parts: [{ text: prompt }] }],
     model: modelName,
     config: {
       responseMimeType: 'application/json',
       systemInstruction: systemPrompt,
-      responseJsonSchema: zodToJsonSchema(schema as any),
+      responseJsonSchema: jsonSchema,
+      abortSignal,
     },
   });
   const text = result.text ?? '';

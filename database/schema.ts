@@ -9,8 +9,9 @@ export const TRANSLATION_TABLE = 'translation';
 export const PHRASE_TAG_TABLE = 'phrase_tag';
 export const LESSON_TABLE = 'lesson';
 export const ATTEMPT_TABLE = 'attempt';
+export const FEEDBACK_TABLE = 'feedback';
 const schema = appSchema({
-  version: 2,
+  version: 3,
   tables: [
     tableSchema({
       name: PHRASE_TABLE,
@@ -110,7 +111,17 @@ const schema = appSchema({
         { name: 'lesson_id', type: 'string' },
         { name: 'paragraph', type: 'string' },
         { name: 'correction', type: 'string' },
-        { name: 'feedback', type: 'string' },
+      ],
+    }),
+    tableSchema({
+      name: FEEDBACK_TABLE,
+      columns: [
+        { name: 'created_at', type: 'number' },
+        { name: 'updated_at', type: 'number' },
+        { name: 'attempt_id', type: 'string' },
+        { name: 'point', type: 'string' },
+        { name: 'explanation', type: 'string' },
+        { name: 'negative', type: 'boolean' },
       ],
     }),
   ],

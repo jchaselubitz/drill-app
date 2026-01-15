@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Q } from '@nozbe/watermelondb';
 import { useDatabase } from '@nozbe/watermelondb/react';
 import Constants from 'expo-constants';
@@ -7,6 +8,7 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -14,7 +16,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Button } from '@/components';
+import { AttemptForm, AttemptHistory, PromptCard } from '@/components/lesson';
 import { useSettings } from '@/contexts/SettingsContext';
 import database from '@/database';
 import { Attempt, Lesson } from '@/database/models';
@@ -22,9 +24,20 @@ import { ATTEMPT_TABLE, LESSON_TABLE } from '@/database/schema';
 import { useColors } from '@/hooks';
 import { reviewParagraph } from '@/lib/ai/tutor';
 
-import { AttemptForm, AttemptHistory, PromptCard } from './components';
-
 const geminiApiKey = Constants.expoConfig?.extra?.geminiApiKey as string | undefined;
+
+function DeleteButton({ onPress, disabled }: { onPress: () => void; disabled: boolean }) {
+  const colors = useColors();
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [styles.deleteButton, { opacity: pressed ? 0.5 : 1 }]}
+      disabled={disabled}
+    >
+      <Ionicons name="trash-outline" size={20} color={colors.textSecondary} />
+    </Pressable>
+  );
+}
 
 export default function LessonDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -38,6 +51,7 @@ export default function LessonDetailScreen() {
   const [paragraph, setParagraph] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [expandedAttemptId, setExpandedAttemptId] = useState<string | null>(null);
+  const [abortController, setAbortController] = useState<AbortController | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -66,6 +80,9 @@ export default function LessonDetailScreen() {
   }, [id, db]);
 
   const handleSubmitAttempt = async () => {
+    if (isLoading) {
+      return;
+    }
     if (!paragraph.trim() || !lesson) {
       Alert.alert('Error', 'Please write something to submit');
       return;
@@ -76,12 +93,15 @@ export default function LessonDetailScreen() {
       return;
     }
 
+    const controller = new AbortController();
+    setAbortController(controller);
     setIsLoading(true);
     try {
       const result = await reviewParagraph({
         paragraph,
         topicLanguage: settings.topicLanguage,
         userLanguage: settings.userLanguage,
+        abortSignal: controller.signal,
       });
 
       await Attempt.addAttempt(database, {
@@ -93,20 +113,21 @@ export default function LessonDetailScreen() {
 
       setParagraph('');
     } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        return;
+      }
       Alert.alert('Error', 'Failed to submit attempt. Please try again.');
       console.error(error);
     } finally {
       setIsLoading(false);
+      setAbortController(null);
     }
   };
 
-  const formatDate = (timestamp: number) => {
-    return new Date(timestamp).toLocaleDateString(undefined, {
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-    });
+  const handleCancelAttempt = () => {
+    abortController?.abort();
+    setAbortController(null);
+    setIsLoading(false);
   };
 
   const toggleAttemptExpand = (attemptId: string) => {
@@ -164,6 +185,7 @@ export default function LessonDetailScreen() {
           title: lesson.topic,
           headerShown: true,
           headerBackTitle: 'Lessons',
+          headerRight: () => <DeleteButton onPress={handleDeleteLesson} disabled={isLoading} />,
         }}
       />
       <KeyboardAvoidingView
@@ -181,6 +203,7 @@ export default function LessonDetailScreen() {
             paragraph={paragraph}
             onChangeText={setParagraph}
             onSubmit={handleSubmitAttempt}
+            onCancel={handleCancelAttempt}
             isLoading={isLoading}
           />
 
@@ -188,17 +211,7 @@ export default function LessonDetailScreen() {
             attempts={attempts}
             expandedAttemptId={expandedAttemptId}
             onToggleAttempt={toggleAttemptExpand}
-            formatDate={formatDate}
           />
-
-          <View style={styles.deleteSection}>
-            <Button
-              title="Delete Lesson"
-              onPress={handleDeleteLesson}
-              variant="destructive"
-              disabled={isLoading}
-            />
-          </View>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -221,10 +234,8 @@ const styles = StyleSheet.create({
     padding: 16,
     gap: 24,
   },
-  deleteSection: {
-    marginTop: 8,
-    paddingTop: 24,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(0, 0, 0, 0.1)',
+  deleteButton: {
+    padding: 8,
+    marginRight: 4,
   },
 });

@@ -1,6 +1,7 @@
 import type { CEFRLevel, LanguageCode } from '@/types';
 
 export enum GeminiModel {
+  THREE_PRO = '3-pro',
   FLASH_3 = '3-flash',
   FLASH_2_5 = '2.5-flash',
   FLASH_2_5_LITE = '2.5-flash-lite',
@@ -9,6 +10,7 @@ export enum GeminiModel {
 }
 
 const MODEL_VALUES: Record<GeminiModel, string> = {
+  [GeminiModel.THREE_PRO]: 'gemini-3-pro-preview',
   [GeminiModel.FLASH_3]: 'gemini-3-flash-preview',
   [GeminiModel.FLASH_2_5]: 'gemini-2.5-flash',
   [GeminiModel.FLASH_2_5_LITE]: 'gemini-2.5-flash-lite',

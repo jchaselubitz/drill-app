@@ -1,4 +1,4 @@
-import { ActivityIndicator, Pressable, StyleSheet, Text } from 'react-native';
+import { ActivityIndicator, Pressable, StyleProp, StyleSheet, Text, ViewStyle } from 'react-native';
 
 import { useColors } from '@/hooks';
 
@@ -8,6 +8,7 @@ type ButtonProps = {
   variant?: 'primary' | 'secondary' | 'destructive';
   disabled?: boolean;
   loading?: boolean;
+  style?: StyleProp<ViewStyle>;
 };
 
 export function Button({
@@ -16,6 +17,7 @@ export function Button({
   variant = 'primary',
   disabled = false,
   loading = false,
+  style,
 }: ButtonProps) {
   const colors = useColors();
 
@@ -32,6 +34,7 @@ export function Button({
     <Pressable
       style={({ pressed }) => [
         styles.button,
+        style,
         { backgroundColor, opacity: pressed || disabled ? 0.7 : 1 },
       ]}
       onPress={onPress}

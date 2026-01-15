@@ -1,4 +1,3 @@
-import { Ionicons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
@@ -7,19 +6,21 @@ import {
   KeyboardAvoidingView,
   Modal,
   Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
 
-import { Button, Card, TextInput } from '@/components';
 import { useSettings } from '@/contexts/SettingsContext';
 import database from '@/database';
 import { Lesson } from '@/database/models';
 import { useColors } from '@/hooks';
 import { changePromptLength, generateTutorPrompt } from '@/lib/ai/tutor';
+
+import { LessonSettingsDisplay } from './LessonSettingsDisplay';
+import { ModalHeader } from './ModalHeader';
+import { NewLessonForm } from './NewLessonForm';
+import { PromptCard } from './PromptCard';
 
 const geminiApiKey = Constants.expoConfig?.extra?.geminiApiKey as string | undefined;
 
@@ -123,17 +124,7 @@ export function NewLessonModal({ visible, onClose }: NewLessonModalProps) {
       onRequestClose={handleClose}
     >
       <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
-        <View style={styles.dragHandleContainer}>
-          <View style={[styles.dragHandle, { backgroundColor: colors.textSecondary }]} />
-        </View>
-
-        <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
-          <Pressable onPress={handleClose} style={styles.closeButton}>
-            <Text style={[styles.closeButtonText, { color: colors.primary }]}>Cancel</Text>
-          </Pressable>
-          <Text style={[styles.modalTitle, { color: colors.text }]}>New Lesson</Text>
-          <View style={styles.headerSpacer} />
-        </View>
+        <ModalHeader title="New Lesson" onClose={handleClose} />
 
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -144,63 +135,28 @@ export function NewLessonModal({ visible, onClose }: NewLessonModalProps) {
             contentContainerStyle={styles.modalContent}
             keyboardShouldPersistTaps="handled"
           >
-            <Text style={[styles.modalSubtitle, { color: colors.textSecondary }]}>
-              Get a writing prompt tailored to your level
-            </Text>
+            <LessonSettingsDisplay
+              topicLanguage={settings.topicLanguage}
+              level={settings.level}
+              onSettingsPress={handleClose}
+            />
 
-            <View style={styles.form}>
-              <TextInput
-                label="What should I write about?"
-                placeholder="e.g., my favorite vacation, a day at work..."
-                value={topic}
-                onChangeText={setTopic}
-              />
-
-              <TextInput
-                label="Related phrases (optional)"
-                placeholder="Comma-separated phrases to practice"
-                value={phrases}
-                onChangeText={setPhrases}
-              />
-
-              <Button
-                title="Generate Lesson"
-                onPress={handleGeneratePrompt}
-                loading={isLoading}
-                disabled={!topic.trim()}
-              />
-            </View>
+            <NewLessonForm
+              topic={topic}
+              onTopicChange={setTopic}
+              onGenerate={handleGeneratePrompt}
+              isLoading={isLoading}
+            />
 
             {prompt && (
-              <Card style={styles.promptCard}>
-                <View style={styles.promptHeader}>
-                  <Ionicons name="bulb" size={20} color={colors.primary} />
-                  <Text style={[styles.promptLabel, { color: colors.textSecondary }]}>
-                    Your Writing Prompt
-                  </Text>
-                </View>
-                <Text style={[styles.promptText, { color: colors.text }]}>{prompt}</Text>
-                <View style={styles.promptActions}>
-                  <Button
-                    title="Shorter"
-                    variant="secondary"
-                    onPress={() => handleChangeLength('shorter')}
-                    disabled={isLoading || isSaving}
-                  />
-                  <Button
-                    title="Longer"
-                    variant="secondary"
-                    onPress={() => handleChangeLength('longer')}
-                    disabled={isLoading || isSaving}
-                  />
-                </View>
-                <Button
-                  title="Save Lesson"
-                  onPress={handleSaveLesson}
-                  loading={isSaving}
-                  disabled={isLoading}
-                />
-              </Card>
+              <PromptCard
+                prompt={prompt}
+                onMakeShorter={() => handleChangeLength('shorter')}
+                onMakeLonger={() => handleChangeLength('longer')}
+                onSave={handleSaveLesson}
+                isLoading={isLoading}
+                isSaving={isSaving}
+              />
             )}
           </ScrollView>
         </KeyboardAvoidingView>
@@ -216,38 +172,6 @@ const styles = StyleSheet.create({
   flex: {
     flex: 1,
   },
-  dragHandleContainer: {
-    alignItems: 'center',
-    paddingTop: 8,
-    paddingBottom: 4,
-  },
-  dragHandle: {
-    width: 36,
-    height: 5,
-    borderRadius: 2.5,
-    opacity: 0.3,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  closeButton: {
-    minWidth: 60,
-  },
-  closeButtonText: {
-    fontSize: 17,
-  },
-  modalTitle: {
-    fontSize: 17,
-    fontWeight: '600',
-  },
-  headerSpacer: {
-    minWidth: 60,
-  },
   modalContent: {
     padding: 20,
     gap: 24,
@@ -255,29 +179,5 @@ const styles = StyleSheet.create({
   modalSubtitle: {
     fontSize: 15,
     textAlign: 'center',
-  },
-  form: {
-    gap: 16,
-  },
-  promptCard: {
-    gap: 12,
-  },
-  promptHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  promptLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  promptText: {
-    fontSize: 17,
-    lineHeight: 26,
-  },
-  promptActions: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 8,
   },
 });

@@ -1,3 +1,5 @@
+import { z } from 'zod';
+
 import { LanguagesISO639 } from '@/constants';
 
 export type LanguageCode = (typeof LanguagesISO639)[keyof typeof LanguagesISO639];
@@ -12,10 +14,26 @@ export type TutorPromptParams = {
   instructions: string;
 };
 
+export type FeedbackItem = {
+  point: string;
+  explanation: string;
+  negative: boolean;
+};
 export type ReviewResponse = {
   correction: string;
-  feedback: string;
+  feedback: FeedbackItem[];
 };
+
+export const reviewSchema = z.object({
+  correction: z.string(),
+  feedback: z.array(
+    z.object({
+      point: z.string(),
+      explanation: z.string(),
+      negative: z.boolean(),
+    })
+  ),
+});
 
 export type ExplanationType = 'message' | 'translation' | 'list';
 

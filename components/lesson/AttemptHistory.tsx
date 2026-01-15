@@ -9,14 +9,12 @@ type AttemptHistoryProps = {
   attempts: Attempt[];
   expandedAttemptId: string | null;
   onToggleAttempt: (attemptId: string) => void;
-  formatDate: (timestamp: number) => string;
 };
 
 export function AttemptHistory({
   attempts,
   expandedAttemptId,
   onToggleAttempt,
-  formatDate,
 }: AttemptHistoryProps) {
   const colors = useColors();
 
@@ -35,7 +33,6 @@ export function AttemptHistory({
           attempt={attempt}
           isExpanded={expandedAttemptId === attempt.id}
           onToggle={() => onToggleAttempt(attempt.id)}
-          formatDate={formatDate}
         />
       ))}
     </View>

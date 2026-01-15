@@ -1,7 +1,10 @@
-import { z } from 'zod';
-
 import { GeminiModel, getModel, Languages } from '@/constants';
-import type { LanguageCode, ReviewResponse, TutorPromptParams } from '@/types';
+import {
+  type LanguageCode,
+  type ReviewResponse,
+  reviewSchema,
+  type TutorPromptParams,
+} from '@/types';
 
 import { generateJSON, generateText } from '../gemini';
 
@@ -63,19 +66,16 @@ Return ONLY the modified prompt text, nothing else.`;
   return generateText({ prompt, modelName: model2_5_lite, systemPrompt: '' });
 }
 
-const reviewSchema = z.object({
-  correction: z.string(),
-  feedback: z.string(),
-});
-
 export async function reviewParagraph({
   paragraph,
   topicLanguage,
   userLanguage,
+  abortSignal,
 }: {
   paragraph: string;
   topicLanguage: LanguageCode;
   userLanguage: LanguageCode;
+  abortSignal?: AbortSignal;
 }): Promise<ReviewResponse> {
   const topicLangName = getLanguageName(topicLanguage);
   const userLangName = getLanguageName(userLanguage);
@@ -88,20 +88,41 @@ Student's paragraph:
   const systemPrompt = `Provide your response as JSON with exactly this structure:
 {
   "correction": "The corrected version of the paragraph with proper grammar and vocabulary. Use **bold** to highlight words/phrases you changed.",
-  "feedback": "Bullet-point feedback in ${userLangName} explaining: 1) What was wrong 2) The specific grammar rules that apply 3) How to remember the correct form"
+  "feedback": [
+    {
+      "point": "Grammar Concept Name",
+      "explanation": "Detailed explanation in ${userLangName} of what was wrong, the specific grammar rule that applies, and how to remember the correct form",
+      "negative": true
+    }
+  ]
 }
 
 Guidelines:
 - Keep the correction as close to the original as possible so the student can see their mistakes
-- In feedback, explain WHY something is wrong, not just that it is wrong
-- Reference specific grammar rules by name when applicable
-- Be encouraging but honest`;
+- Each feedback item should have a "point" (the name of the grammatical concept, e.g., "Subject-Verb Agreement", "Past Tense Formation"), an "explanation" (detailed feedback in ${userLangName}), and a "negative" boolean
+- The feedback should cover every correction made to the paragraph.
+- In explanations, explain WHY something is wrong, not just that it is wrong
+- Reference specific grammar rules by name in the point field
+- Use "negative": true for critiques/corrections and "negative": false for positive reinforcement
+- Include 2-5 feedback items covering the most important corrections
+- Do not repeat keys in the JSON output.`;
 
   const response = await generateJSON({
     prompt,
     modelName: model3_flash,
     systemPrompt,
     schema: reviewSchema,
+    abortSignal,
   });
-  return JSON.parse(response) as ReviewResponse;
+
+  // Parse and validate the response
+  try {
+    const parsed = JSON.parse(response);
+    const validated = reviewSchema.parse(parsed);
+    return validated as ReviewResponse;
+  } catch (error) {
+    console.error('Error parsing or validating review response:', error);
+    console.error('Raw response:', response);
+    throw new Error('Failed to parse review response. The AI may have returned an invalid format.');
+  }
 }

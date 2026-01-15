@@ -4,6 +4,7 @@ import { Platform } from 'react-native';
 
 import {
   Attempt,
+  Feedback,
   Lesson,
   Media,
   Phrase,
@@ -24,7 +25,18 @@ const adapter = new SQLiteAdapter({
 
 const database = new Database({
   adapter,
-  modelClasses: [Attempt, Lesson, Media, Phrase, PhraseTag, Profile, Subject, Tag, Translation],
+  modelClasses: [
+    Attempt,
+    Feedback,
+    Lesson,
+    Media,
+    Phrase,
+    PhraseTag,
+    Profile,
+    Subject,
+    Tag,
+    Translation,
+  ],
 });
 
 export default database;

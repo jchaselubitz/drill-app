@@ -1,4 +1,5 @@
 export { default as Attempt } from './Attempt';
+export { default as Feedback } from './Feedback';
 export { default as Lesson } from './Lesson';
 export { default as Media } from './Media';
 export { default as Phrase } from './Phrase';
