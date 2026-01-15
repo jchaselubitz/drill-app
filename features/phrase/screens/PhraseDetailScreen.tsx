@@ -262,9 +262,10 @@ export default function PhraseDetailScreen() {
           </View>
 
           <Button
-            title={isTranslating ? 'Translating...' : 'Translate'}
+            text="Translate"
             onPress={handleTranslate}
-            loading={isTranslating}
+            buttonState={isTranslating ? 'loading' : 'default'}
+            loadingText="Translating..."
             variant="secondary"
           />
 

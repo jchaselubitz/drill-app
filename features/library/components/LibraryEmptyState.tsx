@@ -18,7 +18,7 @@ export function LibraryEmptyState({ onPressAdd }: LibraryEmptyStateProps) {
       <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
         Add words and phrases you want to learn
       </Text>
-      <Button title="Add Phrase" onPress={onPressAdd} />
+      <Button text="Add Phrase" onPress={onPressAdd} />
     </View>
   );
 }

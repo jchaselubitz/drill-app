@@ -90,7 +90,12 @@ export function AddPhrasePanel({
             autoFocus
           />
           <Select label="Language" options={languageOptions} value={lang} onValueChange={setLang} />
-          <Button title="Save" onPress={handleSave} loading={isSaving} disabled={!text.trim()} />
+          <Button
+            text="Save"
+            onPress={handleSave}
+            buttonState={isSaving ? 'loading' : !text.trim() ? 'disabled' : 'default'}
+            loadingText="Saving..."
+          />
         </View>
       )}
     </View>

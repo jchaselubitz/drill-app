@@ -1,14 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { Button } from '@/components';
 import { useColors } from '@/hooks';
 
-type LessonsEmptyStateProps = {
-  onPressCreate: () => void;
-};
-
-export function LessonsEmptyState({ onPressCreate }: LessonsEmptyStateProps) {
+export function LessonsEmptyState() {
   const colors = useColors();
 
   return (
@@ -18,7 +13,6 @@ export function LessonsEmptyState({ onPressCreate }: LessonsEmptyStateProps) {
       <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
         Create your first lesson to get started
       </Text>
-      <Button title="Create Lesson" onPress={onPressCreate} />
     </View>
   );
 }

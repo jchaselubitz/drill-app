@@ -34,19 +34,24 @@ export function PromptCard({
       <Text style={[styles.promptText, { color: colors.text }]}>{prompt}</Text>
       <View style={styles.promptActions}>
         <Button
-          title="Shorter"
+          text="Shorter"
           variant="secondary"
           onPress={onMakeShorter}
-          disabled={isLoading || isSaving}
+          buttonState={isLoading || isSaving ? 'disabled' : 'default'}
         />
         <Button
-          title="Longer"
+          text="Longer"
           variant="secondary"
           onPress={onMakeLonger}
-          disabled={isLoading || isSaving}
+          buttonState={isLoading || isSaving ? 'disabled' : 'default'}
         />
       </View>
-      <Button title="Save Lesson" onPress={onSave} loading={isSaving} disabled={isLoading} />
+      <Button
+        text="Save Lesson"
+        onPress={onSave}
+        buttonState={isSaving ? 'loading' : isLoading ? 'disabled' : 'default'}
+        loadingText="Saving..."
+      />
     </Card>
   );
 }

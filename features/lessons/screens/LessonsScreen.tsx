@@ -68,7 +68,7 @@ export default function LessonsScreen() {
           styles.listContent,
           lessons.length === 0 && styles.emptyListContent,
         ]}
-        ListEmptyComponent={() => <LessonsEmptyState onPressCreate={openModal} />}
+        ListEmptyComponent={() => <LessonsEmptyState />}
         ListFooterComponent={() => (
           <View style={styles.addButton}>
             <GlassAddButton />

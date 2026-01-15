@@ -36,10 +36,10 @@ export function AttemptForm({
       {isLoading ? (
         <View style={styles.submitRow}>
           <Button
-            title="Submit Attempt"
+            text="Submit Attempt"
             onPress={onSubmit}
-            loading
-            disabled={!paragraph.trim()}
+            buttonState={!paragraph.trim() ? 'disabled' : 'loading'}
+            loadingText="Submitting..."
             style={styles.submitButton}
           />
           <Pressable
@@ -54,7 +54,11 @@ export function AttemptForm({
           </Pressable>
         </View>
       ) : (
-        <Button title="Submit Attempt" onPress={onSubmit} disabled={!paragraph.trim()} />
+        <Button
+          text="Submit Attempt"
+          onPress={onSubmit}
+          buttonState={!paragraph.trim() ? 'disabled' : 'default'}
+        />
       )}
     </View>
   );

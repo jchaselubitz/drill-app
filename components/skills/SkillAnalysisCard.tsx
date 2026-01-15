@@ -68,10 +68,10 @@ export function SkillAnalysisCard({
       {error && <Text style={[styles.errorText, { color: colors.error }]}>{error}</Text>}
 
       <Button
-        title={isAnalyzing ? 'Analyzing...' : isStale ? 'Analyze My Skills' : 'Re-analyze'}
+        text={isStale ? 'Analyze My Skills' : 'Re-analyze'}
         onPress={onAnalyze}
-        loading={isAnalyzing}
-        disabled={isAnalyzing}
+        buttonState={isAnalyzing ? 'loading' : 'default'}
+        loadingText="Analyzing..."
         variant={isStale ? 'primary' : 'secondary'}
         style={styles.button}
       />

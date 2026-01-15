@@ -27,10 +27,10 @@ export function NewLessonForm({ topic, onTopicChange, onGenerate, isLoading }: N
       /> */}
 
       <Button
-        title="Generate Lesson"
+        text="Generate Lesson"
         onPress={onGenerate}
-        loading={isLoading}
-        disabled={!topic.trim()}
+        buttonState={isLoading ? 'loading' : !topic.trim() ? 'disabled' : 'default'}
+        loadingText="Generating..."
       />
     </View>
   );
