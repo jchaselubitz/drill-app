@@ -31,6 +31,16 @@ function TabLayoutContent() {
       </NativeTabs.Trigger>
 
       <NativeTabs.Trigger
+        name="library"
+        options={{
+          title: 'Library',
+        }}
+      >
+        <Icon sf="book.fill" drawable="custom_android_drawable" />
+        <Label>Library</Label>
+      </NativeTabs.Trigger>
+
+      <NativeTabs.Trigger
         name="settings"
         options={{
           title: 'Settings',

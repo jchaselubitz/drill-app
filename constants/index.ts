@@ -274,6 +274,19 @@ export const DEFAULT_SETTINGS = {
   theme: 'system' as const,
 };
 
+export const PARTS_OF_SPEECH = [
+  { value: 'noun', label: 'Noun' },
+  { value: 'verb', label: 'Verb' },
+  { value: 'adjective', label: 'Adjective' },
+  { value: 'adverb', label: 'Adverb' },
+  { value: 'pronoun', label: 'Pronoun' },
+  { value: 'preposition', label: 'Preposition' },
+  { value: 'conjunction', label: 'Conjunction' },
+  { value: 'interjection', label: 'Interjection' },
+  { value: 'article', label: 'Article' },
+  { value: 'phrase', label: 'Phrase' },
+];
+
 export const Colors = {
   light: {
     text: '#11181C',

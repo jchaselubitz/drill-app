@@ -76,4 +76,25 @@ export default class Phrase extends Model {
     });
     return updatedPhrase;
   }
+
+  @writer async updateLang(newLang: string): Promise<Phrase> {
+    return await this.update((phrase) => {
+      phrase.lang = newLang;
+      phrase.updatedAt = Date.now();
+    });
+  }
+
+  @writer async updateNote(newNote: string | null): Promise<Phrase> {
+    return await this.update((phrase) => {
+      phrase.note = newNote;
+      phrase.updatedAt = Date.now();
+    });
+  }
+
+  @writer async updatePartSpeech(newPartSpeech: string | null): Promise<Phrase> {
+    return await this.update((phrase) => {
+      phrase.partSpeech = newPartSpeech;
+      phrase.updatedAt = Date.now();
+    });
+  }
 }

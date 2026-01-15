@@ -1,22 +1,26 @@
-// app/model/migrations.js
-
 import { createTable, schemaMigrations } from '@nozbe/watermelondb/Schema/migrations';
 
 export default schemaMigrations({
   migrations: [
-    // {
-    //   // ⚠️ Set this to a number one larger than the current schema version
-    //   toVersion: 2,
-    //   steps: [
-    //     // See "Migrations API" for more details
-    //     // createTable({
-    //     //   name: 'comments',
-    //     //   columns: [
-    //     //     { name: 'post_id', type: 'string', isIndexed: true },
-    //     //     { name: 'body', type: 'string' },
-    //     //   ],
-    //     // }),
-    //   ],
-    // },
+    {
+      toVersion: 4,
+      steps: [
+        createTable({
+          name: 'skill',
+          columns: [
+            { name: 'created_at', type: 'number' },
+            { name: 'updated_at', type: 'number' },
+            { name: 'name', type: 'string' },
+            { name: 'category', type: 'string' },
+            { name: 'rank', type: 'number' },
+            { name: 'description', type: 'string' },
+            { name: 'last_seen_at', type: 'number' },
+            { name: 'occurrence_count', type: 'number' },
+            { name: 'status', type: 'string' },
+            { name: 'lang', type: 'string' },
+          ],
+        }),
+      ],
+    },
   ],
 });

@@ -2,6 +2,7 @@ import SQLiteAdapter from '@nozbe/watermelondb/adapters/sqlite';
 import Database from '@nozbe/watermelondb/Database';
 import { Platform } from 'react-native';
 
+import migrations from './migrations';
 import {
   Attempt,
   Feedback,
@@ -10,6 +11,7 @@ import {
   Phrase,
   PhraseTag,
   Profile,
+  Skill,
   Subject,
   Tag,
   Translation,
@@ -18,8 +20,7 @@ import schema from './schema';
 
 const adapter = new SQLiteAdapter({
   schema,
-  // dbName: 'drill_app',
-  // migrations,
+  migrations,
   jsi: Platform.OS === 'ios',
 });
 
@@ -33,6 +34,7 @@ const database = new Database({
     Phrase,
     PhraseTag,
     Profile,
+    Skill,
     Subject,
     Tag,
     Translation,

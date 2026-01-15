@@ -49,4 +49,59 @@ export type UserSettings = {
   topicLanguage: LanguageCode;
   level: CEFRLevel;
   theme: ThemeMode;
+  lastSkillAnalysisAt?: number;
 };
+
+export type SkillCategory =
+  | 'grammar'
+  | 'spelling'
+  | 'vocabulary'
+  | 'style'
+  | 'punctuation'
+  | 'sentence_structure'
+  | 'tone'
+  | 'idioms';
+
+export type SkillStatus = 'active' | 'improving' | 'resolved';
+
+export type SkillRank = 1 | 2 | 3;
+
+export type AnalyzedSkill = {
+  name: string;
+  category: SkillCategory;
+  rank: SkillRank;
+  description: string;
+  relatedFeedbackIndices: number[];
+};
+
+export const skillAnalysisSchema = z.object({
+  skills: z.array(
+    z.object({
+      name: z.string(),
+      category: z.enum([
+        'grammar',
+        'spelling',
+        'vocabulary',
+        'style',
+        'punctuation',
+        'sentence_structure',
+        'tone',
+        'idioms',
+      ]),
+      rank: z.number().min(1).max(3),
+      description: z.string(),
+      relatedFeedbackIndices: z.array(z.number()),
+    })
+  ),
+});
+
+export type SkillAnalysisResponse = z.infer<typeof skillAnalysisSchema>;
+
+export const translationResponseSchema = z.object({
+  input_text: z.string(),
+  input_lang: z.string(),
+  output_text: z.string(),
+  output_lang: z.string(),
+});
+
+export type TranslationResponse = z.infer<typeof translationResponseSchema>;

@@ -2,14 +2,16 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Card, Select } from '@/components';
+import { SkillAnalysisCard, SkillsList } from '@/components/skills';
 import { CEFR_LEVELS, Languages } from '@/constants';
 import { useSettings } from '@/contexts/SettingsContext';
-import { useColors } from '@/hooks';
+import { useColors, useSkillAnalysis } from '@/hooks';
 import type { CEFRLevel, LanguageCode, ThemeMode } from '@/types';
 
 export default function SettingsScreen() {
   const colors = useColors();
   const { settings, updateSettings, isLoading } = useSettings();
+  const { skills, isAnalyzing, error, runAnalysis, lastAnalyzedAt, staleDays } = useSkillAnalysis();
 
   const languageOptions = Languages.map((lang) => ({
     value: lang.code,
@@ -79,6 +81,19 @@ export default function SettingsScreen() {
               onValueChange={(value: CEFRLevel) => updateSettings({ level: value })}
             />
           </View>
+        </Card>
+
+        <Card>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Skills to Improve</Text>
+          <SkillAnalysisCard
+            onAnalyze={runAnalysis}
+            isAnalyzing={isAnalyzing}
+            error={error}
+            lastAnalyzedAt={lastAnalyzedAt}
+            staleDays={staleDays}
+            skillCount={skills.length}
+          />
+          <SkillsList skills={skills} />
         </Card>
 
         <Card>

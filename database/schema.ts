@@ -10,8 +10,9 @@ export const PHRASE_TAG_TABLE = 'phrase_tag';
 export const LESSON_TABLE = 'lesson';
 export const ATTEMPT_TABLE = 'attempt';
 export const FEEDBACK_TABLE = 'feedback';
+export const SKILL_TABLE = 'skill';
 const schema = appSchema({
-  version: 3,
+  version: 4,
   tables: [
     tableSchema({
       name: PHRASE_TABLE,
@@ -122,6 +123,21 @@ const schema = appSchema({
         { name: 'point', type: 'string' },
         { name: 'explanation', type: 'string' },
         { name: 'negative', type: 'boolean' },
+      ],
+    }),
+    tableSchema({
+      name: SKILL_TABLE,
+      columns: [
+        { name: 'created_at', type: 'number' },
+        { name: 'updated_at', type: 'number' },
+        { name: 'name', type: 'string' },
+        { name: 'category', type: 'string' },
+        { name: 'rank', type: 'number' },
+        { name: 'description', type: 'string' },
+        { name: 'last_seen_at', type: 'number' },
+        { name: 'occurrence_count', type: 'number' },
+        { name: 'status', type: 'string' },
+        { name: 'lang', type: 'string' },
       ],
     }),
   ],
