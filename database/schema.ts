@@ -6,13 +6,17 @@ export const PROFILE_TABLE = 'profile';
 export const SUBJECT_TABLE = 'subject';
 export const TAG_TABLE = 'tag';
 export const TRANSLATION_TABLE = 'translation';
+export const DECK_TABLE = 'deck';
+export const DECK_TRANSLATION_TABLE = 'deck_translation';
+export const SRS_CARD_TABLE = 'srs_card';
+export const SRS_REVIEW_LOG_TABLE = 'srs_review_log';
 export const PHRASE_TAG_TABLE = 'phrase_tag';
 export const LESSON_TABLE = 'lesson';
 export const ATTEMPT_TABLE = 'attempt';
 export const FEEDBACK_TABLE = 'feedback';
 export const SKILL_TABLE = 'skill';
 const schema = appSchema({
-  version: 5,
+  version: 6,
   tables: [
     tableSchema({
       name: PHRASE_TABLE,
@@ -91,6 +95,68 @@ const schema = appSchema({
         { name: 'lesson_id', type: 'string', isOptional: true },
         { name: 'phrase_primary_id', type: 'string' },
         { name: 'phrase_secondary_id', type: 'string' },
+      ],
+    }),
+    tableSchema({
+      name: DECK_TABLE,
+      columns: [
+        { name: 'created_at', type: 'number' },
+        { name: 'updated_at', type: 'number' },
+        { name: 'name', type: 'string' },
+        { name: 'archived', type: 'boolean' },
+        { name: 'sort_order', type: 'number', isOptional: true },
+        { name: 'is_default', type: 'boolean' },
+      ],
+    }),
+    tableSchema({
+      name: DECK_TRANSLATION_TABLE,
+      columns: [
+        { name: 'created_at', type: 'number' },
+        { name: 'updated_at', type: 'number' },
+        { name: 'deck_id', type: 'string' },
+        { name: 'translation_id', type: 'string' },
+      ],
+    }),
+    tableSchema({
+      name: SRS_CARD_TABLE,
+      columns: [
+        { name: 'created_at', type: 'number' },
+        { name: 'updated_at', type: 'number' },
+        { name: 'deck_id', type: 'string' },
+        { name: 'translation_id', type: 'string' },
+        { name: 'direction', type: 'string' },
+        { name: 'state', type: 'string' },
+        { name: 'due_at', type: 'number' },
+        { name: 'interval_days', type: 'number' },
+        { name: 'ease', type: 'number' },
+        { name: 'reps', type: 'number' },
+        { name: 'lapses', type: 'number' },
+        { name: 'step_index', type: 'number' },
+        { name: 'last_reviewed_at', type: 'number', isOptional: true },
+        { name: 'suspended', type: 'boolean' },
+        { name: 'stability', type: 'number', isOptional: true },
+        { name: 'difficulty', type: 'number', isOptional: true },
+      ],
+    }),
+    tableSchema({
+      name: SRS_REVIEW_LOG_TABLE,
+      columns: [
+        { name: 'created_at', type: 'number' },
+        { name: 'updated_at', type: 'number' },
+        { name: 'srs_card_id', type: 'string' },
+        { name: 'deck_id', type: 'string' },
+        { name: 'translation_id', type: 'string' },
+        { name: 'direction', type: 'string' },
+        { name: 'reviewed_at', type: 'number' },
+        { name: 'rating', type: 'string' },
+        { name: 'state_before', type: 'string' },
+        { name: 'state_after', type: 'string' },
+        { name: 'interval_before', type: 'number', isOptional: true },
+        { name: 'interval_after', type: 'number', isOptional: true },
+        { name: 'ease_before', type: 'number', isOptional: true },
+        { name: 'ease_after', type: 'number', isOptional: true },
+        { name: 'due_before', type: 'number', isOptional: true },
+        { name: 'due_after', type: 'number', isOptional: true },
       ],
     }),
     tableSchema({

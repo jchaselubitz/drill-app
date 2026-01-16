@@ -1,4 +1,6 @@
 export { default as Attempt } from './Attempt';
+export { default as Deck } from './Deck';
+export { default as DeckTranslation } from './DeckTranslation';
 export { default as Feedback } from './Feedback';
 export { default as Lesson } from './Lesson';
 export { default as Media } from './Media';
@@ -6,6 +8,8 @@ export { default as Phrase } from './Phrase';
 export { default as PhraseTag } from './PhraseTag';
 export { default as Profile } from './Profile';
 export { default as Skill } from './Skill';
+export { default as SrsCard } from './SrsCard';
+export { default as SrsReviewLog } from './SrsReviewLog';
 export { default as Subject } from './Subject';
 export { default as Tag } from './Tag';
 export { default as Translation } from './Translation';

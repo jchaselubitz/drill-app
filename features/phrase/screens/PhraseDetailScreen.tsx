@@ -22,10 +22,17 @@ import { TextInput } from '@/components/TextInput';
 import { Languages, PARTS_OF_SPEECH } from '@/constants';
 import { useSettings } from '@/contexts/SettingsContext';
 import database from '@/database';
-import { Phrase, Translation } from '@/database/models';
-import { PHRASE_TABLE, TRANSLATION_TABLE } from '@/database/schema';
+import { Deck, DeckTranslation, Phrase, SrsCard, Translation } from '@/database/models';
+import {
+  DECK_TABLE,
+  DECK_TRANSLATION_TABLE,
+  PHRASE_TABLE,
+  SRS_CARD_TABLE,
+  TRANSLATION_TABLE,
+} from '@/database/schema';
 import { useColors } from '@/hooks';
 import { translatePhrase } from '@/lib/ai/translate';
+import { SRS_DEFAULT_EASE } from '@/lib/srs/constants';
 
 function DeleteButton({ onPress }: { onPress: () => void }) {
   const colors = useColors();
@@ -50,8 +57,28 @@ export default function PhraseDetailScreen() {
   const [note, setNote] = useState('');
   const [isNoteDirty, setIsNoteDirty] = useState(false);
   const [isTranslating, setIsTranslating] = useState(false);
-  const [linkedPhrases, setLinkedPhrases] = useState<Phrase[]>([]);
+  const [linkedTranslations, setLinkedTranslations] = useState<
+    { translation: Translation; phrase: Phrase }[]
+  >([]);
+  const [decks, setDecks] = useState<Deck[]>([]);
+  const [deckAssignments, setDeckAssignments] = useState<Record<string, string | null>>({});
   const [targetLanguage, setTargetLanguage] = useState<string>(settings.topicLanguage);
+
+  useEffect(() => {
+    Deck.getOrCreateDefault(db).catch((error) => {
+      console.error('Failed to ensure default deck:', error);
+    });
+
+    const subscription = db.collections
+      .get<Deck>(DECK_TABLE)
+      .query(Q.where('archived', false))
+      .observe()
+      .subscribe((results) => {
+        setDecks(results);
+      });
+
+    return () => subscription.unsubscribe();
+  }, [db]);
 
   useEffect(() => {
     if (!id) return;
@@ -78,25 +105,53 @@ export default function PhraseDetailScreen() {
       .query(Q.or(Q.where('phrase_primary_id', id), Q.where('phrase_secondary_id', id)))
       .observe()
       .subscribe(async (translations) => {
-        const linkedIds = translations.map((t) =>
-          t.phrasePrimaryId === id ? t.phraseSecondaryId : t.phrasePrimaryId
-        );
+        try {
+          if (translations.length === 0) {
+            setLinkedTranslations([]);
+            setDeckAssignments({});
+            return;
+          }
 
-        if (linkedIds.length === 0) {
-          setLinkedPhrases([]);
-          return;
+          const linked = await Promise.all(
+            translations.map(async (translation) => {
+              const linkedId =
+                translation.phrasePrimaryId === id
+                  ? translation.phraseSecondaryId
+                  : translation.phrasePrimaryId;
+              const linkedPhrase = await db.collections
+                .get<Phrase>(PHRASE_TABLE)
+                .find(linkedId)
+                .catch(() => null);
+              return linkedPhrase ? { translation, phrase: linkedPhrase } : null;
+            })
+          );
+
+          setLinkedTranslations(
+            linked.filter(
+              (item): item is { translation: Translation; phrase: Phrase } => item !== null
+            )
+          );
+
+          const translationIds = translations.map((t) => t.id);
+          if (translationIds.length > 0) {
+            const deckTranslations = await db.collections
+              .get<DeckTranslation>(DECK_TRANSLATION_TABLE)
+              .query(Q.where('translation_id', Q.oneOf(translationIds)))
+              .fetch();
+
+            const assignments: Record<string, string | null> = {};
+            deckTranslations.forEach((deckTranslation) => {
+              assignments[deckTranslation.translationId] = deckTranslation.deckId;
+            });
+            setDeckAssignments(assignments);
+          } else {
+            setDeckAssignments({});
+          }
+        } catch (error) {
+          console.error('Error loading translations:', error);
+          setLinkedTranslations([]);
+          setDeckAssignments({});
         }
-
-        const phrases = await Promise.all(
-          linkedIds.map((phraseId) =>
-            db.collections
-              .get<Phrase>(PHRASE_TABLE)
-              .find(phraseId)
-              .catch(() => null)
-          )
-        );
-
-        setLinkedPhrases(phrases.filter((p): p is Phrase => p !== null));
       });
 
     return () => subscription.unsubscribe();
@@ -108,7 +163,7 @@ export default function PhraseDetailScreen() {
 
     const excludedLanguages = new Set([
       phrase.lang, // Current phrase language
-      ...linkedPhrases.map((p) => p.lang), // Already translated languages
+      ...linkedTranslations.map((item) => item.phrase.lang), // Already translated languages
     ]);
 
     // If current target language is excluded, reset to topic language (if available) or first available
@@ -124,7 +179,7 @@ export default function PhraseDetailScreen() {
       }
       return currentTarget;
     });
-  }, [phrase, linkedPhrases, settings.topicLanguage]);
+  }, [phrase, linkedTranslations, settings.topicLanguage]);
 
   const handleLanguageChange = async (newLang: string) => {
     if (!phrase) return;
@@ -190,6 +245,86 @@ export default function PhraseDetailScreen() {
     }
   };
 
+  const handleDeckAssignment = async (translationId: string, deckId: string) => {
+    const nowMs = Date.now();
+    const selectedDeckId = deckId || null;
+
+    const existingDeckTranslations = await db.collections
+      .get<DeckTranslation>(DECK_TRANSLATION_TABLE)
+      .query(Q.where('translation_id', translationId))
+      .fetch();
+
+    const existingCards = await db.collections
+      .get<SrsCard>(SRS_CARD_TABLE)
+      .query(Q.where('translation_id', translationId))
+      .fetch();
+
+    await db.write(async () => {
+      if (!selectedDeckId) {
+        for (const deckTranslation of existingDeckTranslations) {
+          await deckTranslation.destroyPermanently();
+        }
+        for (const card of existingCards) {
+          await card.destroyPermanently();
+        }
+        return;
+      }
+
+      if (existingDeckTranslations.length > 0) {
+        const current = existingDeckTranslations[0];
+        if (current.deckId !== selectedDeckId) {
+          await current.update((deckTranslation) => {
+            deckTranslation.deckId = selectedDeckId;
+            deckTranslation.updatedAt = nowMs;
+          });
+        }
+      } else {
+        await db.collections.get<DeckTranslation>(DECK_TRANSLATION_TABLE).create((record) => {
+          record.translationId = translationId;
+          record.deckId = selectedDeckId;
+          record.createdAt = nowMs;
+          record.updatedAt = nowMs;
+        });
+      }
+
+      if (existingCards.length === 0) {
+        const directions: Array<'primary_to_secondary' | 'secondary_to_primary'> = [
+          'primary_to_secondary',
+          'secondary_to_primary',
+        ];
+        for (const direction of directions) {
+          await db.collections.get<SrsCard>(SRS_CARD_TABLE).create((card) => {
+            card.deckId = selectedDeckId;
+            card.translationId = translationId;
+            card.direction = direction;
+            card.state = 'new';
+            card.dueAt = nowMs;
+            card.intervalDays = 0;
+            card.ease = SRS_DEFAULT_EASE;
+            card.reps = 0;
+            card.lapses = 0;
+            card.stepIndex = 0;
+            card.lastReviewedAt = null;
+            card.suspended = false;
+            card.stability = null;
+            card.difficulty = null;
+            card.createdAt = nowMs;
+            card.updatedAt = nowMs;
+          });
+        }
+      } else {
+        for (const card of existingCards) {
+          await card.update((record) => {
+            record.deckId = selectedDeckId;
+            record.updatedAt = nowMs;
+          });
+        }
+      }
+    });
+
+    setDeckAssignments((prev) => ({ ...prev, [translationId]: selectedDeckId }));
+  };
+
   const handleDelete = () => {
     if (!phrase) return;
 
@@ -221,7 +356,7 @@ export default function PhraseDetailScreen() {
 
   // Get available languages for translation (exclude current phrase language and already translated languages)
   const excludedLanguages = phrase
-    ? new Set([phrase.lang, ...linkedPhrases.map((p) => p.lang)])
+    ? new Set([phrase.lang, ...linkedTranslations.map((item) => item.phrase.lang)])
     : new Set<string>();
   const availableLanguages = Languages.filter((l) => !excludedLanguages.has(l.code));
   const translationLanguageOptions = availableLanguages.map((l) => ({
@@ -241,6 +376,9 @@ export default function PhraseDetailScreen() {
   }
 
   const language = Languages.find((l) => l.code === phrase.lang);
+  const deckOptions = [{ value: '', label: 'Not in a deck' }].concat(
+    decks.map((deck) => ({ value: deck.id, label: deck.name }))
+  );
 
   return (
     <SafeAreaView
@@ -302,29 +440,43 @@ export default function PhraseDetailScreen() {
             )}
           </View>
 
-          {linkedPhrases.length > 0 && (
+          {linkedTranslations.length > 0 && (
             <View style={styles.translationsSection}>
               <Text style={[styles.sectionTitle, { color: colors.text }]}>Translations</Text>
-              {linkedPhrases.map((linkedPhrase) => {
+              {linkedTranslations.map(({ translation, phrase: linkedPhrase }) => {
                 const linkedLang = Languages.find((l) => l.code === linkedPhrase.lang);
+                const deckAssignment = deckAssignments[translation.id] ?? '';
                 return (
-                  <Pressable
-                    key={linkedPhrase.id}
+                  <View
+                    key={translation.id}
                     style={[
                       styles.translationCard,
                       { backgroundColor: colors.card, borderColor: colors.border },
                     ]}
-                    onPress={() => router.push(`/phrase/${linkedPhrase.id}` as any)}
                   >
-                    <Text style={[styles.translationText, { color: colors.text }]}>
-                      {linkedPhrase.text}
-                    </Text>
-                    {linkedLang && (
-                      <Text style={[styles.translationLang, { color: colors.textSecondary }]}>
-                        {linkedLang.icon} {linkedLang.name}
+                    <Pressable onPress={() => router.push(`/phrase/${linkedPhrase.id}` as any)}>
+                      <Text style={[styles.translationText, { color: colors.text }]}>
+                        {linkedPhrase.text}
                       </Text>
+                      {linkedLang && (
+                        <Text style={[styles.translationLang, { color: colors.textSecondary }]}>
+                          {linkedLang.icon} {linkedLang.name}
+                        </Text>
+                      )}
+                    </Pressable>
+                    {deckOptions.length > 1 && (
+                      <View style={styles.deckSelect}>
+                        <Select
+                          label="Deck"
+                          options={deckOptions}
+                          value={deckAssignment}
+                          onValueChange={(value: string) =>
+                            handleDeckAssignment(translation.id, value)
+                          }
+                        />
+                      </View>
                     )}
-                  </Pressable>
+                  </View>
                 );
               })}
             </View>
@@ -426,6 +578,9 @@ const styles = StyleSheet.create({
   },
   translationLang: {
     fontSize: 13,
+  },
+  deckSelect: {
+    marginTop: 8,
   },
   translateRow: {
     flexDirection: 'row',

@@ -16,9 +16,6 @@ function TabLayoutContent() {
         default: { color: colors.textSecondary },
         selected: { color: colors.primary },
       }}
-      titlePositionAdjustment={{
-        horizontal: 40,
-      }}
     >
       <NativeTabs.Trigger
         name="index"
@@ -38,6 +35,16 @@ function TabLayoutContent() {
       >
         <Icon sf="book.fill" drawable="custom_android_drawable" />
         <Label>Library</Label>
+      </NativeTabs.Trigger>
+
+      <NativeTabs.Trigger
+        name="review"
+        options={{
+          title: 'Review',
+        }}
+      >
+        <Icon sf="rectangle.stack.fill" drawable="custom_android_drawable" />
+        <Label>Review</Label>
       </NativeTabs.Trigger>
 
       <NativeTabs.Trigger

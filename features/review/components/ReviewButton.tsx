@@ -12,11 +12,10 @@ import {
   ViewStyle,
 } from 'react-native';
 
+import { type ButtonState } from '@/components/Button';
 import { useColors } from '@/hooks';
 
-export type ButtonState = 'default' | 'disabled' | 'loading' | 'success' | 'error';
-
-type ButtonProps = {
+type ReviewButtonProps = {
   text: string | React.ReactNode;
   onPress: () => void;
   variant?: 'primary' | 'secondary' | 'destructive';
@@ -39,7 +38,7 @@ type ButtonProps = {
   tintColor?: string;
 };
 
-export function Button({
+export function ReviewButton({
   text,
   onPress,
   variant = 'primary',
@@ -53,7 +52,7 @@ export function Button({
   setButtonState,
   style,
   tintColor: customTintColor,
-}: ButtonProps) {
+}: ReviewButtonProps) {
   const colors = useColors();
   const useGlass = Platform.OS === 'ios' && isLiquidGlassAvailable();
 
@@ -150,7 +149,9 @@ export function Button({
         {iconName && iconPosition === 'left' && (
           <Ionicons name={iconName} size={iconSize} color={textColor} style={{ marginRight: 8 }} />
         )}
-        <Text style={[styles.text, { color: textColor }]}>{text}</Text>
+        <Text style={[styles.text, { color: textColor }]} numberOfLines={1}>
+          {text}
+        </Text>
         {iconName && iconPosition === 'right' && (
           <Ionicons name={iconName} size={iconSize} color={textColor} style={{ marginLeft: 8 }} />
         )}
@@ -186,12 +187,12 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   button: {
-    paddingVertical: 14,
-    paddingHorizontal: 24,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
     borderRadius: 25,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 48,
+    minHeight: 44,
   },
   contentContainer: {
     flexDirection: 'row',
@@ -203,9 +204,9 @@ const styles = StyleSheet.create({
   },
   disabled: {
     opacity: 0.6,
-  }, // Only used when not using glass effect
+  },
   text: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
   },
 });

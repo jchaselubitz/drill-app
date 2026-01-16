@@ -18,6 +18,16 @@ export default function SettingsScreen() {
     label: `${level.level} - ${level.name}`,
   }));
 
+  const maxNewOptions = [5, 10, 20, 30, 50].map((value) => ({
+    value: String(value),
+    label: `${value} per day`,
+  }));
+
+  const maxReviewOptions = [25, 50, 100, 150, 200].map((value) => ({
+    value: String(value),
+    label: `${value} per day`,
+  }));
+
   if (isLoading) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
@@ -72,6 +82,25 @@ export default function SettingsScreen() {
               options={levelOptions}
               value={settings.level}
               onValueChange={(value: CEFRLevel) => updateSettings({ level: value })}
+            />
+          </View>
+        </Card>
+
+        <Card>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Spaced Repetition</Text>
+          <View style={styles.settingsForm}>
+            <Select
+              label="New cards per day"
+              options={maxNewOptions}
+              value={String(settings.maxNewPerDay)}
+              onValueChange={(value: string) => updateSettings({ maxNewPerDay: Number(value) })}
+            />
+
+            <Select
+              label="Reviews per day"
+              options={maxReviewOptions}
+              value={String(settings.maxReviewsPerDay)}
+              onValueChange={(value: string) => updateSettings({ maxReviewsPerDay: Number(value) })}
             />
           </View>
         </Card>

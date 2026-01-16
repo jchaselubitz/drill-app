@@ -1,0 +1,31 @@
+import { Stack } from 'expo-router';
+import { StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+import { useColors } from '@/hooks';
+
+export function ReviewLoadingState() {
+  const colors = useColors();
+
+  return (
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <Stack.Screen options={{ title: 'Review', headerShown: true }} />
+      <View style={styles.center}>
+        <Text style={{ color: colors.textSecondary }}>Loading session...</Text>
+      </View>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  center: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+    gap: 12,
+  },
+});

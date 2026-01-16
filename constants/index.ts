@@ -274,6 +274,10 @@ export const DEFAULT_SETTINGS = {
   topicLanguage: 'es' as LanguageCode,
   level: 'A2' as CEFRLevel,
   theme: 'system' as const,
+  maxNewPerDay: 20,
+  maxReviewsPerDay: 100,
+  dayStartHour: 4,
+  activeDeckId: null,
 };
 
 export const PARTS_OF_SPEECH = [

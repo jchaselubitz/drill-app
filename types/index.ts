@@ -67,12 +67,20 @@ export type ExplanationResponse = {
 
 export type ThemeMode = 'light' | 'dark' | 'system';
 
+export type SrsDirection = 'primary_to_secondary' | 'secondary_to_primary';
+export type SrsCardState = 'new' | 'learning' | 'review' | 'relearning';
+export type SrsRating = 'failed' | 'hard' | 'good' | 'easy';
+
 export type UserSettings = {
   userLanguage: LanguageCode;
   topicLanguage: LanguageCode;
   level: CEFRLevel;
   theme: ThemeMode;
   lastSkillAnalysisAt?: number;
+  maxNewPerDay: number;
+  maxReviewsPerDay: number;
+  dayStartHour: number;
+  activeDeckId?: string | null;
 };
 
 export type SkillCategory =
