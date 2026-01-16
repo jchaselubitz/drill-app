@@ -17,6 +17,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/Button';
+import { LanguageChooser } from '@/components/LanguageChooser';
 import { Select } from '@/components/Select';
 import { TextInput } from '@/components/TextInput';
 import { Languages, PARTS_OF_SPEECH } from '@/constants';
@@ -201,11 +202,6 @@ export default function PhraseDetailScreen() {
     );
   };
 
-  const languageOptions = Languages.map((l) => ({
-    value: l.code,
-    label: `${l.icon} ${l.name}`,
-  }));
-
   const partSpeechOptions = [{ value: '', label: 'None' }, ...PARTS_OF_SPEECH];
 
   if (!phrase) {
@@ -298,9 +294,8 @@ export default function PhraseDetailScreen() {
           )}
 
           <View style={styles.form}>
-            <Select
+            <LanguageChooser
               label="Language"
-              options={languageOptions}
               value={phrase.lang}
               onValueChange={handleLanguageChange}
             />

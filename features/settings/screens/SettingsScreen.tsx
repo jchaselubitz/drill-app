@@ -1,9 +1,9 @@
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Card, Select } from '@/components';
+import { Card, LanguageChooser, Select } from '@/components';
 import { SkillAnalysisCard, SkillsList } from '@/components/skills';
-import { CEFR_LEVELS, Languages } from '@/constants';
+import { CEFR_LEVELS } from '@/constants';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useColors, useSkillAnalysis } from '@/hooks';
 import type { CEFRLevel, LanguageCode, ThemeMode } from '@/types';
@@ -12,11 +12,6 @@ export default function SettingsScreen() {
   const colors = useColors();
   const { settings, updateSettings, isLoading } = useSettings();
   const { skills, isAnalyzing, error, runAnalysis, lastAnalyzedAt, staleDays } = useSkillAnalysis();
-
-  const languageOptions = Languages.map((lang) => ({
-    value: lang.code,
-    label: lang.name,
-  }));
 
   const levelOptions = CEFR_LEVELS.map((level) => ({
     value: level.level,
@@ -60,16 +55,14 @@ export default function SettingsScreen() {
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Language Settings</Text>
 
           <View style={styles.settingsForm}>
-            <Select
+            <LanguageChooser
               label="I speak"
-              options={languageOptions}
               value={settings.userLanguage}
               onValueChange={(value: LanguageCode) => updateSettings({ userLanguage: value })}
             />
 
-            <Select
+            <LanguageChooser
               label="I'm learning"
-              options={languageOptions}
               value={settings.topicLanguage}
               onValueChange={(value: LanguageCode) => updateSettings({ topicLanguage: value })}
             />

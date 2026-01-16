@@ -4,9 +4,8 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
-import { Select } from '@/components/Select';
+import { LanguageChooser } from '@/components/LanguageChooser';
 import { TextInput } from '@/components/TextInput';
-import { Languages } from '@/constants';
 import { Phrase } from '@/database/models';
 import { useColors } from '@/hooks';
 import { detectLanguage } from '@/lib/ai/translate';
@@ -30,14 +29,6 @@ export function AddPhrasePanel({
   const [text, setText] = useState('');
   const [lang, setLang] = useState<LanguageCode | typeof AUTO_DETECT>(AUTO_DETECT);
   const [isSaving, setIsSaving] = useState(false);
-
-  const languageOptions = [
-    { value: AUTO_DETECT, label: '✨ Detect automatically' },
-    ...Languages.map((l) => ({
-      value: l.code,
-      label: `${l.icon} ${l.name}`,
-    })),
-  ];
 
   const handleSave = async () => {
     if (!text.trim()) return;
@@ -89,7 +80,13 @@ export function AddPhrasePanel({
             onChangeText={setText}
             autoFocus
           />
-          <Select label="Language" options={languageOptions} value={lang} onValueChange={setLang} />
+          <LanguageChooser
+            label="Language"
+            value={lang}
+            onValueChange={setLang}
+            includeAutoDetect
+            autoDetectValue={AUTO_DETECT}
+          />
           <Button
             text="Save"
             onPress={handleSave}
