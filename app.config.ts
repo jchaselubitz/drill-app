@@ -19,6 +19,9 @@ const config: AppConfig = {
     icon: './assets/images/1024.png',
     supportsTablet: true,
     bundleIdentifier: 'com.drillapp.mobile',
+    infoPlist: {
+      ITSAppUsesNonExemptEncryption: false,
+    },
   },
   android: {
     package: 'com.drillapp.mobile',
