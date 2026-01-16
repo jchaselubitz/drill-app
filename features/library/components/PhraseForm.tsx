@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 import database from '@/database';
 import Phrase from '@/database/models/Phrase';
@@ -28,6 +28,7 @@ const PhraseForm: React.FC = () => {
         note: null,
         difficulty: null,
         historyId: null,
+        attemptId: null,
       });
 
       // Reset form
@@ -36,6 +37,8 @@ const PhraseForm: React.FC = () => {
       setSource('manual');
       setType('phrase');
     } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to add phrase.';
+      Alert.alert('Error', message);
       console.error('Error creating phrase:', error);
     } finally {
       setLoading(false);

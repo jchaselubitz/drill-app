@@ -1,10 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
-import { withObservables } from '@nozbe/watermelondb/react';
+import { useDatabase, withObservables } from '@nozbe/watermelondb/react';
+import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Card, Markdown } from '@/components';
-import { Attempt } from '@/database/models';
+import { Attempt, Phrase, Translation } from '@/database/models';
 import type Feedback from '@/database/models/Feedback';
+import { TRANSLATION_TABLE } from '@/database/schema';
 import { useColors } from '@/hooks';
 import { formatDate } from '@/lib/helpers/helpersFormatting';
 
@@ -16,11 +18,63 @@ type AttemptCardProps = {
 
 type AttemptCardInnerProps = AttemptCardProps & {
   feedbackItems: Feedback[];
+  phrases: Phrase[];
 };
 
-function AttemptCardInner({ attempt, feedbackItems, isExpanded, onToggle }: AttemptCardInnerProps) {
+type VocabularyPair = {
+  nativePhrase: Phrase;
+  targetPhrase: Phrase;
+};
+
+function AttemptCardInner({
+  attempt,
+  feedbackItems,
+  phrases,
+  isExpanded,
+  onToggle,
+}: AttemptCardInnerProps) {
   const colors = useColors();
-  console.log(attempt);
+  const db = useDatabase();
+  const [vocabularyPairs, setVocabularyPairs] = useState<VocabularyPair[]>([]);
+
+  useEffect(() => {
+    if (!phrases.length) {
+      setVocabularyPairs([]);
+      return;
+    }
+
+    const phraseIds = phrases.map((p) => p.id);
+    // Create a map for quick phrase lookup
+    const phraseMap = new Map(phrases.map((p) => [p.id, p]));
+
+    // Query translations where primary phrase is from this attempt
+    const subscription = db.collections
+      .get<Translation>(TRANSLATION_TABLE)
+      .query()
+      .observe()
+      .subscribe((allTranslations) => {
+        // Filter to translations where primary phrase is from this attempt
+        const relevantTranslations = allTranslations.filter((t) =>
+          phraseIds.includes(t.phrasePrimaryId)
+        );
+
+        const pairs: VocabularyPair[] = [];
+
+        for (const translation of relevantTranslations) {
+          const nativePhrase = phraseMap.get(translation.phrasePrimaryId);
+          const targetPhrase = phraseMap.get(translation.phraseSecondaryId);
+
+          // Both phrases should be in the phrases array since they're both linked to the attempt
+          if (nativePhrase && targetPhrase) {
+            pairs.push({ nativePhrase, targetPhrase });
+          }
+        }
+
+        setVocabularyPairs(pairs);
+      });
+
+    return () => subscription.unsubscribe();
+  }, [db, phrases]);
   return (
     <Card style={styles.attemptCard}>
       <Pressable onPress={onToggle}>
@@ -78,6 +132,26 @@ function AttemptCardInner({ attempt, feedbackItems, isExpanded, onToggle }: Atte
               ))}
             </View>
           </View>
+
+          {vocabularyPairs.length > 0 && (
+            <View style={styles.detailSection}>
+              <View style={styles.detailHeader}>
+                <Ionicons name="book-outline" size={16} color={colors.primary} />
+                <Text style={[styles.detailLabel, { color: colors.primary }]}>New Vocabulary</Text>
+              </View>
+              <View style={styles.vocabularyList}>
+                {vocabularyPairs.map((pair, index) => (
+                  <View key={index} style={styles.vocabularyItem}>
+                    <Text style={[styles.vocabularyText, { color: colors.text }]}>
+                      <Text style={styles.vocabularyNative}>{pair.nativePhrase.text}</Text>
+                      {' → '}
+                      <Text style={styles.vocabularyTarget}>{pair.targetPhrase.text}</Text>
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
         </View>
       )}
     </Card>
@@ -87,6 +161,7 @@ function AttemptCardInner({ attempt, feedbackItems, isExpanded, onToggle }: Atte
 export const AttemptCard = withObservables(['attempt'], ({ attempt }: AttemptCardProps) => ({
   attempt: attempt.observe(),
   feedbackItems: attempt.feedbackItems.observe(),
+  phrases: attempt.phrases.observe(),
 }))(AttemptCardInner);
 
 const styles = StyleSheet.create({
@@ -146,5 +221,22 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+  },
+  vocabularyList: {
+    marginTop: 12,
+    gap: 8,
+  },
+  vocabularyItem: {
+    gap: 4,
+  },
+  vocabularyText: {
+    fontSize: 14,
+    lineHeight: 22,
+  },
+  vocabularyNative: {
+    fontWeight: '600',
+  },
+  vocabularyTarget: {
+    fontWeight: '500',
   },
 });

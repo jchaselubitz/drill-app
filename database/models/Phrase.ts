@@ -1,4 +1,4 @@
-import { Model } from '@nozbe/watermelondb';
+import { Model, Q } from '@nozbe/watermelondb';
 import Database from '@nozbe/watermelondb/Database';
 import { field, writer } from '@nozbe/watermelondb/decorators';
 
@@ -16,9 +16,14 @@ export interface PhraseProps {
   note: string | null;
   difficulty: number | null;
   historyId: string | null;
+  attemptId: string | null;
   createdAt: number;
   updatedAt: number;
 }
+
+export const DUPLICATE_PHRASE_ERROR_MESSAGE = 'That word already exists in your library';
+
+type PhraseUniqueFields = Pick<PhraseProps, 'text' | 'lang' | 'partSpeech'>;
 
 export default class Phrase extends Model {
   static table = PHRASE_TABLE;
@@ -35,6 +40,26 @@ export default class Phrase extends Model {
   @field('note') note!: string | null;
   @field('difficulty') difficulty!: number | null;
   @field('history_id') historyId!: string | null;
+  @field('attempt_id') attemptId!: string | null;
+
+  static async findByUniqueFields(
+    db: Database,
+    { text, lang, partSpeech }: PhraseUniqueFields
+  ): Promise<Phrase | null> {
+    const normalizedText = text.trim();
+    const normalizedPartSpeech = partSpeech ?? null;
+
+    const matches = await db.collections
+      .get<Phrase>(PHRASE_TABLE)
+      .query(
+        Q.where('text', normalizedText),
+        Q.where('lang', lang),
+        Q.where('part_speech', normalizedPartSpeech)
+      )
+      .fetch();
+
+    return matches[0] ?? null;
+  }
 
   static async addPhrase(
     db: Database,
@@ -49,11 +74,23 @@ export default class Phrase extends Model {
       note,
       difficulty,
       historyId,
+      attemptId,
     }: Omit<PhraseProps, 'id' | 'createdAt' | 'updatedAt'>
   ): Promise<Phrase> {
+    const normalizedText = text.trim();
+    const existing = await Phrase.findByUniqueFields(db, {
+      text: normalizedText,
+      lang,
+      partSpeech,
+    });
+
+    if (existing) {
+      throw new Error(DUPLICATE_PHRASE_ERROR_MESSAGE);
+    }
+
     return await db.write(async () => {
       return await db.collections.get<Phrase>(PHRASE_TABLE).create((phrase) => {
-        phrase.text = text;
+        phrase.text = normalizedText;
         phrase.lang = lang;
         phrase.source = source;
         phrase.partSpeech = partSpeech;
@@ -63,6 +100,53 @@ export default class Phrase extends Model {
         phrase.note = note;
         phrase.difficulty = difficulty;
         phrase.historyId = historyId;
+        phrase.attemptId = attemptId ?? null;
+        phrase.createdAt = Date.now();
+        phrase.updatedAt = Date.now();
+      });
+    });
+  }
+
+  static async findOrCreatePhrase(
+    db: Database,
+    {
+      text,
+      lang,
+      source,
+      partSpeech,
+      favorite,
+      filename,
+      type,
+      note,
+      difficulty,
+      historyId,
+      attemptId,
+    }: Omit<PhraseProps, 'id' | 'createdAt' | 'updatedAt'>
+  ): Promise<Phrase> {
+    const normalizedText = text.trim();
+    const existing = await Phrase.findByUniqueFields(db, {
+      text: normalizedText,
+      lang,
+      partSpeech,
+    });
+
+    if (existing) {
+      return existing;
+    }
+
+    return await db.write(async () => {
+      return await db.collections.get<Phrase>(PHRASE_TABLE).create((phrase) => {
+        phrase.text = normalizedText;
+        phrase.lang = lang;
+        phrase.source = source;
+        phrase.partSpeech = partSpeech;
+        phrase.favorite = favorite;
+        phrase.filename = filename;
+        phrase.type = type;
+        phrase.note = note;
+        phrase.difficulty = difficulty;
+        phrase.historyId = historyId;
+        phrase.attemptId = attemptId ?? null;
         phrase.createdAt = Date.now();
         phrase.updatedAt = Date.now();
       });

@@ -12,7 +12,7 @@ export const ATTEMPT_TABLE = 'attempt';
 export const FEEDBACK_TABLE = 'feedback';
 export const SKILL_TABLE = 'skill';
 const schema = appSchema({
-  version: 4,
+  version: 5,
   tables: [
     tableSchema({
       name: PHRASE_TABLE,
@@ -29,6 +29,7 @@ const schema = appSchema({
         { name: 'note', type: 'string', isOptional: true },
         { name: 'difficulty', type: 'number', isOptional: true },
         { name: 'history_id', type: 'string', isOptional: true },
+        { name: 'attempt_id', type: 'string', isOptional: true },
       ],
     }),
     tableSchema({

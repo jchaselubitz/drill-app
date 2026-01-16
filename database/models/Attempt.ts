@@ -2,12 +2,14 @@ import { Model, Query, Relation } from '@nozbe/watermelondb';
 import Database from '@nozbe/watermelondb/Database';
 import { children, field, relation } from '@nozbe/watermelondb/decorators';
 
-import { ATTEMPT_TABLE, FEEDBACK_TABLE, LESSON_TABLE } from '@/database/schema';
+import { ATTEMPT_TABLE, FEEDBACK_TABLE, LESSON_TABLE, PHRASE_TABLE } from '@/database/schema';
 import type { ReviewResponse } from '@/types';
 
 import { validateFeedback } from './utils/validateFeedback';
 import type Feedback from './Feedback';
 import type Lesson from './Lesson';
+import Phrase from './Phrase';
+import Translation from './Translation';
 
 export interface AttemptProps {
   id: string;
@@ -20,6 +22,7 @@ export interface AttemptProps {
 
 type CreateAttemptParams = Omit<AttemptProps, 'id' | 'createdAt' | 'updatedAt'> & {
   feedback: ReviewResponse['feedback'];
+  vocabulary?: ReviewResponse['vocabulary'];
 };
 
 export default class Attempt extends Model {
@@ -28,6 +31,7 @@ export default class Attempt extends Model {
   static associations = {
     [LESSON_TABLE]: { type: 'belongs_to' as const, key: 'lesson_id' },
     [FEEDBACK_TABLE]: { type: 'has_many' as const, foreignKey: 'attempt_id' },
+    [PHRASE_TABLE]: { type: 'has_many' as const, foreignKey: 'attempt_id' },
   };
 
   @field('created_at') createdAt!: number;
@@ -38,10 +42,11 @@ export default class Attempt extends Model {
 
   @relation(LESSON_TABLE, 'lesson_id') lesson!: Relation<Lesson>;
   @children(FEEDBACK_TABLE) feedbackItems!: Query<Feedback>;
+  @children(PHRASE_TABLE) phrases!: Query<Phrase>;
 
   static async addAttempt(
     db: Database,
-    { lessonId, paragraph, correction, feedback }: CreateAttemptParams
+    { lessonId, paragraph, correction, feedback, vocabulary }: CreateAttemptParams
   ): Promise<Attempt> {
     return await db.write(async () => {
       const now = Date.now();
@@ -68,6 +73,78 @@ export default class Attempt extends Model {
           })
         )
       );
+
+      // Create phrases and translations from vocabulary if provided
+      if (vocabulary && vocabulary.length > 0) {
+        const phraseCollection = db.collections.get<Phrase>(PHRASE_TABLE);
+        const translationCollection = db.collections.get<Translation>(Translation.table);
+
+        await Promise.all(
+          vocabulary.map(async (vocabItem) => {
+            const nativeText = vocabItem.nativeText.trim();
+            const targetText = vocabItem.targetText.trim();
+
+            const existingNative = await Phrase.findByUniqueFields(db, {
+              text: nativeText,
+              lang: vocabItem.nativeLang,
+              partSpeech: null,
+            });
+
+            // Create native language phrase if it doesn't already exist
+            const nativePhrase =
+              existingNative ??
+              (await phraseCollection.create((phrase) => {
+                phrase.text = nativeText;
+                phrase.lang = vocabItem.nativeLang;
+                phrase.source = 'tutor';
+                phrase.partSpeech = null;
+                phrase.favorite = false;
+                phrase.filename = null;
+                phrase.type = nativeText.includes(' ') ? 'phrase' : 'word';
+                phrase.note = null;
+                phrase.difficulty = null;
+                phrase.historyId = null;
+                phrase.attemptId = attempt.id;
+                phrase.createdAt = now;
+                phrase.updatedAt = now;
+              }));
+
+            const existingTarget = await Phrase.findByUniqueFields(db, {
+              text: targetText,
+              lang: vocabItem.targetLang,
+              partSpeech: null,
+            });
+
+            // Create target language phrase if it doesn't already exist
+            const targetPhrase =
+              existingTarget ??
+              (await phraseCollection.create((phrase) => {
+                phrase.text = targetText;
+                phrase.lang = vocabItem.targetLang;
+                phrase.source = 'tutor';
+                phrase.partSpeech = null;
+                phrase.favorite = false;
+                phrase.filename = null;
+                phrase.type = targetText.includes(' ') ? 'phrase' : 'word';
+                phrase.note = null;
+                phrase.difficulty = null;
+                phrase.historyId = null;
+                phrase.attemptId = attempt.id;
+                phrase.createdAt = now;
+                phrase.updatedAt = now;
+              }));
+
+            // Create translation linking the two phrases (native as primary, target as secondary)
+            await translationCollection.create((translation) => {
+              translation.phrasePrimaryId = nativePhrase.id;
+              translation.phraseSecondaryId = targetPhrase.id;
+              translation.lessonId = lessonId;
+              translation.createdAt = now;
+              translation.updatedAt = now;
+            });
+          })
+        );
+      }
 
       return attempt;
     });

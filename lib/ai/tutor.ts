@@ -94,17 +94,27 @@ Student's paragraph:
       "explanation": "Detailed explanation in ${userLangName} of what was wrong, the specific grammar rule that applies, and how to remember the correct form",
       "negative": true
     }
+  ],
+  "vocabulary": [
+    {
+      "nativeText": "Word or phrase in ${userLangName}",
+      "targetText": "Translation in ${topicLangName}",
+      "nativeLang": "${userLanguage}",
+      "targetLang": "${topicLanguage}"
+    }
   ]
 }
 
 Guidelines:
 - Keep the correction as close to the original as possible so the student can see their mistakes
+- IMPORTANT: The feedback should cover EVERY correction made to the paragraph. It can also include suggestions that are not corrections.
 - Each feedback item should have a "point" (the name of the grammatical concept, e.g., "Subject-Verb Agreement", "Past Tense Formation"), an "explanation" (detailed feedback in ${userLangName}), and a "negative" boolean
-- The feedback should cover every correction made to the paragraph.
 - In explanations, explain WHY something is wrong, not just that it is wrong
 - Reference specific grammar rules by name in the point field
 - Use "negative": true for critiques/corrections and "negative": false for positive reinforcement
 - Include 2-5 feedback items covering the most important corrections
+- Vocabulary detection: Identify any words or phrases in the student's submission that are written in ${userLangName} (the student's native language). For each detected native language term, include it in the "vocabulary" array with both the native text and its translation in ${topicLangName} (the target language). If no native language words are detected, include an empty array for "vocabulary"
+- Each vocabulary item must have "nativeText" (the word/phrase as written in ${userLangName}), "targetText" (the translation in ${topicLangName}), "nativeLang" (set to "${userLanguage}"), and "targetLang" (set to "${topicLanguage}")
 - Do not repeat keys in the JSON output.`;
 
   const response = await generateJSON({

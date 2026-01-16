@@ -23,9 +23,18 @@ export type FeedbackItem = {
   explanation: string;
   negative: boolean;
 };
+
+export type VocabularyItem = {
+  nativeText: string;
+  targetText: string;
+  nativeLang: string;
+  targetLang: string;
+};
+
 export type ReviewResponse = {
   correction: string;
   feedback: FeedbackItem[];
+  vocabulary?: VocabularyItem[];
 };
 
 export const reviewSchema = z.object({
@@ -37,6 +46,16 @@ export const reviewSchema = z.object({
       negative: z.boolean(),
     })
   ),
+  vocabulary: z
+    .array(
+      z.object({
+        nativeText: z.string(),
+        targetText: z.string(),
+        nativeLang: z.string(),
+        targetLang: z.string(),
+      })
+    )
+    .optional(),
 });
 
 export type ExplanationType = 'message' | 'translation' | 'list';

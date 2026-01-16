@@ -1,4 +1,4 @@
-import { createTable, schemaMigrations } from '@nozbe/watermelondb/Schema/migrations';
+import { addColumns, createTable, schemaMigrations } from '@nozbe/watermelondb/Schema/migrations';
 
 export default schemaMigrations({
   migrations: [
@@ -19,6 +19,15 @@ export default schemaMigrations({
             { name: 'status', type: 'string' },
             { name: 'lang', type: 'string' },
           ],
+        }),
+      ],
+    },
+    {
+      toVersion: 5,
+      steps: [
+        addColumns({
+          table: 'phrase',
+          columns: [{ name: 'attempt_id', type: 'string', isOptional: true }],
         }),
       ],
     },

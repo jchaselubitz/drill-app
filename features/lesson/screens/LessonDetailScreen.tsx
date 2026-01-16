@@ -109,6 +109,7 @@ export default function LessonDetailScreen() {
         paragraph: paragraph.trim(),
         correction: result.correction,
         feedback: result.feedback,
+        vocabulary: result.vocabulary,
       });
 
       setParagraph('');

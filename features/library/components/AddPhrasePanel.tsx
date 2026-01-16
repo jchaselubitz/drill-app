@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useDatabase } from '@nozbe/watermelondb/react';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Button } from '@/components/Button';
 import { LanguageChooser } from '@/components/LanguageChooser';
@@ -48,11 +48,15 @@ export function AddPhrasePanel({
         note: null,
         difficulty: null,
         historyId: null,
+        attemptId: null,
       });
 
       setText('');
       onToggleExpanded(false);
       onPhraseAdded?.();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to add phrase.';
+      Alert.alert('Error', message);
     } finally {
       setIsSaving(false);
     }

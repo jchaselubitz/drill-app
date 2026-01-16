@@ -4,7 +4,6 @@ import { useDatabase } from '@nozbe/watermelondb/react';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Platform,
@@ -52,6 +51,7 @@ export default function PhraseDetailScreen() {
   const [isNoteDirty, setIsNoteDirty] = useState(false);
   const [isTranslating, setIsTranslating] = useState(false);
   const [linkedPhrases, setLinkedPhrases] = useState<Phrase[]>([]);
+  const [targetLanguage, setTargetLanguage] = useState<string>(settings.topicLanguage);
 
   useEffect(() => {
     if (!id) return;
@@ -102,6 +102,30 @@ export default function PhraseDetailScreen() {
     return () => subscription.unsubscribe();
   }, [id, db]);
 
+  // Update target language when phrase or linked phrases change
+  useEffect(() => {
+    if (!phrase) return;
+
+    const excludedLanguages = new Set([
+      phrase.lang, // Current phrase language
+      ...linkedPhrases.map((p) => p.lang), // Already translated languages
+    ]);
+
+    // If current target language is excluded, reset to topic language (if available) or first available
+    setTargetLanguage((currentTarget) => {
+      if (excludedLanguages.has(currentTarget)) {
+        const availableLanguages = Languages.filter((l) => !excludedLanguages.has(l.code));
+        if (availableLanguages.length > 0) {
+          return (
+            availableLanguages.find((l) => l.code === settings.topicLanguage)?.code ??
+            availableLanguages[0].code
+          );
+        }
+      }
+      return currentTarget;
+    });
+  }, [phrase, linkedPhrases, settings.topicLanguage]);
+
   const handleLanguageChange = async (newLang: string) => {
     if (!phrase) return;
     await phrase.updateLang(newLang);
@@ -131,16 +155,6 @@ export default function PhraseDetailScreen() {
   const handleTranslate = async () => {
     if (!phrase || isTranslating) return;
 
-    // Determine target language based on phrase language
-    let targetLanguage: string;
-    if (phrase.lang === settings.topicLanguage) {
-      targetLanguage = settings.userLanguage;
-    } else if (phrase.lang === settings.userLanguage) {
-      targetLanguage = settings.topicLanguage;
-    } else {
-      targetLanguage = settings.userLanguage;
-    }
-
     setIsTranslating(true);
     try {
       const result = await translatePhrase({
@@ -149,7 +163,7 @@ export default function PhraseDetailScreen() {
       });
 
       // Create the translated phrase
-      const newPhrase = await Phrase.addPhrase(db, {
+      const newPhrase = await Phrase.findOrCreatePhrase(db, {
         text: result.output_text,
         lang: result.output_lang,
         source: 'translation',
@@ -160,6 +174,7 @@ export default function PhraseDetailScreen() {
         note: null,
         difficulty: null,
         historyId: null,
+        attemptId: null,
       });
 
       // Link the phrases via Translation
@@ -203,6 +218,16 @@ export default function PhraseDetailScreen() {
   };
 
   const partSpeechOptions = [{ value: '', label: 'None' }, ...PARTS_OF_SPEECH];
+
+  // Get available languages for translation (exclude current phrase language and already translated languages)
+  const excludedLanguages = phrase
+    ? new Set([phrase.lang, ...linkedPhrases.map((p) => p.lang)])
+    : new Set<string>();
+  const availableLanguages = Languages.filter((l) => !excludedLanguages.has(l.code));
+  const translationLanguageOptions = availableLanguages.map((l) => ({
+    value: l.code,
+    label: `${l.icon} ${l.name}`,
+  }));
 
   if (!phrase) {
     return (
@@ -257,13 +282,25 @@ export default function PhraseDetailScreen() {
             )}
           </View>
 
-          <Button
-            text="Translate"
-            onPress={handleTranslate}
-            buttonState={isTranslating ? 'loading' : 'default'}
-            loadingText="Translating..."
-            variant="secondary"
-          />
+          <View style={styles.translateRow}>
+            <Button
+              text="Translate"
+              onPress={handleTranslate}
+              buttonState={isTranslating ? 'loading' : 'default'}
+              loadingText="Translating..."
+              variant="secondary"
+              style={styles.translateButton}
+            />
+            {translationLanguageOptions.length > 0 && (
+              <View style={styles.translateSelect}>
+                <Select
+                  options={translationLanguageOptions}
+                  value={targetLanguage}
+                  onValueChange={setTargetLanguage}
+                />
+              </View>
+            )}
+          </View>
 
           {linkedPhrases.length > 0 && (
             <View style={styles.translationsSection}>
@@ -389,5 +426,16 @@ const styles = StyleSheet.create({
   },
   translationLang: {
     fontSize: 13,
+  },
+  translateRow: {
+    flexDirection: 'row',
+    gap: 12,
+    alignItems: 'flex-end',
+  },
+  translateButton: {
+    flex: 1,
+  },
+  translateSelect: {
+    flex: 1,
   },
 });
