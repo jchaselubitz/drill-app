@@ -410,6 +410,9 @@ export default function PhraseDetailScreen() {
           title: 'Phrase',
           headerShown: true,
           headerBackTitle: 'Library',
+          headerStyle: { backgroundColor: colors.background },
+          headerTintColor: colors.text,
+          headerTitleStyle: { color: colors.text },
           headerRight: () => <DeleteButton onPress={handleDelete} />,
         }}
       />
