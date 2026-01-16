@@ -15,39 +15,15 @@ A React Native mobile app for language learning with AI-powered tutoring.
 
 ```
 drill-app/
-├── .mcp.json               # MCP server configuration
-├── app/                    # Expo Router file-based routing
-│   ├── _layout.tsx         # Root layout with providers
-│   ├── (tabs)/             # Tab-based navigation group
-│   │   ├── _layout.tsx     # Tab bar configuration (2 tabs)
-│   │   ├── index.tsx       # Lessons tab (library + create modal)
-│   │   └── settings.tsx    # Settings tab
-│   ├── lesson/
-│   │   └── [id].tsx        # Lesson detail screen (dynamic route)
-│   └── +not-found.tsx      # 404 page
-├── database/
-│   ├── index.ts            # Database initialization
-│   ├── schema.ts           # WatermelonDB schema definitions
-│   └── models/             # Database model classes
-│       ├── Phrase.ts       # Vocabulary phrases
-│       ├── Media.ts        # Media attachments
-│       ├── Profile.ts      # User profile
-│       ├── Subject.ts      # Learning subjects
-│       ├── Tag.ts          # Phrase tags
-│       ├── PhraseTag.ts    # Phrase-tag junction
-│       ├── Translation.ts  # Phrase translations
-│       ├── Lesson.ts       # Writing lessons
-│       └── Attempt.ts      # Lesson attempt history
-├── lib/
-│   ├── gemini.ts           # Gemini API client
-│   └── ai/
-│       ├── tutor.ts        # Tutor prompt generation
-│       └── explain.ts      # Explanation generation
-├── components/             # Reusable UI components
-├── hooks/                  # Custom React hooks
-├── types/                  # TypeScript type definitions
-├── constants/              # App constants and config
-└── assets/                 # Images, fonts, etc.
+├── app/           # Expo Router routes (thin wrappers importing from features/)
+├── features/      # Feature modules with screens/, components/, context/
+├── database/      # WatermelonDB schema, migrations, and models/
+├── lib/           # Gemini client and ai/ functions (tutor, explain, translate, analyzeSkills)
+├── components/    # Shared UI components
+├── contexts/      # React contexts
+├── hooks/         # Custom hooks
+├── types/         # TypeScript types
+└── constants/     # App constants
 ```
 
 ## Key Features
@@ -58,19 +34,23 @@ Generates writing prompts tailored to user's language level (CEFR A1-C2).
 - Incorporates related phrases for vocabulary practice
 - Supports prompt length adjustment (shorter/longer)
 
-### 2. Paragraph Review (`lib/ai/review.ts`)
-Reviews user-written paragraphs and provides:
-- Corrected version with markdown highlighting
-- Bullet-point feedback on grammar/vocabulary
-- Specific grammar rule explanations
-
-### 3. Explanation Generation (`lib/ai/explain.ts`)
+### 2. Explanation Generation (`lib/ai/explain.ts`)
 Provides contextual explanations for:
 - Grammar concepts
 - Vocabulary usage
 - Cultural context
 
-### 4. Lesson System (`app/lesson/[id].tsx`)
+### 3. Translation (`lib/ai/translate.ts`)
+Handles phrase translation with:
+- Automatic language detection
+- Bidirectional translation support
+
+### 4. Skill Analysis (`lib/ai/analyzeSkills.ts`)
+Analyzes user attempts to track language skills:
+- Extracts skills demonstrated in writing
+- Tracks progress over time
+
+### 5. Lesson System (`features/lesson/screens/LessonDetailScreen.tsx`)
 Structured writing practice with:
 - Saved prompts with topic, level, and related phrases
 - Attempt history with corrections and feedback
@@ -115,6 +95,8 @@ yarn new
 
 ## Development Notes
 
+- **Feature-based architecture**: Screens and their related components live in `features/` modules
+- **Thin route files**: Files in `app/` are thin wrappers that import screens from `features/`
 - Use `expo-router/unstable-native-tabs` for native tab bar with icons
 - Gemini API calls go through `lib/gemini.ts` client
 - All AI functions return typed responses
@@ -153,6 +135,8 @@ Key models and their relationships:
 - **Profile** - User settings (languages, preferences)
 - **Subject** - Learning subjects with language and level
 - **Media** - Media attachments with URLs and metadata
+- **Skill** - Language skills tracked from user attempts
+- **Feedback** - Feedback records for attempts
 
 ## MCP Servers
 
