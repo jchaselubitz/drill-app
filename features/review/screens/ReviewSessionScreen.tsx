@@ -176,7 +176,16 @@ export default function ReviewSessionScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <Stack.Screen options={{ title: 'Review', headerShown: true, headerBackTitle: 'Decks' }} />
+      <Stack.Screen
+        options={{
+          title: 'Review',
+          headerShown: true,
+          headerBackTitle: 'Decks',
+          headerStyle: { backgroundColor: colors.background },
+          headerTintColor: colors.text,
+          headerTitleStyle: { color: colors.text },
+        }}
+      />
       <View style={styles.content}>
         <ReviewProgress current={index + 1} total={queue.length} />
         <ReviewCard front={current.front} back={current.back} showBack={showBack} />

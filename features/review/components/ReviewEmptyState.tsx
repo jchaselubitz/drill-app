@@ -1,5 +1,4 @@
-import { useRouter } from 'expo-router';
-import { Stack } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -12,7 +11,15 @@ export function ReviewEmptyState() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <Stack.Screen options={{ title: 'Review', headerShown: true }} />
+      <Stack.Screen
+        options={{
+          title: 'Review',
+          headerShown: true,
+          headerStyle: { backgroundColor: colors.background },
+          headerTintColor: colors.text,
+          headerTitleStyle: { color: colors.text },
+        }}
+      />
       <View style={styles.center}>
         <Text style={[styles.emptyTitle, { color: colors.text }]}>All done for now</Text>
         <Text style={{ color: colors.textSecondary }}>You have no cards due in this deck.</Text>

@@ -187,6 +187,9 @@ export default function LessonDetailScreen() {
           headerShown: true,
           headerBackTitle: 'Lessons',
           headerRight: () => <DeleteButton onPress={handleDeleteLesson} disabled={isLoading} />,
+          headerStyle: { backgroundColor: colors.background },
+          headerTintColor: colors.text,
+          headerTitleStyle: { color: colors.text },
         }}
       />
       <KeyboardAvoidingView

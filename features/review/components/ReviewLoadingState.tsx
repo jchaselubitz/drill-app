@@ -9,7 +9,15 @@ export function ReviewLoadingState() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <Stack.Screen options={{ title: 'Review', headerShown: true }} />
+      <Stack.Screen
+        options={{
+          title: 'Review',
+          headerShown: true,
+          headerStyle: { backgroundColor: colors.background },
+          headerTintColor: colors.text,
+          headerTitleStyle: { color: colors.text },
+        }}
+      />
       <View style={styles.center}>
         <Text style={{ color: colors.textSecondary }}>Loading session...</Text>
       </View>

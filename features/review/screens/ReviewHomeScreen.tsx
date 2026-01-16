@@ -136,7 +136,15 @@ export default function ReviewHomeScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <Stack.Screen options={{ title: 'Review', headerShown: true }} />
+      <Stack.Screen
+        options={{
+          title: 'Review',
+          headerShown: true,
+          headerStyle: { backgroundColor: colors.background },
+          headerTintColor: colors.text,
+          headerTitleStyle: { color: colors.text },
+        }}
+      />
       <ScrollView contentContainerStyle={styles.content}>
         <Card>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Active Deck</Text>

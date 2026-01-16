@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Q } from '@nozbe/watermelondb';
 import { useDatabase } from '@nozbe/watermelondb/react';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -63,6 +63,9 @@ export default function PhraseDetailScreen() {
   const [decks, setDecks] = useState<Deck[]>([]);
   const [deckAssignments, setDeckAssignments] = useState<Record<string, string | null>>({});
   const [targetLanguage, setTargetLanguage] = useState<string>(settings.topicLanguage);
+
+  const scrollViewRef = useRef<ScrollView>(null);
+  const noteInputY = useRef<number>(0);
 
   useEffect(() => {
     Deck.getOrCreateDefault(db).catch((error) => {
@@ -194,6 +197,23 @@ export default function PhraseDetailScreen() {
   const handleNoteChange = (text: string) => {
     setNote(text);
     setIsNoteDirty(true);
+  };
+
+  const handleNoteLayout = (event: any) => {
+    const { y } = event.nativeEvent.layout;
+    noteInputY.current = y;
+  };
+
+  const handleNoteFocus = () => {
+    // Scroll to input after a short delay to ensure keyboard is shown
+    setTimeout(() => {
+      if (noteInputY.current > 0) {
+        scrollViewRef.current?.scrollTo({
+          y: noteInputY.current - 40,
+          animated: true,
+        });
+      }
+    }, 100);
   };
 
   const handleNoteBlur = async () => {
@@ -396,11 +416,14 @@ export default function PhraseDetailScreen() {
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.flex}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
       >
         <ScrollView
+          ref={scrollViewRef}
           style={styles.flex}
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={true}
         >
           <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <View style={styles.phraseHeader}>
@@ -496,16 +519,19 @@ export default function PhraseDetailScreen() {
               onValueChange={handlePartSpeechChange}
             />
 
-            <TextInput
-              label="Note"
-              placeholder="Add a note..."
-              value={note}
-              onChangeText={handleNoteChange}
-              onBlur={handleNoteBlur}
-              multiline
-              numberOfLines={4}
-              style={styles.noteInput}
-            />
+            <View onLayout={handleNoteLayout}>
+              <TextInput
+                label="Note"
+                placeholder="Add a note..."
+                value={note}
+                onChangeText={handleNoteChange}
+                onFocus={handleNoteFocus}
+                onBlur={handleNoteBlur}
+                multiline
+                numberOfLines={4}
+                style={styles.noteInput}
+              />
+            </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -527,6 +553,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 16,
+    paddingBottom: 32,
     gap: 24,
   },
   card: {
