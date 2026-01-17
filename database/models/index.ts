@@ -1,9 +1,10 @@
-export { default as Attempt } from './Attempt';
+export { default as Attempt, type AttemptStatus } from './Attempt';
 export { default as Deck } from './Deck';
 export { default as DeckTranslation } from './DeckTranslation';
 export { default as Feedback } from './Feedback';
 export { default as Lesson } from './Lesson';
 export { default as Media } from './Media';
+export { default as PendingRequest } from './PendingRequest';
 export { default as Phrase } from './Phrase';
 export { default as PhraseTag } from './PhraseTag';
 export { default as Profile } from './Profile';

@@ -1,5 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { Button, TextInput } from '@/components';
 import { useColors } from '@/hooks';
@@ -8,7 +7,6 @@ type AttemptFormProps = {
   paragraph: string;
   onChangeText: (text: string) => void;
   onSubmit: () => void;
-  onCancel: () => void;
   isLoading: boolean;
 };
 
@@ -16,10 +14,15 @@ export function AttemptForm({
   paragraph,
   onChangeText,
   onSubmit,
-  onCancel,
   isLoading,
 }: AttemptFormProps) {
   const colors = useColors();
+
+  const getButtonState = () => {
+    if (isLoading) return 'loading';
+    if (!paragraph.trim()) return 'disabled';
+    return 'default';
+  };
 
   return (
     <View style={styles.attemptForm}>
@@ -33,33 +36,12 @@ export function AttemptForm({
         style={styles.textArea}
         textAlignVertical="top"
       />
-      {isLoading ? (
-        <View style={styles.submitRow}>
-          <Button
-            text="Submit Attempt"
-            onPress={onSubmit}
-            buttonState={!paragraph.trim() ? 'disabled' : 'loading'}
-            loadingText="Submitting..."
-            style={styles.submitButton}
-          />
-          <Pressable
-            style={({ pressed }) => [
-              styles.stopButton,
-              { backgroundColor: colors.error, opacity: pressed ? 0.8 : 1 },
-            ]}
-            onPress={onCancel}
-            accessibilityLabel="Cancel request"
-          >
-            <Ionicons name="stop-circle" size={22} color={colors.primaryText} />
-          </Pressable>
-        </View>
-      ) : (
-        <Button
-          text="Submit Attempt"
-          onPress={onSubmit}
-          buttonState={!paragraph.trim() ? 'disabled' : 'default'}
-        />
-      )}
+      <Button
+        text="Submit Attempt"
+        onPress={onSubmit}
+        buttonState={getButtonState()}
+        loadingText="Submitting..."
+      />
     </View>
   );
 }
@@ -74,20 +56,5 @@ const styles = StyleSheet.create({
   },
   textArea: {
     minHeight: 120,
-  },
-  submitRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  submitButton: {
-    flex: 1,
-  },
-  stopButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 });

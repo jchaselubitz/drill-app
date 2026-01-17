@@ -8,7 +8,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { SettingsProvider } from '@/contexts/SettingsContext';
 import database from '@/database';
-import { useColorScheme } from '@/hooks';
+import { useColorScheme, usePendingRequests } from '@/hooks';
 
 // Suppress WatermelonDB NONE property warnings (known non-fatal issue with Hermes)
 LogBox.ignoreLogs([
@@ -30,13 +30,20 @@ if (__DEV__) {
   };
 }
 
+function BackgroundRequestHandler({ children }: { children: React.ReactNode }) {
+  usePendingRequests();
+  return <>{children}</>;
+}
+
 function AppContent() {
   const colorScheme = useColorScheme();
 
   return (
     <DatabaseProvider database={database}>
-      <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-      <Stack screenOptions={{ headerShown: false }} />
+      <BackgroundRequestHandler>
+        <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+        <Stack screenOptions={{ headerShown: false }} />
+      </BackgroundRequestHandler>
     </DatabaseProvider>
   );
 }

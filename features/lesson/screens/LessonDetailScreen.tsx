@@ -22,7 +22,7 @@ import { Attempt, Lesson } from '@/database/models';
 import { ATTEMPT_TABLE, LESSON_TABLE } from '@/database/schema';
 import { AttemptForm, AttemptHistory, PromptCard } from '@/features/lesson/components';
 import { useColors } from '@/hooks';
-import { reviewParagraph } from '@/lib/ai/tutor';
+import { submitAttemptForReview } from '@/lib/backgroundReviewService';
 
 const geminiApiKey = Constants.expoConfig?.extra?.geminiApiKey as string | undefined;
 
@@ -49,9 +49,8 @@ export default function LessonDetailScreen() {
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [attempts, setAttempts] = useState<Attempt[]>([]);
   const [paragraph, setParagraph] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [expandedAttemptId, setExpandedAttemptId] = useState<string | null>(null);
-  const [abortController, setAbortController] = useState<AbortController | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -80,7 +79,7 @@ export default function LessonDetailScreen() {
   }, [id, db]);
 
   const handleSubmitAttempt = async () => {
-    if (isLoading) {
+    if (isSubmitting) {
       return;
     }
     if (!paragraph.trim() || !lesson) {
@@ -93,42 +92,24 @@ export default function LessonDetailScreen() {
       return;
     }
 
-    const controller = new AbortController();
-    setAbortController(controller);
-    setIsLoading(true);
+    setIsSubmitting(true);
     try {
-      const result = await reviewParagraph({
+      // Submit for background processing - returns immediately with pending attempt
+      await submitAttemptForReview({
+        db: database,
+        lessonId: lesson.id,
         paragraph,
         topicLanguage: settings.topicLanguage,
         userLanguage: settings.userLanguage,
-        abortSignal: controller.signal,
-      });
-
-      await Attempt.addAttempt(database, {
-        lessonId: lesson.id,
-        paragraph: paragraph.trim(),
-        correction: result.correction,
-        feedback: result.feedback,
-        vocabulary: result.vocabulary,
       });
 
       setParagraph('');
     } catch (error) {
-      if (error instanceof Error && error.name === 'AbortError') {
-        return;
-      }
       Alert.alert('Error', 'Failed to submit attempt. Please try again.');
       console.error(error);
     } finally {
-      setIsLoading(false);
-      setAbortController(null);
+      setIsSubmitting(false);
     }
-  };
-
-  const handleCancelAttempt = () => {
-    abortController?.abort();
-    setAbortController(null);
-    setIsLoading(false);
   };
 
   const toggleAttemptExpand = (attemptId: string) => {
@@ -186,7 +167,7 @@ export default function LessonDetailScreen() {
           title: lesson.topic,
           headerShown: true,
           headerBackTitle: 'Lessons',
-          headerRight: () => <DeleteButton onPress={handleDeleteLesson} disabled={isLoading} />,
+          headerRight: () => <DeleteButton onPress={handleDeleteLesson} disabled={isSubmitting} />,
           headerStyle: { backgroundColor: colors.background },
           headerTintColor: colors.text,
           headerTitleStyle: { color: colors.text },
@@ -207,8 +188,7 @@ export default function LessonDetailScreen() {
             paragraph={paragraph}
             onChangeText={setParagraph}
             onSubmit={handleSubmitAttempt}
-            onCancel={handleCancelAttempt}
-            isLoading={isLoading}
+            isLoading={isSubmitting}
           />
 
           <AttemptHistory
