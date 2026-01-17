@@ -70,17 +70,19 @@ export async function reviewParagraph({
   paragraph,
   topicLanguage,
   userLanguage,
+  level,
   abortSignal,
 }: {
   paragraph: string;
   topicLanguage: LanguageCode;
   userLanguage: LanguageCode;
+  level: string;
   abortSignal?: AbortSignal;
 }): Promise<ReviewResponse> {
   const topicLangName = getLanguageName(topicLanguage);
   const userLangName = getLanguageName(userLanguage);
 
-  const prompt = `You are a ${topicLangName} language tutor. Review the following paragraph written by a student learning ${topicLangName}.
+  const prompt = `You are a ${topicLangName} language tutor. Review the following paragraph written by a student learning ${topicLangName} at ${level} level (Common European Framework of Reference for Languages).
 
 Student's paragraph:
 "${paragraph}"`;
