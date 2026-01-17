@@ -16,12 +16,16 @@ export function ReviewCard({ front, back, showBack }: ReviewCardProps) {
   return (
     <Card style={styles.card}>
       <Text style={[styles.cardLabel, { color: colors.textSecondary }]}>Prompt</Text>
-      <Text style={[styles.cardText, { color: colors.text }]}>{front.text}</Text>
+      <Text style={[styles.cardText, { color: colors.text }]} selectable>
+        {front.text}
+      </Text>
       {showBack && (
         <>
           <View style={[styles.divider, { backgroundColor: colors.border }]} />
           <Text style={[styles.cardLabel, { color: colors.textSecondary }]}>Answer</Text>
-          <Text style={[styles.cardText, { color: colors.text }]}>{back.text}</Text>
+          <Text style={[styles.cardText, { color: colors.text }]} selectable>
+            {back.text}
+          </Text>
         </>
       )}
     </Card>
