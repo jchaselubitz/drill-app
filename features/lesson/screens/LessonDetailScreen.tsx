@@ -99,8 +99,9 @@ export default function LessonDetailScreen() {
     try {
       const result = await reviewParagraph({
         paragraph,
-        topicLanguage: settings.topicLanguage,
+        topicLanguage: lesson.lang,
         userLanguage: settings.userLanguage,
+        level: lesson.level,
         abortSignal: controller.signal,
       });
 
