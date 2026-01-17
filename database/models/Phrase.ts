@@ -181,4 +181,26 @@ export default class Phrase extends Model {
       phrase.updatedAt = Date.now();
     });
   }
+
+  @writer async updateText(newText: string): Promise<Phrase> {
+    const normalizedText = newText.trim();
+    if (normalizedText === this.text) {
+      return this;
+    }
+
+    const existing = await Phrase.findByUniqueFields(this._database, {
+      text: normalizedText,
+      lang: this.lang,
+      partSpeech: this.partSpeech,
+    });
+
+    if (existing && existing.id !== this.id) {
+      throw new Error(DUPLICATE_PHRASE_ERROR_MESSAGE);
+    }
+
+    return await this.update((phrase) => {
+      phrase.text = normalizedText;
+      phrase.updatedAt = Date.now();
+    });
+  }
 }

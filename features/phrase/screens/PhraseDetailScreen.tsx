@@ -11,6 +11,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput as RNTextInput,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -54,6 +55,8 @@ export default function PhraseDetailScreen() {
   const { settings } = useSettings();
 
   const [phrase, setPhrase] = useState<Phrase | null>(null);
+  const [phraseText, setPhraseText] = useState('');
+  const [isPhraseDirty, setIsPhraseDirty] = useState(false);
   const [note, setNote] = useState('');
   const [isNoteDirty, setIsNoteDirty] = useState(false);
   const [isTranslating, setIsTranslating] = useState(false);
@@ -91,13 +94,16 @@ export default function PhraseDetailScreen() {
       .findAndObserve(id)
       .subscribe((result) => {
         setPhrase(result);
+        if (!isPhraseDirty) {
+          setPhraseText(result.text);
+        }
         if (!isNoteDirty) {
           setNote(result.note ?? '');
         }
       });
 
     return () => subscription.unsubscribe();
-  }, [id, db, isNoteDirty]);
+  }, [id, db, isPhraseDirty, isNoteDirty]);
 
   // Fetch linked translations
   useEffect(() => {
@@ -220,6 +226,23 @@ export default function PhraseDetailScreen() {
     if (!phrase || !isNoteDirty) return;
     await phrase.updateNote(note.trim() || null);
     setIsNoteDirty(false);
+  };
+
+  const handlePhraseTextChange = (text: string) => {
+    setPhraseText(text);
+    setIsPhraseDirty(true);
+  };
+
+  const handlePhraseTextBlur = async () => {
+    if (!phrase || !isPhraseDirty) return;
+    try {
+      await phrase.updateText(phraseText);
+      setIsPhraseDirty(false);
+    } catch (error) {
+      Alert.alert('Error', error instanceof Error ? error.message : 'Failed to update phrase');
+      setPhraseText(phrase.text);
+      setIsPhraseDirty(false);
+    }
   };
 
   const handleToggleFavorite = async () => {
@@ -430,7 +453,14 @@ export default function PhraseDetailScreen() {
         >
           <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <View style={styles.phraseHeader}>
-              <Text style={[styles.phraseText, { color: colors.text }]}>{phrase.text}</Text>
+              <RNTextInput
+                style={[styles.phraseTextInput, { color: colors.text }]}
+                value={phraseText}
+                onChangeText={handlePhraseTextChange}
+                onBlur={handlePhraseTextBlur}
+                placeholderTextColor={colors.textSecondary}
+                multiline
+              />
               <Pressable onPress={handleToggleFavorite} hitSlop={8}>
                 <Ionicons
                   name={phrase.favorite ? 'heart' : 'heart-outline'}
@@ -575,6 +605,13 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '600',
     flex: 1,
+  },
+  phraseTextInput: {
+    fontSize: 20,
+    fontWeight: '600',
+    flex: 1,
+    padding: 0,
+    margin: 0,
   },
   languageText: {
     fontSize: 14,
