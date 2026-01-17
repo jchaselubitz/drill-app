@@ -16,7 +16,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/Button';
-import { LanguageChooser } from '@/components/LanguageChooser';
+import { getSmartDefaultLanguage, LanguageChooser } from '@/components/LanguageChooser';
 import { Select } from '@/components/Select';
 import { TextInput } from '@/components/TextInput';
 import { Languages, PARTS_OF_SPEECH } from '@/constants';
@@ -169,20 +169,27 @@ export default function PhraseDetailScreen() {
       ...linkedTranslations.map((item) => item.phrase.lang), // Already translated languages
     ]);
 
-    // If current target language is excluded, reset to topic language (if available) or first available
+    // Determine the smart default based on phrase language
+    const smartDefault = getSmartDefaultLanguage({
+      contextLanguage: phrase.lang,
+      userLanguage: settings.userLanguage,
+      topicLanguage: settings.topicLanguage,
+    });
+
+    // If current target language is excluded, reset using smart default or first available
     setTargetLanguage((currentTarget) => {
       if (excludedLanguages.has(currentTarget)) {
         const availableLanguages = Languages.filter((l) => !excludedLanguages.has(l.code));
         if (availableLanguages.length > 0) {
           return (
-            availableLanguages.find((l) => l.code === settings.topicLanguage)?.code ??
+            availableLanguages.find((l) => l.code === smartDefault)?.code ??
             availableLanguages[0].code
           );
         }
       }
       return currentTarget;
     });
-  }, [phrase, linkedTranslations, settings.topicLanguage]);
+  }, [phrase, linkedTranslations, settings.userLanguage, settings.topicLanguage]);
 
   const handleLanguageChange = async (newLang: string) => {
     if (!phrase) return;
