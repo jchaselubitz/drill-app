@@ -11,13 +11,14 @@ import { useColors } from '@/hooks';
 type TextInputProps = RNTextInputProps & {
   label?: string;
   error?: string;
+  containerStyle?: RNTextInputProps['style'];
 };
 
-export function TextInput({ label, error, style, ...props }: TextInputProps) {
+export function TextInput({ label, error, style, containerStyle, ...props }: TextInputProps) {
   const colors = useColors();
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, containerStyle]}>
       {label && <Text style={[styles.label, { color: colors.text }]}>{label}</Text>}
       <RNTextInput
         style={[

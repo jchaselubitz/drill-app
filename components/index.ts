@@ -1,5 +1,6 @@
 export { Button } from './Button';
 export { Card } from './Card';
+export { KeyboardToolbar } from './KeyboardToolbar';
 export { LanguageChooser } from './LanguageChooser';
 export { Markdown } from './Markdown';
 export { Select } from './Select';

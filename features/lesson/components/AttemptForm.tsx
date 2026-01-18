@@ -1,8 +1,21 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  InputAccessoryView,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput as RNTextInput,
+  View,
+} from 'react-native';
 
-import { Button, TextInput } from '@/components';
+import { KeyboardToolbar } from '@/components';
 import { useColors } from '@/hooks';
+
+const INPUT_ACCESSORY_VIEW_ID = 'attempt-form-toolbar';
+const BUTTON_SIZE = 44;
+const BUTTON_GAP = 8;
 
 type AttemptFormProps = {
   paragraph: string;
@@ -20,46 +33,69 @@ export function AttemptForm({
   isLoading,
 }: AttemptFormProps) {
   const colors = useColors();
+  const isDisabled = !paragraph.trim();
 
   return (
     <View style={styles.attemptForm}>
       <Text style={[styles.sectionTitle, { color: colors.text }]}>Your Response</Text>
-      <TextInput
-        placeholder="Write your paragraph here..."
-        value={paragraph}
-        onChangeText={onChangeText}
-        multiline
-        numberOfLines={6}
-        style={styles.textArea}
-        textAlignVertical="top"
-      />
-      {isLoading ? (
-        <View style={styles.submitRow}>
-          <Button
-            text="Submit Attempt"
-            onPress={onSubmit}
-            buttonState={!paragraph.trim() ? 'disabled' : 'loading'}
-            loadingText="Submitting..."
-            style={styles.submitButton}
-          />
+      <View
+        style={[
+          styles.inputContainer,
+          {
+            backgroundColor: colors.card,
+            borderColor: colors.border,
+          },
+        ]}
+      >
+        <RNTextInput
+          placeholder="Write your paragraph here..."
+          value={paragraph}
+          onChangeText={onChangeText}
+          multiline
+          numberOfLines={6}
+          style={[styles.textArea, { color: colors.text }]}
+          placeholderTextColor={colors.textSecondary}
+          textAlignVertical="top"
+          inputAccessoryViewID={Platform.OS === 'ios' ? INPUT_ACCESSORY_VIEW_ID : undefined}
+        />
+        <View style={styles.buttonRow}>
+          {isLoading && (
+            <Pressable
+              style={({ pressed }) => [
+                styles.iconButton,
+                { backgroundColor: colors.error, opacity: pressed ? 0.8 : 1 },
+              ]}
+              onPress={onCancel}
+              accessibilityLabel="Cancel request"
+            >
+              <Ionicons name="stop" size={20} color={colors.primaryText} />
+            </Pressable>
+          )}
           <Pressable
             style={({ pressed }) => [
-              styles.stopButton,
-              { backgroundColor: colors.error, opacity: pressed ? 0.8 : 1 },
+              styles.iconButton,
+              {
+                backgroundColor: isDisabled ? colors.border : colors.primary,
+                opacity: pressed && !isDisabled ? 0.8 : 1,
+              },
             ]}
-            onPress={onCancel}
-            accessibilityLabel="Cancel request"
+            onPress={onSubmit}
+            disabled={isDisabled || isLoading}
+            accessibilityLabel="Submit attempt"
           >
-            <Ionicons name="stop-circle" size={22} color={colors.primaryText} />
+            {isLoading ? (
+              <ActivityIndicator size="small" color={colors.primaryText} />
+            ) : (
+              <Ionicons name="send" size={18} color={colors.primaryText} />
+            )}
           </Pressable>
         </View>
-      ) : (
-        <Button
-          text="Submit Attempt"
-          onPress={onSubmit}
-          buttonState={!paragraph.trim() ? 'disabled' : 'default'}
-        />
-      )}
+      </View>
+      {/* {Platform.OS === 'ios' && (
+        <InputAccessoryView nativeID={INPUT_ACCESSORY_VIEW_ID}>
+          <KeyboardToolbar />
+        </InputAccessoryView>
+      )} */}
     </View>
   );
 }
@@ -72,21 +108,30 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
   },
+  inputContainer: {
+    borderRadius: 10,
+    borderWidth: 1,
+    minHeight: 140,
+  },
   textArea: {
+    flex: 1,
+    paddingTop: 12,
+    paddingHorizontal: 16,
+    paddingBottom: BUTTON_SIZE + BUTTON_GAP * 2,
+    fontSize: 16,
     minHeight: 120,
   },
-  submitRow: {
+  buttonRow: {
+    position: 'absolute',
+    bottom: BUTTON_GAP,
+    right: BUTTON_GAP,
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
+    gap: BUTTON_GAP,
   },
-  submitButton: {
-    flex: 1,
-  },
-  stopButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
+  iconButton: {
+    width: BUTTON_SIZE,
+    height: BUTTON_SIZE,
+    borderRadius: BUTTON_SIZE / 2,
     alignItems: 'center',
     justifyContent: 'center',
   },
