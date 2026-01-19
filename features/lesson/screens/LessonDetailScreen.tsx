@@ -39,6 +39,8 @@ function DeleteButton({ onPress, disabled }: { onPress: () => void; disabled: bo
   );
 }
 
+
+
 export default function LessonDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
@@ -51,6 +53,9 @@ export default function LessonDetailScreen() {
   const [paragraph, setParagraph] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [expandedAttemptId, setExpandedAttemptId] = useState<string | null>(null);
+  const [abortController, setAbortController] = useState<AbortController | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
 
   useEffect(() => {
     if (!id) return;
@@ -91,8 +96,11 @@ export default function LessonDetailScreen() {
       Alert.alert('API Key Required', 'Please set the geminiApiKey in app.config.ts');
       return;
     }
-
+    const controller = new AbortController();
+    setAbortController(controller);
+    setIsLoading(true);
     setIsSubmitting(true);
+    
     try {
       // Submit for background processing - returns immediately with pending attempt
       await submitAttemptForReview({
@@ -110,6 +118,12 @@ export default function LessonDetailScreen() {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleCancelAttempt = () => {
+    abortController?.abort();
+    setAbortController(null);
+    setIsLoading(false);
   };
 
   const toggleAttemptExpand = (attemptId: string) => {
@@ -189,6 +203,7 @@ export default function LessonDetailScreen() {
             onChangeText={setParagraph}
             onSubmit={handleSubmitAttempt}
             isLoading={isSubmitting}
+            onCancel={handleCancelAttempt}
           />
 
           <AttemptHistory
