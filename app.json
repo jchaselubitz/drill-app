@@ -19,6 +19,8 @@
     },
     "infoPlist": {
       "UIDesignRequiresCompatibility": true,
+      "UIBackgroundModes": ["processing"],
+      "BGTaskSchedulerPermittedIdentifiers": ["com.drillapp.mobile.background-review-fetch"]
     },
     "android": {
       "adaptiveIcon": {

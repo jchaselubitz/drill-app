@@ -4761,7 +4761,7 @@ __metadata:
     eslint-plugin-react-hooks: "npm:^7.0.1"
     eslint-plugin-simple-import-sort: "npm:^12.1.1"
     expo: "npm:^54.0.31"
-    expo-background-fetch: "npm:~14.0.9"
+    expo-background-task: "npm:^1.0.10"
     expo-constants: "npm:^18.0.13"
     expo-font: "npm:^14.0.10"
     expo-glass-effect: "npm:^0.1.8"
@@ -5447,14 +5447,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"expo-background-fetch@npm:~14.0.9":
-  version: 14.0.9
-  resolution: "expo-background-fetch@npm:14.0.9"
+"expo-background-task@npm:^1.0.10":
+  version: 1.0.10
+  resolution: "expo-background-task@npm:1.0.10"
   dependencies:
     expo-task-manager: "npm:~14.0.9"
   peerDependencies:
     expo: "*"
-  checksum: 10c0/df0d8c7ae3f15c63c181a16c25ebbb4712afce65b4a1a88708dfca21a0dd47ce9352d9ba117d2e76e220d3ca35145f114f39fb3a43434fe4cd27e1a9e8ee24fc
+  checksum: 10c0/f787ecb55489f414c0a08c944e846d8dbe4f2a88652e04e22caa35da72fdfdf3f73f1a863c715f20abfb3a62f81885dc5bc6a4c50619f2718500d9d374d6a559
   languageName: node
   linkType: hard
 
