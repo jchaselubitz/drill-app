@@ -18,7 +18,7 @@ export const SKILL_TABLE = 'skill';
 export const PENDING_REQUEST_TABLE = 'pending_request';
 
 const schema = appSchema({
-  version: 7,
+  version: 8,
   tables: [
     tableSchema({
       name: PHRASE_TABLE,

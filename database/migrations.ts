@@ -105,6 +105,22 @@ export default schemaMigrations({
     {
       toVersion: 7,
       steps: [
+     
+        addColumns({
+          table: 'deck',
+          columns: [
+            { name: 'source', type: 'string' },
+            { name: 'topic', type: 'string', isOptional: true },
+            { name: 'primary_lang', type: 'string', isOptional: true },
+            { name: 'secondary_lang', type: 'string', isOptional: true },
+            { name: 'level', type: 'string', isOptional: true },
+          ],
+        }),
+      ],
+    },
+    {
+      toVersion: 8,
+      steps: [
         addColumns({
           table: 'attempt',
           columns: [{ name: 'status', type: 'string' }],
@@ -120,16 +136,7 @@ export default schemaMigrations({
             { name: 'retry_count', type: 'number' },
           ],
         }),
-        createTable({
-          name: 'deck',
-          columns: [
-            { name: 'source', type: 'string' },
-            { name: 'topic', type: 'string', isOptional: true },
-            { name: 'primary_lang', type: 'string', isOptional: true },
-            { name: 'secondary_lang', type: 'string', isOptional: true },
-            { name: 'level', type: 'string', isOptional: true },
-          ],
-        }),
+       
       ],
     },
   ],
