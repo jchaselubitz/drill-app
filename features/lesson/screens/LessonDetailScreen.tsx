@@ -23,6 +23,7 @@ import { ATTEMPT_TABLE, LESSON_TABLE } from '@/database/schema';
 import { AttemptForm, AttemptHistory, PromptCard } from '@/features/lesson/components';
 import { useColors } from '@/hooks';
 import { submitAttemptForReview } from '@/lib/backgroundReviewService';
+import { LanguageCode } from '@/types';
 
 const geminiApiKey = Constants.expoConfig?.extra?.geminiApiKey as string | undefined;
 
@@ -39,8 +40,6 @@ function DeleteButton({ onPress, disabled }: { onPress: () => void; disabled: bo
   );
 }
 
-
-
 export default function LessonDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
@@ -55,7 +54,6 @@ export default function LessonDetailScreen() {
   const [expandedAttemptId, setExpandedAttemptId] = useState<string | null>(null);
   const [abortController, setAbortController] = useState<AbortController | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-
 
   useEffect(() => {
     if (!id) return;
@@ -100,15 +98,17 @@ export default function LessonDetailScreen() {
     setAbortController(controller);
     setIsLoading(true);
     setIsSubmitting(true);
-    
+
     try {
       // Submit for background processing - returns immediately with pending attempt
       await submitAttemptForReview({
         db: database,
         lessonId: lesson.id,
         paragraph,
-        topicLanguage: settings.topicLanguage,
-        userLanguage: settings.userLanguage,
+        topicLanguage: settings.topicLanguage as LanguageCode,
+        userLanguage: lesson.userLanguage as LanguageCode,
+        level: lesson.level,
+        abortSignal: controller.signal,
       });
 
       setParagraph('');

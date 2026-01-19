@@ -1,12 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import {
   ActivityIndicator,
-
   Platform,
   Pressable,
-  TextInput as RNTextInput,
   StyleSheet,
   Text,
+  TextInput as RNTextInput,
   View,
 } from 'react-native';
 
@@ -48,8 +47,8 @@ export function AttemptForm({
           styles.inputContainer,
           {
             backgroundColor: colors.card,
-            borderColor: colors.border
-          }
+            borderColor: colors.border,
+          },
         ]}
       >
         <RNTextInput
@@ -70,8 +69,8 @@ export function AttemptForm({
               isLoading && styles.iconButtonLoading,
               {
                 backgroundColor: isDisabled ? colors.border : colors.primary,
-                opacity: pressed && !isDisabled ? 0.8 : 1
-              }
+                opacity: pressed && !isDisabled ? 0.8 : 1,
+              },
             ]}
             onPress={isLoading ? onCancel : onSubmit}
             disabled={isDisabled && !isLoading}
@@ -123,22 +122,22 @@ const styles = StyleSheet.create({
     bottom: BUTTON_GAP,
     right: BUTTON_GAP,
     flexDirection: 'row',
-    gap: BUTTON_GAP
+    gap: BUTTON_GAP,
   },
   iconButton: {
     width: BUTTON_SIZE,
     height: BUTTON_SIZE,
     borderRadius: BUTTON_SIZE / 2,
     alignItems: 'center',
-    justifyContent: 'center'
+    justifyContent: 'center',
   },
   iconButtonLoading: {
     width: 'auto',
-    paddingHorizontal: 16
+    paddingHorizontal: 16,
   },
   loadingContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8
+    gap: 8,
   },
 });

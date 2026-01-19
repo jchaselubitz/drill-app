@@ -175,6 +175,7 @@ const schema = appSchema({
         { name: 'phrases', type: 'string', isOptional: true },
         { name: 'prompt', type: 'string' },
         { name: 'lang', type: 'string' },
+        { name: 'user_language', type: 'string' },
         { name: 'level', type: 'string' },
       ],
     }),
@@ -185,8 +186,11 @@ const schema = appSchema({
         { name: 'updated_at', type: 'number' },
         { name: 'lesson_id', type: 'string' },
         { name: 'paragraph', type: 'string' },
-        { name: 'correction', type: 'string' },
+        { name: 'level', type: 'string' },
         { name: 'status', type: 'string' }, // 'pending' | 'completed' | 'failed'
+        { name: 'correction', type: 'string', isOptional: true },
+        { name: 'feedback', type: 'string', isOptional: true },
+        { name: 'vocabulary', type: 'string', isOptional: true },
       ],
     }),
     tableSchema({
@@ -197,6 +201,7 @@ const schema = appSchema({
         { name: 'attempt_id', type: 'string' },
         { name: 'topic_language', type: 'string' },
         { name: 'user_language', type: 'string' },
+        { name: 'level', type: 'string' },
         { name: 'retry_count', type: 'number' },
       ],
     }),

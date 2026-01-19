@@ -1,8 +1,4 @@
-import {
-  addColumns,
-  createTable,
-  schemaMigrations,
-} from '@nozbe/watermelondb/Schema/migrations';
+import { addColumns, createTable, schemaMigrations } from '@nozbe/watermelondb/Schema/migrations';
 
 export default schemaMigrations({
   migrations: [
@@ -105,7 +101,6 @@ export default schemaMigrations({
     {
       toVersion: 7,
       steps: [
-     
         addColumns({
           table: 'deck',
           columns: [
@@ -123,7 +118,19 @@ export default schemaMigrations({
       steps: [
         addColumns({
           table: 'attempt',
-          columns: [{ name: 'status', type: 'string' }],
+          columns: [
+            { name: 'lesson_id', type: 'string' },
+            { name: 'paragraph', type: 'string' },
+            { name: 'status', type: 'string' },
+            { name: 'level', type: 'string' },
+            { name: 'correction', type: 'string', isOptional: true },
+            { name: 'feedback', type: 'string', isOptional: true },
+            { name: 'vocabulary', type: 'string', isOptional: true },
+          ],
+        }),
+        addColumns({
+          table: 'lesson',
+          columns: [{ name: 'user_language', type: 'string' }],
         }),
         createTable({
           name: 'pending_request',
@@ -133,10 +140,10 @@ export default schemaMigrations({
             { name: 'attempt_id', type: 'string' },
             { name: 'topic_language', type: 'string' },
             { name: 'user_language', type: 'string' },
+            { name: 'level', type: 'string' },
             { name: 'retry_count', type: 'number' },
           ],
         }),
-       
       ],
     },
   ],

@@ -123,12 +123,7 @@ function AttemptCardInner({
   // Render pending state
   if (isPending || isFailed) {
     return (
-      <Card
-        style={[
-          styles.attemptCard,
-          isFailed && { borderColor: colors.error, borderWidth: 1 },
-        ]}
-      >
+      <Card style={[styles.attemptCard, isFailed && { borderColor: colors.error, borderWidth: 1 }]}>
         <View style={styles.attemptHeader}>
           <View style={styles.attemptMeta}>
             <Ionicons name="time-outline" size={14} color={colors.textSecondary} />
@@ -152,10 +147,7 @@ function AttemptCardInner({
           )}
         </View>
 
-        <Text
-          style={[styles.attemptPreview, { color: colors.text }]}
-          numberOfLines={2}
-        >
+        <Text style={[styles.attemptPreview, { color: colors.text }]} numberOfLines={2}>
           {attempt.paragraph}
         </Text>
 
@@ -182,9 +174,7 @@ function AttemptCardInner({
               onPress={handleDelete}
             >
               <Ionicons name="trash-outline" size={16} color={colors.primaryText} />
-              <Text style={[styles.actionButtonText, { color: colors.primaryText }]}>
-                Delete
-              </Text>
+              <Text style={[styles.actionButtonText, { color: colors.primaryText }]}>Delete</Text>
             </Pressable>
           </View>
         )}
