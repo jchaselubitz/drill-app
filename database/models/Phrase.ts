@@ -3,6 +3,7 @@ import Database from '@nozbe/watermelondb/Database';
 import { field, writer } from '@nozbe/watermelondb/decorators';
 
 import { PHRASE_TABLE } from '@/database/schema';
+import { deleteAudioFile } from '@/lib/audio/storage';
 
 export interface PhraseProps {
   id: string;
@@ -187,5 +188,46 @@ export default class Phrase extends Model {
       phrase.text = newText.trim();
       phrase.updatedAt = Date.now();
     });
+  }
+
+  @writer async updateFilename(newFilename: string | null): Promise<Phrase> {
+    const oldFilename = this.filename;
+
+    const updatedPhrase = await this.update((phrase) => {
+      phrase.filename = newFilename;
+      phrase.updatedAt = Date.now();
+    });
+
+    // Delete old audio file if it exists and is different from the new one
+    if (oldFilename && oldFilename !== newFilename) {
+      try {
+        await deleteAudioFile(oldFilename);
+      } catch (error) {
+        // Log error but don't fail the update if audio file deletion fails
+        console.warn(`Failed to delete old audio file ${oldFilename}:`, error);
+      }
+    }
+
+    return updatedPhrase;
+  }
+
+  /**
+   * Deletes the phrase and its associated audio file (if any).
+   */
+  async deleteWithAudio(): Promise<void> {
+    const filename = this.filename;
+
+    // Delete the phrase from the database
+    await this.destroyPermanently();
+
+    // Delete the audio file if it exists
+    if (filename) {
+      try {
+        await deleteAudioFile(filename);
+      } catch (error) {
+        // Log error but don't fail the deletion if audio file deletion fails
+        console.warn(`Failed to delete audio file ${filename}:`, error);
+      }
+    }
   }
 }

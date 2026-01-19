@@ -16,9 +16,10 @@ export const ATTEMPT_TABLE = 'attempt';
 export const FEEDBACK_TABLE = 'feedback';
 export const SKILL_TABLE = 'skill';
 export const PENDING_REQUEST_TABLE = 'pending_request';
+export const PENDING_AUDIO_REQUEST_TABLE = 'pending_audio_request';
 
 const schema = appSchema({
-  version: 8,
+  version: 9,
   tables: [
     tableSchema({
       name: PHRASE_TABLE,
@@ -229,6 +230,19 @@ const schema = appSchema({
         { name: 'occurrence_count', type: 'number' },
         { name: 'status', type: 'string' },
         { name: 'lang', type: 'string' },
+      ],
+    }),
+    tableSchema({
+      name: PENDING_AUDIO_REQUEST_TABLE,
+      columns: [
+        { name: 'created_at', type: 'number' },
+        { name: 'updated_at', type: 'number' },
+        { name: 'phrase_id', type: 'string' },
+        { name: 'deck_id', type: 'string' },
+        { name: 'language_code', type: 'string' },
+        { name: 'status', type: 'string' },
+        { name: 'retry_count', type: 'number' },
+        { name: 'error_message', type: 'string', isOptional: true },
       ],
     }),
   ],

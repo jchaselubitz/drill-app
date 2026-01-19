@@ -31,7 +31,7 @@ import {
   SRS_CARD_TABLE,
   TRANSLATION_TABLE,
 } from '@/database/schema';
-import { useColors } from '@/hooks';
+import { useAudioPlayback, useColors } from '@/hooks';
 import { translatePhrase } from '@/lib/ai/translate';
 import { SRS_DEFAULT_EASE } from '@/lib/srs/constants';
 
@@ -53,6 +53,7 @@ export default function PhraseDetailScreen() {
   const colors = useColors();
   const db = useDatabase();
   const { settings } = useSettings();
+  const { togglePlayPause, isPlayingFile } = useAudioPlayback();
 
   const [phrase, setPhrase] = useState<Phrase | null>(null);
   const [note, setNote] = useState('');
@@ -387,7 +388,7 @@ export default function PhraseDetailScreen() {
           onPress: async () => {
             try {
               await database.write(async () => {
-                await phrase.destroyPermanently();
+                await phrase.deleteWithAudio();
               });
               router.back();
             } catch (error) {
@@ -477,13 +478,28 @@ export default function PhraseDetailScreen() {
                   </Text>
                 </Pressable>
               )}
-              <Pressable onPress={handleToggleFavorite} hitSlop={8}>
-                <Ionicons
-                  name={phrase.favorite ? 'heart' : 'heart-outline'}
-                  size={24}
-                  color={phrase.favorite ? colors.error : colors.textSecondary}
-                />
-              </Pressable>
+              <View style={styles.phraseActions}>
+                {phrase.filename && (
+                  <Pressable
+                    onPress={() => togglePlayPause(phrase.filename!)}
+                    hitSlop={8}
+                    style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1 }]}
+                  >
+                    <Ionicons
+                      name={isPlayingFile(phrase.filename) ? 'pause' : 'play'}
+                      size={24}
+                      color={colors.primary}
+                    />
+                  </Pressable>
+                )}
+                <Pressable onPress={handleToggleFavorite} hitSlop={8}>
+                  <Ionicons
+                    name={phrase.favorite ? 'heart' : 'heart-outline'}
+                    size={24}
+                    color={phrase.favorite ? colors.error : colors.textSecondary}
+                  />
+                </Pressable>
+              </View>
             </View>
             {language && (
               <Text style={[styles.languageText, { color: colors.textSecondary }]}>
@@ -615,6 +631,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
+    gap: 12,
+  },
+  phraseActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 12,
   },
   phraseText: {

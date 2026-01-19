@@ -3,17 +3,30 @@ import * as TaskManager from 'expo-task-manager';
 
 import database from '@/database';
 
+import { retryPendingAudioRequests } from './backgroundAudioService';
 import { retryPendingRequests } from './backgroundReviewService';
 
 const BACKGROUND_FETCH_TASK = 'background-review-fetch';
+const BACKGROUND_AUDIO_FETCH_TASK = 'background-audio-fetch';
 
-// Define the background task
+// Define the background task for review requests
 TaskManager.defineTask(BACKGROUND_FETCH_TASK, async () => {
   try {
     await retryPendingRequests(database);
     return BackgroundTask.BackgroundTaskResult.Success;
   } catch (error) {
     console.error('Background fetch failed:', error);
+    return BackgroundTask.BackgroundTaskResult.Failed;
+  }
+});
+
+// Define the background task for audio generation
+TaskManager.defineTask(BACKGROUND_AUDIO_FETCH_TASK, async () => {
+  try {
+    await retryPendingAudioRequests(database);
+    return BackgroundTask.BackgroundTaskResult.Success;
+  } catch (error) {
+    console.error('Background audio fetch failed:', error);
     return BackgroundTask.BackgroundTaskResult.Failed;
   }
 });
@@ -50,4 +63,38 @@ export async function unregisterBackgroundFetch(): Promise<void> {
  */
 export async function isBackgroundFetchRegistered(): Promise<boolean> {
   return await TaskManager.isTaskRegisteredAsync(BACKGROUND_FETCH_TASK);
+}
+
+/**
+ * Registers the background audio fetch task.
+ * Call this once during app initialization.
+ */
+export async function registerAudioBackgroundFetch(): Promise<void> {
+  try {
+    await BackgroundTask.registerTaskAsync(BACKGROUND_AUDIO_FETCH_TASK, {
+      minimumInterval: 15, // 15 minutes (minimum allowed)
+    });
+    console.log('Background audio fetch task registered');
+  } catch (error) {
+    console.error('Failed to register audio background fetch:', error);
+  }
+}
+
+/**
+ * Unregisters the background audio fetch task.
+ */
+export async function unregisterAudioBackgroundFetch(): Promise<void> {
+  try {
+    await BackgroundTask.unregisterTaskAsync(BACKGROUND_AUDIO_FETCH_TASK);
+    console.log('Background audio fetch task unregistered');
+  } catch (error) {
+    console.error('Failed to unregister audio background fetch:', error);
+  }
+}
+
+/**
+ * Checks if the background audio fetch task is registered.
+ */
+export async function isAudioBackgroundFetchRegistered(): Promise<boolean> {
+  return await TaskManager.isTaskRegisteredAsync(BACKGROUND_AUDIO_FETCH_TASK);
 }

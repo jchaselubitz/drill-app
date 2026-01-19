@@ -4761,8 +4761,10 @@ __metadata:
     eslint-plugin-react-hooks: "npm:^7.0.1"
     eslint-plugin-simple-import-sort: "npm:^12.1.1"
     expo: "npm:^54.0.31"
+    expo-audio: "npm:~1.1.1"
     expo-background-task: "npm:^1.0.10"
     expo-constants: "npm:^18.0.13"
+    expo-file-system: "npm:^19.0.21"
     expo-font: "npm:^14.0.10"
     expo-glass-effect: "npm:^0.1.8"
     expo-haptics: "npm:^15.0.8"
@@ -5447,6 +5449,18 @@ __metadata:
   languageName: node
   linkType: hard
 
+"expo-audio@npm:~1.1.1":
+  version: 1.1.1
+  resolution: "expo-audio@npm:1.1.1"
+  peerDependencies:
+    expo: "*"
+    expo-asset: "*"
+    react: "*"
+    react-native: "*"
+  checksum: 10c0/3ec687ca239b816097336808c9bd69995149166faf8dd74cb5fe732878843436178cbd1d901642779148df397562ffd36d207d217c801f16c300ab7df24d2208
+  languageName: node
+  linkType: hard
+
 "expo-background-task@npm:^1.0.10":
   version: 1.0.10
   resolution: "expo-background-task@npm:1.0.10"
@@ -5471,7 +5485,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"expo-file-system@npm:~19.0.21":
+"expo-file-system@npm:^19.0.21, expo-file-system@npm:~19.0.21":
   version: 19.0.21
   resolution: "expo-file-system@npm:19.0.21"
   peerDependencies:

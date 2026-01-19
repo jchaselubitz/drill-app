@@ -3,6 +3,7 @@ import type { ExpoConfig } from '@expo/config-types';
 type AppConfig = ExpoConfig & {
   extra: {
     geminiApiKey?: string;
+    googleCloudTtsApiKey?: string;
   };
 };
 
@@ -21,8 +22,11 @@ const config: AppConfig = {
     bundleIdentifier: 'com.drillapp.mobile',
     infoPlist: {
       ITSAppUsesNonExemptEncryption: false,
-      UIBackgroundModes: ['processing'],
-      BGTaskSchedulerPermittedIdentifiers: ['com.drillapp.mobile.background-review-fetch'],
+      UIBackgroundModes: ['processing', 'audio'],
+      BGTaskSchedulerPermittedIdentifiers: [
+        'com.drillapp.mobile.background-review-fetch',
+        'com.drillapp.mobile.background-audio-fetch',
+      ],
     },
   },
   android: {
@@ -35,12 +39,21 @@ const config: AppConfig = {
     bundler: 'metro',
     output: 'static',
   },
-  plugins: ['expo-router'],
+  plugins: [
+    'expo-router',
+    [
+      'expo-audio',
+      {
+        microphonePermission: false,
+      },
+    ],
+  ],
   experiments: {
     typedRoutes: true,
   },
   extra: {
     geminiApiKey: process.env.EXPO_PUBLIC_GEMINI_API_KEY,
+    googleCloudTtsApiKey: process.env.EXPO_PUBLIC_GEMINI_API_KEY,
     supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,
     supabasePublishableKey: process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
     openAiProxyUrl: process.env.EXPO_PUBLIC_OPENAI_PROXY_URL,

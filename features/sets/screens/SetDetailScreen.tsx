@@ -18,8 +18,10 @@ import {
   SRS_CARD_TABLE,
   TRANSLATION_TABLE,
 } from '@/database/schema';
-import { useColors } from '@/hooks';
+import { useAudioPlayback, useColors, useDeckAudioStatus } from '@/hooks';
 import { generatePhraseSet } from '@/lib/ai/generatePhraseSet';
+import { isLanguageSupported } from '@/lib/audio/voiceMapping';
+import { queueDeckAudioGeneration } from '@/lib/backgroundAudioService';
 import { ensureSrsCardsForTranslation } from '@/lib/srs/cards';
 import type { CEFRLevel, GeneratedPhrase, LanguageCode } from '@/types';
 
@@ -29,9 +31,11 @@ const geminiApiKey = Constants.expoConfig?.extra?.geminiApiKey as string | undef
 
 type PhraseItem = {
   id: string;
+  primaryPhraseId: string;
   primary: string;
   secondary: string;
   partOfSpeech: string | null;
+  filename: string | null;
 };
 
 function DeleteButton({ onPress, disabled }: { onPress: () => void; disabled: boolean }) {
@@ -59,6 +63,8 @@ export default function SetDetailScreen() {
   const [dueCount, setDueCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [showGenerateMore, setShowGenerateMore] = useState(false);
+  const audioStatus = useDeckAudioStatus(id);
+  const { togglePlayPause, isPlayingFile } = useAudioPlayback();
 
   useEffect(() => {
     if (!id) return;
@@ -95,9 +101,11 @@ export default function SetDetailScreen() {
 
             phraseItems.push({
               id: dt.id,
+              primaryPhraseId: primaryPhrase.id,
               primary: primaryPhrase.text,
               secondary: secondaryPhrase.text,
               partOfSpeech: primaryPhrase.partSpeech,
+              filename: primaryPhrase.filename,
             });
           } catch (error) {
             console.error('Error fetching phrase:', error);
@@ -252,21 +260,74 @@ export default function SetDetailScreen() {
     );
   };
 
-  const renderPhraseItem = ({ item }: { item: PhraseItem }) => (
-    <View style={[styles.phraseItem, { borderBottomColor: colors.border }]}>
-      <View style={styles.phraseContent}>
-        <Text style={[styles.primaryText, { color: colors.text }]} selectable>
-          {item.primary}
-        </Text>
-        <Text style={[styles.secondaryText, { color: colors.textSecondary }]} selectable>
-          {item.secondary}
-        </Text>
-        {item.partOfSpeech && (
-          <Text style={[styles.partOfSpeech, { color: colors.primary }]}>{item.partOfSpeech}</Text>
+  const handleGenerateAudio = async () => {
+    if (!deck || !id) return;
+
+    const primaryLang = (deck.primaryLang ?? settings.topicLanguage) as LanguageCode;
+
+    if (!isLanguageSupported(primaryLang)) {
+      Alert.alert('Not Supported', `Audio generation is not available for this language yet.`);
+      return;
+    }
+
+    if (phrases.length === 0) {
+      Alert.alert('No Phrases', 'Add some phrases first before generating audio.');
+      return;
+    }
+
+    // Collect phrase data for audio generation
+    const phraseData = phrases.map((p) => ({
+      phraseId: p.primaryPhraseId,
+      phraseText: p.primary,
+    }));
+
+    try {
+      const queuedCount = await queueDeckAudioGeneration(db, id, primaryLang, phraseData);
+
+      if (queuedCount === 0) {
+        Alert.alert('Complete', 'All phrases already have audio.');
+      } else {
+        Alert.alert(
+          'Audio Generation Started',
+          `Generating audio for ${queuedCount} phrases. This will continue in the background.`
+        );
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to start audio generation. Please try again.');
+      console.error('Audio generation error:', error);
+    }
+  };
+
+  const renderPhraseItem = ({ item }: { item: PhraseItem }) => {
+    const hasAudio = item.filename !== null;
+    const isPlaying = hasAudio && isPlayingFile(item.filename!);
+
+    return (
+      <View style={[styles.phraseItem, { borderBottomColor: colors.border }]}>
+        <View style={styles.phraseContent}>
+          <Text style={[styles.primaryText, { color: colors.text }]} selectable>
+            {item.primary}
+          </Text>
+          <Text style={[styles.secondaryText, { color: colors.textSecondary }]} selectable>
+            {item.secondary}
+          </Text>
+          {item.partOfSpeech && (
+            <Text style={[styles.partOfSpeech, { color: colors.primary }]}>
+              {item.partOfSpeech}
+            </Text>
+          )}
+        </View>
+        {hasAudio && (
+          <Pressable
+            onPress={() => togglePlayPause(item.filename!)}
+            style={({ pressed }) => [styles.playButton, { opacity: pressed ? 0.5 : 1 }]}
+          >
+            <Ionicons name={isPlaying ? 'pause' : 'play'} size={20} color={colors.primary} />
+          </Pressable>
         )}
       </View>
-    </View>
-  );
+    );
+  };
 
   if (!deck) {
     return (
@@ -337,13 +398,34 @@ export default function SetDetailScreen() {
                   buttonState={isLoading ? 'disabled' : 'default'}
                 />
               )}
-              <Button
-                text="Generate More"
-                variant="secondary"
-                onPress={() => setShowGenerateMore(true)}
-                buttonState={isLoading ? 'loading' : 'default'}
-                loadingText="Generating..."
-              />
+              <View style={styles.buttonRow}>
+                <View style={styles.buttonHalf}>
+                  <Button
+                    text="Generate More"
+                    variant="secondary"
+                    onPress={() => setShowGenerateMore(true)}
+                    buttonState={isLoading ? 'loading' : 'default'}
+                    loadingText="Generating..."
+                  />
+                </View>
+                <View style={styles.buttonHalf}>
+                  <Button
+                    text="Generate Audio"
+                    variant="secondary"
+                    onPress={handleGenerateAudio}
+                    buttonState={isLoading ? 'disabled' : 'default'}
+                  />
+                </View>
+              </View>
+              {audioStatus.isGenerating && (
+                <View style={[styles.audioStatusBar, { backgroundColor: colors.card }]}>
+                  <Ionicons name="volume-high" size={16} color={colors.primary} />
+                  <Text style={[styles.audioStatusText, { color: colors.textSecondary }]}>
+                    Generating audio: {audioStatus.pendingCount + audioStatus.processingCount}{' '}
+                    remaining
+                  </Text>
+                </View>
+              )}
             </View>
 
             <Text style={[styles.sectionTitle, { color: colors.text }]}>Phrases</Text>
@@ -404,17 +486,43 @@ const styles = StyleSheet.create({
   actions: {
     gap: 12,
   },
+  buttonRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  buttonHalf: {
+    flex: 1,
+  },
+  audioStatusBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+  },
+  audioStatusText: {
+    fontSize: 13,
+  },
   sectionTitle: {
     fontSize: 17,
     fontWeight: '600',
     marginTop: 8,
   },
   phraseItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   phraseContent: {
+    flex: 1,
     gap: 2,
+  },
+  playButton: {
+    padding: 8,
+    marginLeft: 8,
   },
   primaryText: {
     fontSize: 16,

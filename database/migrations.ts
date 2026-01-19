@@ -146,5 +146,23 @@ export default schemaMigrations({
         }),
       ],
     },
+    {
+      toVersion: 9,
+      steps: [
+        createTable({
+          name: 'pending_audio_request',
+          columns: [
+            { name: 'created_at', type: 'number' },
+            { name: 'updated_at', type: 'number' },
+            { name: 'phrase_id', type: 'string' },
+            { name: 'deck_id', type: 'string' },
+            { name: 'language_code', type: 'string' },
+            { name: 'status', type: 'string' },
+            { name: 'retry_count', type: 'number' },
+            { name: 'error_message', type: 'string', isOptional: true },
+          ],
+        }),
+      ],
+    },
   ],
 });

@@ -19,8 +19,8 @@
     },
     "infoPlist": {
       "UIDesignRequiresCompatibility": true,
-      "UIBackgroundModes": ["processing"],
-      "BGTaskSchedulerPermittedIdentifiers": ["com.drillapp.mobile.background-review-fetch"]
+      "UIBackgroundModes": ["processing", "audio"],
+      "BGTaskSchedulerPermittedIdentifiers": ["com.drillapp.mobile.background-review-fetch", "com.drillapp.mobile.background-audio-fetch"]
     },
     "android": {
       "adaptiveIcon": {
@@ -48,6 +48,12 @@
           "dark": {
             "backgroundColor": "#000000"
           }
+        }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": false
         }
       ]
     ],
