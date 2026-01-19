@@ -108,6 +108,11 @@ const schema = appSchema({
         { name: 'archived', type: 'boolean' },
         { name: 'sort_order', type: 'number', isOptional: true },
         { name: 'is_default', type: 'boolean' },
+        { name: 'source', type: 'string' },
+        { name: 'topic', type: 'string', isOptional: true },
+        { name: 'primary_lang', type: 'string', isOptional: true },
+        { name: 'secondary_lang', type: 'string', isOptional: true },
+        { name: 'level', type: 'string', isOptional: true },
       ],
     }),
     tableSchema({

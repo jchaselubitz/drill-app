@@ -120,6 +120,16 @@ export default schemaMigrations({
             { name: 'retry_count', type: 'number' },
           ],
         }),
+        createTable({
+          name: 'deck',
+          columns: [
+            { name: 'source', type: 'string' },
+            { name: 'topic', type: 'string', isOptional: true },
+            { name: 'primary_lang', type: 'string', isOptional: true },
+            { name: 'secondary_lang', type: 'string', isOptional: true },
+            { name: 'level', type: 'string', isOptional: true },
+          ],
+        }),
       ],
     },
   ],

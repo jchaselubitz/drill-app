@@ -11,6 +11,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput as RNTextInput,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -57,6 +58,8 @@ export default function PhraseDetailScreen() {
   const [note, setNote] = useState('');
   const [isNoteDirty, setIsNoteDirty] = useState(false);
   const [isTranslating, setIsTranslating] = useState(false);
+  const [isEditingText, setIsEditingText] = useState(false);
+  const [editedText, setEditedText] = useState('');
   const [linkedTranslations, setLinkedTranslations] = useState<
     { translation: Translation; phrase: Phrase }[]
   >([]);
@@ -66,6 +69,7 @@ export default function PhraseDetailScreen() {
 
   const scrollViewRef = useRef<ScrollView>(null);
   const noteInputY = useRef<number>(0);
+  const textInputRef = useRef<any>(null);
 
   useEffect(() => {
     Deck.getOrCreateDefault(db).catch((error) => {
@@ -225,6 +229,30 @@ export default function PhraseDetailScreen() {
   const handleToggleFavorite = async () => {
     if (!phrase) return;
     await phrase.updateFavorite(!phrase.favorite);
+  };
+
+  const handleStartEditText = () => {
+    if (!phrase) return;
+    setEditedText(phrase.text);
+    setIsEditingText(true);
+    // Focus the input after render
+    setTimeout(() => {
+      textInputRef.current?.focus();
+    }, 50);
+  };
+
+  const handleSaveText = async () => {
+    if (!phrase) return;
+    const trimmedText = editedText.trim();
+    if (trimmedText && trimmedText !== phrase.text) {
+      try {
+        await phrase.updateText(trimmedText);
+      } catch (error) {
+        Alert.alert('Error', 'Failed to update phrase text.');
+        console.error(error);
+      }
+    }
+    setIsEditingText(false);
   };
 
   const handleTranslate = async () => {
@@ -430,7 +458,25 @@ export default function PhraseDetailScreen() {
         >
           <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <View style={styles.phraseHeader}>
-              <Text style={[styles.phraseText, { color: colors.text }]}>{phrase.text}</Text>
+              {isEditingText ? (
+                <RNTextInput
+                  ref={textInputRef}
+                  style={[styles.phraseText, styles.phraseTextInput, { color: colors.text }]}
+                  value={editedText}
+                  onChangeText={setEditedText}
+                  onBlur={handleSaveText}
+                  autoFocus
+                  multiline
+                  returnKeyType="done"
+                  blurOnSubmit
+                />
+              ) : (
+                <Pressable onPress={handleStartEditText} style={styles.phraseTextPressable}>
+                  <Text style={[styles.phraseText, { color: colors.text }]} selectable>
+                    {phrase.text}
+                  </Text>
+                </Pressable>
+              )}
               <Pressable onPress={handleToggleFavorite} hitSlop={8}>
                 <Ionicons
                   name={phrase.favorite ? 'heart' : 'heart-outline'}
@@ -575,6 +621,14 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '600',
     flex: 1,
+  },
+  phraseTextPressable: {
+    flex: 1,
+  },
+  phraseTextInput: {
+    padding: 0,
+    margin: 0,
+    minHeight: 28,
   },
   languageText: {
     fontSize: 14,
