@@ -1,13 +1,20 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useDatabase, withObservables } from '@nozbe/watermelondb/react';
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Card, Markdown } from '@/components';
+import { useSettings } from '@/contexts/SettingsContext';
+import database from '@/database';
 import { Attempt, Phrase, Translation } from '@/database/models';
 import type Feedback from '@/database/models/Feedback';
 import { TRANSLATION_TABLE } from '@/database/schema';
 import { useColors } from '@/hooks';
+import {
+  deletePendingAttempt,
+  hasActiveRequest,
+  submitAttemptForReview,
+} from '@/lib/backgroundReviewService';
 import { formatDate } from '@/lib/helpers/helpersFormatting';
 
 type AttemptCardProps = {
@@ -35,7 +42,13 @@ function AttemptCardInner({
 }: AttemptCardInnerProps) {
   const colors = useColors();
   const db = useDatabase();
+  const { settings } = useSettings();
   const [vocabularyPairs, setVocabularyPairs] = useState<VocabularyPair[]>([]);
+  const [isRetrying, setIsRetrying] = useState(false);
+
+  const isPending = attempt.status === 'pending';
+  const isFailed = attempt.status === 'failed';
+  const isProcessing = isPending && hasActiveRequest(attempt.id);
 
   useEffect(() => {
     if (!phrases.length) {
@@ -75,6 +88,111 @@ function AttemptCardInner({
 
     return () => subscription.unsubscribe();
   }, [db, phrases]);
+
+  const handleRetry = async () => {
+    setIsRetrying(true);
+    try {
+      // Delete the failed attempt and create a new one
+      const lessonId = attempt.lessonId;
+      const paragraph = attempt.paragraph;
+
+      await deletePendingAttempt(database, attempt.id);
+
+      await submitAttemptForReview({
+        db: database,
+        lessonId,
+        paragraph,
+        topicLanguage: settings.topicLanguage,
+        userLanguage: settings.userLanguage,
+      });
+    } catch (error) {
+      console.error('Failed to retry attempt:', error);
+    } finally {
+      setIsRetrying(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      await deletePendingAttempt(database, attempt.id);
+    } catch (error) {
+      console.error('Failed to delete attempt:', error);
+    }
+  };
+
+  // Render pending state
+  if (isPending || isFailed) {
+    return (
+      <Card
+        style={[
+          styles.attemptCard,
+          isFailed && { borderColor: colors.error, borderWidth: 1 },
+        ]}
+      >
+        <View style={styles.attemptHeader}>
+          <View style={styles.attemptMeta}>
+            <Ionicons name="time-outline" size={14} color={colors.textSecondary} />
+            <Text style={[styles.attemptDate, { color: colors.textSecondary }]}>
+              {formatDate(attempt.createdAt)}
+            </Text>
+          </View>
+          {isPending && (
+            <View style={styles.statusBadge}>
+              <ActivityIndicator size="small" color={colors.primary} />
+              <Text style={[styles.statusText, { color: colors.primary }]}>
+                {isProcessing ? 'Processing...' : 'Pending'}
+              </Text>
+            </View>
+          )}
+          {isFailed && (
+            <View style={[styles.statusBadge, { backgroundColor: colors.error + '20' }]}>
+              <Ionicons name="alert-circle" size={14} color={colors.error} />
+              <Text style={[styles.statusText, { color: colors.error }]}>Failed</Text>
+            </View>
+          )}
+        </View>
+
+        <Text
+          style={[styles.attemptPreview, { color: colors.text }]}
+          numberOfLines={2}
+        >
+          {attempt.paragraph}
+        </Text>
+
+        {isFailed && (
+          <View style={styles.actionButtons}>
+            <Pressable
+              style={[styles.actionButton, { backgroundColor: colors.primary }]}
+              onPress={handleRetry}
+              disabled={isRetrying}
+            >
+              {isRetrying ? (
+                <ActivityIndicator size="small" color={colors.primaryText} />
+              ) : (
+                <>
+                  <Ionicons name="refresh" size={16} color={colors.primaryText} />
+                  <Text style={[styles.actionButtonText, { color: colors.primaryText }]}>
+                    Retry
+                  </Text>
+                </>
+              )}
+            </Pressable>
+            <Pressable
+              style={[styles.actionButton, { backgroundColor: colors.error }]}
+              onPress={handleDelete}
+            >
+              <Ionicons name="trash-outline" size={16} color={colors.primaryText} />
+              <Text style={[styles.actionButtonText, { color: colors.primaryText }]}>
+                Delete
+              </Text>
+            </Pressable>
+          </View>
+        )}
+      </Card>
+    );
+  }
+
+  // Render completed state
   return (
     <Card style={styles.attemptCard}>
       <Pressable onPress={onToggle}>
@@ -238,5 +356,36 @@ const styles = StyleSheet.create({
   },
   vocabularyTarget: {
     fontWeight: '500',
+  },
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 8,
+  },
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 8,
+    flex: 1,
+  },
+  actionButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

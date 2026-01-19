@@ -84,19 +84,21 @@ export function AddPhrasePanel({
             onChangeText={setText}
             autoFocus
           />
-          <LanguageChooser
-            label="Language"
-            value={lang}
-            onValueChange={setLang}
-            includeAutoDetect
-            autoDetectValue={AUTO_DETECT}
-          />
-          <Button
-            text="Save"
-            onPress={handleSave}
-            buttonState={isSaving ? 'loading' : !text.trim() ? 'disabled' : 'default'}
-            loadingText="Saving..."
-          />
+          <View style={styles.languageChooserContainer}>
+            <LanguageChooser
+              label="Language"
+              value={lang}
+              onValueChange={setLang}
+              includeAutoDetect
+              autoDetectValue={AUTO_DETECT}
+            />
+            <Button
+              text="Save"
+              onPress={handleSave}
+              buttonState={isSaving ? 'loading' : !text.trim() ? 'disabled' : 'default'}
+              loadingText="Saving..."
+            />
+          </View>
         </View>
       )}
     </View>
@@ -128,5 +130,11 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingTop: 0,
     gap: 16,
+  },
+  languageChooserContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+    gap: 8,
   },
 });

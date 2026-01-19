@@ -15,8 +15,10 @@ export const LESSON_TABLE = 'lesson';
 export const ATTEMPT_TABLE = 'attempt';
 export const FEEDBACK_TABLE = 'feedback';
 export const SKILL_TABLE = 'skill';
+export const PENDING_REQUEST_TABLE = 'pending_request';
+
 const schema = appSchema({
-  version: 6,
+  version: 8,
   tables: [
     tableSchema({
       name: PHRASE_TABLE,
@@ -106,6 +108,11 @@ const schema = appSchema({
         { name: 'archived', type: 'boolean' },
         { name: 'sort_order', type: 'number', isOptional: true },
         { name: 'is_default', type: 'boolean' },
+        { name: 'source', type: 'string' },
+        { name: 'topic', type: 'string', isOptional: true },
+        { name: 'primary_lang', type: 'string', isOptional: true },
+        { name: 'secondary_lang', type: 'string', isOptional: true },
+        { name: 'level', type: 'string', isOptional: true },
       ],
     }),
     tableSchema({
@@ -179,6 +186,18 @@ const schema = appSchema({
         { name: 'lesson_id', type: 'string' },
         { name: 'paragraph', type: 'string' },
         { name: 'correction', type: 'string' },
+        { name: 'status', type: 'string' }, // 'pending' | 'completed' | 'failed'
+      ],
+    }),
+    tableSchema({
+      name: PENDING_REQUEST_TABLE,
+      columns: [
+        { name: 'created_at', type: 'number' },
+        { name: 'updated_at', type: 'number' },
+        { name: 'attempt_id', type: 'string' },
+        { name: 'topic_language', type: 'string' },
+        { name: 'user_language', type: 'string' },
+        { name: 'retry_count', type: 'number' },
       ],
     }),
     tableSchema({

@@ -181,4 +181,11 @@ export default class Phrase extends Model {
       phrase.updatedAt = Date.now();
     });
   }
+
+  @writer async updateText(newText: string): Promise<Phrase> {
+    return await this.update((phrase) => {
+      phrase.text = newText.trim();
+      phrase.updatedAt = Date.now();
+    });
+  }
 }

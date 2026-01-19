@@ -51,12 +51,16 @@ export default function DecksScreen() {
         options={{
           title: 'Decks',
           headerShown: true,
+          headerBackTitle: 'Review',
           headerStyle: { backgroundColor: colors.background },
           headerTintColor: colors.text,
           headerTitleStyle: { color: colors.text },
         }}
       />
       <ScrollView contentContainerStyle={styles.content}>
+        <Text style={[styles.explanation, { color: colors.textSecondary }]}>
+          Create a deck here and then add phrases to it in your library.
+        </Text>
         <Card>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Create Deck</Text>
           <View style={styles.createRow}>
@@ -64,7 +68,7 @@ export default function DecksScreen() {
               placeholder="Deck name"
               value={newDeckName}
               onChangeText={setNewDeckName}
-              style={styles.input}
+              containerStyle={styles.input}
             />
             <Button
               text="Add"
@@ -120,6 +124,11 @@ const styles = StyleSheet.create({
     padding: 20,
     gap: 20,
   },
+  explanation: {
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 4,
+  },
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
@@ -128,7 +137,8 @@ const styles = StyleSheet.create({
   createRow: {
     flexDirection: 'row',
     gap: 12,
-    alignItems: 'flex-end',
+    alignItems: 'center',
+    width: '100%',
   },
   input: {
     flex: 1,
