@@ -136,3 +136,31 @@ export const translationResponseSchema = z.object({
 });
 
 export type TranslationResponse = z.infer<typeof translationResponseSchema>;
+
+// Phrase Set Generation types
+export type GeneratedPhrase = {
+  primary: string;
+  secondary: string;
+  partOfSpeech?: string;
+};
+
+export const phraseSetSchema = z.object({
+  phrases: z.array(
+    z.object({
+      primary: z.string(),
+      secondary: z.string(),
+      partOfSpeech: z.string().optional(),
+    })
+  ),
+});
+
+export type PhraseSetResponse = z.infer<typeof phraseSetSchema>;
+
+export type GeneratePhraseSetParams = {
+  topic: string;
+  primaryLanguage: LanguageCode;
+  secondaryLanguage: LanguageCode;
+  level: CEFRLevel;
+  count?: number;
+  existingPhrases?: string[];
+};

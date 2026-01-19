@@ -98,5 +98,20 @@ export default schemaMigrations({
         }),
       ],
     },
+    {
+      toVersion: 7,
+      steps: [
+        addColumns({
+          table: 'deck',
+          columns: [
+            { name: 'source', type: 'string' },
+            { name: 'topic', type: 'string', isOptional: true },
+            { name: 'primary_lang', type: 'string', isOptional: true },
+            { name: 'secondary_lang', type: 'string', isOptional: true },
+            { name: 'level', type: 'string', isOptional: true },
+          ],
+        }),
+      ],
+    },
   ],
 });

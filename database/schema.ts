@@ -16,7 +16,7 @@ export const ATTEMPT_TABLE = 'attempt';
 export const FEEDBACK_TABLE = 'feedback';
 export const SKILL_TABLE = 'skill';
 const schema = appSchema({
-  version: 6,
+  version: 7,
   tables: [
     tableSchema({
       name: PHRASE_TABLE,
@@ -106,6 +106,11 @@ const schema = appSchema({
         { name: 'archived', type: 'boolean' },
         { name: 'sort_order', type: 'number', isOptional: true },
         { name: 'is_default', type: 'boolean' },
+        { name: 'source', type: 'string' },
+        { name: 'topic', type: 'string', isOptional: true },
+        { name: 'primary_lang', type: 'string', isOptional: true },
+        { name: 'secondary_lang', type: 'string', isOptional: true },
+        { name: 'level', type: 'string', isOptional: true },
       ],
     }),
     tableSchema({
