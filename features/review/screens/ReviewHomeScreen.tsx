@@ -2,7 +2,7 @@ import { Q } from '@nozbe/watermelondb';
 import { useDatabase } from '@nozbe/watermelondb/react';
 import { Stack, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/Button';
@@ -203,6 +203,27 @@ export default function ReviewHomeScreen() {
           </View>
         </Card>
 
+        <Card>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Audio</Text>
+          <View style={styles.settingRow}>
+            <View style={styles.settingText}>
+              <Text style={[styles.settingLabel, { color: colors.text }]}>
+                Auto-play review audio
+              </Text>
+              <Text style={[styles.settingDescription, { color: colors.textSecondary }]}>
+                Play audio automatically when a phrase appears.
+              </Text>
+            </View>
+            <Switch
+              value={settings.autoPlayReviewAudio}
+              onValueChange={(value) => updateSettings({ autoPlayReviewAudio: value })}
+              trackColor={{ false: colors.border, true: colors.primary }}
+              thumbColor={colors.background}
+              ios_backgroundColor={colors.border}
+            />
+          </View>
+        </Card>
+
         <Button
           text="Start Review"
           onPress={() => router.push(`/review/session?deckId=${settings.activeDeckId}`)}
@@ -251,5 +272,22 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 20,
     fontWeight: '600',
+  },
+  settingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 16,
+  },
+  settingText: {
+    flex: 1,
+    gap: 4,
+  },
+  settingLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  settingDescription: {
+    fontSize: 13,
   },
 });

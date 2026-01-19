@@ -35,7 +35,8 @@ type PhraseItem = {
   primary: string;
   secondary: string;
   partOfSpeech: string | null;
-  filename: string | null;
+  primaryFilename: string | null;
+  secondaryFilename: string | null;
 };
 
 function DeleteButton({ onPress, disabled }: { onPress: () => void; disabled: boolean }) {
@@ -105,7 +106,8 @@ export default function SetDetailScreen() {
               primary: primaryPhrase.text,
               secondary: secondaryPhrase.text,
               partOfSpeech: primaryPhrase.partSpeech,
-              filename: primaryPhrase.filename,
+              primaryFilename: primaryPhrase.filename,
+              secondaryFilename: secondaryPhrase.filename,
             });
           } catch (error) {
             console.error('Error fetching phrase:', error);
@@ -299,32 +301,60 @@ export default function SetDetailScreen() {
   };
 
   const renderPhraseItem = ({ item }: { item: PhraseItem }) => {
-    const hasAudio = item.filename !== null;
-    const isPlaying = hasAudio && isPlayingFile(item.filename!);
+    const primaryHasAudio = item.primaryFilename !== null;
+    const secondaryHasAudio = item.secondaryFilename !== null;
+    const isPrimaryPlaying = primaryHasAudio && isPlayingFile(item.primaryFilename!);
+    const isSecondaryPlaying = secondaryHasAudio && isPlayingFile(item.secondaryFilename!);
 
     return (
       <View style={[styles.phraseItem, { borderBottomColor: colors.border }]}>
         <View style={styles.phraseContent}>
-          <Text style={[styles.primaryText, { color: colors.text }]} selectable>
-            {item.primary}
-          </Text>
-          <Text style={[styles.secondaryText, { color: colors.textSecondary }]} selectable>
-            {item.secondary}
-          </Text>
+          <View style={styles.phraseRow}>
+            <Text
+              style={[styles.primaryText, styles.phraseText, { color: colors.text }]}
+              selectable
+            >
+              {item.primary}
+            </Text>
+            {primaryHasAudio && (
+              <Pressable
+                onPress={() => togglePlayPause(item.primaryFilename!)}
+                style={({ pressed }) => [styles.playButton, { opacity: pressed ? 0.5 : 1 }]}
+              >
+                <Ionicons
+                  name={isPrimaryPlaying ? 'pause' : 'play'}
+                  size={18}
+                  color={colors.primary}
+                />
+              </Pressable>
+            )}
+          </View>
+          <View style={styles.phraseRow}>
+            <Text
+              style={[styles.secondaryText, styles.phraseText, { color: colors.textSecondary }]}
+              selectable
+            >
+              {item.secondary}
+            </Text>
+            {secondaryHasAudio && (
+              <Pressable
+                onPress={() => togglePlayPause(item.secondaryFilename!)}
+                style={({ pressed }) => [styles.playButton, { opacity: pressed ? 0.5 : 1 }]}
+              >
+                <Ionicons
+                  name={isSecondaryPlaying ? 'pause' : 'play'}
+                  size={18}
+                  color={colors.primary}
+                />
+              </Pressable>
+            )}
+          </View>
           {item.partOfSpeech && (
             <Text style={[styles.partOfSpeech, { color: colors.primary }]}>
               {item.partOfSpeech}
             </Text>
           )}
         </View>
-        {hasAudio && (
-          <Pressable
-            onPress={() => togglePlayPause(item.filename!)}
-            style={({ pressed }) => [styles.playButton, { opacity: pressed ? 0.5 : 1 }]}
-          >
-            <Ionicons name={isPlaying ? 'pause' : 'play'} size={20} color={colors.primary} />
-          </Pressable>
-        )}
       </View>
     );
   };
@@ -510,9 +540,6 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   phraseItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
@@ -520,9 +547,16 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 2,
   },
+  phraseRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  phraseText: {
+    flex: 1,
+  },
   playButton: {
-    padding: 8,
-    marginLeft: 8,
+    padding: 6,
   },
   primaryText: {
     fontSize: 16,

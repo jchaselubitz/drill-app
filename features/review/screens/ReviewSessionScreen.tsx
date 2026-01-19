@@ -1,6 +1,6 @@
 import { useDatabase } from '@nozbe/watermelondb/react';
 import { Stack, useLocalSearchParams } from 'expo-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -8,7 +8,7 @@ import { Button } from '@/components/Button';
 import { useSettings } from '@/contexts/SettingsContext';
 import { Phrase, SrsCard, SrsReviewLog, Translation } from '@/database/models';
 import { PHRASE_TABLE, SRS_REVIEW_LOG_TABLE, TRANSLATION_TABLE } from '@/database/schema';
-import { useColors } from '@/hooks';
+import { useAudioPlayback, useColors } from '@/hooks';
 import { getDailyLimitsRemaining, getReviewQueue } from '@/lib/srs/queue';
 import { scheduleSm2Review } from '@/lib/srs/sm2';
 import type { SrsCardState, SrsDirection, SrsRating } from '@/types';
@@ -40,6 +40,8 @@ export default function ReviewSessionScreen() {
     [params.deckId, settings.activeDeckId]
   );
 
+  const { play, togglePlayPause, isPlayingFile } = useAudioPlayback();
+  const lastAutoPlayKeyRef = useRef<string | null>(null);
   const [queue, setQueue] = useState<ReviewItem[]>([]);
   const [index, setIndex] = useState(0);
   const [showBack, setShowBack] = useState(false);
@@ -100,6 +102,17 @@ export default function ReviewSessionScreen() {
   }, [loadQueue]);
 
   const current = queue[index] ?? null;
+
+  useEffect(() => {
+    if (!settings.autoPlayReviewAudio || !current) return;
+    const filename = showBack ? current.back.filename : current.front.filename;
+    const autoPlayKey = `${current.card.id}-${showBack ? 'back' : 'front'}`;
+    if (lastAutoPlayKeyRef.current === autoPlayKey) return;
+    lastAutoPlayKeyRef.current = autoPlayKey;
+    if (filename) {
+      play(filename);
+    }
+  }, [current, showBack, settings.autoPlayReviewAudio, play]);
 
   const handleRate = async (rating: SrsRating) => {
     if (!current) return;
@@ -188,7 +201,13 @@ export default function ReviewSessionScreen() {
       />
       <View style={styles.content}>
         <ReviewProgress current={index + 1} total={queue.length} />
-        <ReviewCard front={current.front} back={current.back} showBack={showBack} />
+        <ReviewCard
+          front={current.front}
+          back={current.back}
+          showBack={showBack}
+          onTogglePlayPause={togglePlayPause}
+          isPlayingFile={isPlayingFile}
+        />
 
         {!showBack ? (
           <Button text="Show Answer" onPress={() => setShowBack(true)} variant="secondary" />

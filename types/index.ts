@@ -80,6 +80,7 @@ export type UserSettings = {
   maxNewPerDay: number;
   maxReviewsPerDay: number;
   dayStartHour: number;
+  autoPlayReviewAudio: boolean;
   activeDeckId?: string | null;
 };
 

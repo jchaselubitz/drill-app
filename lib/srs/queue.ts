@@ -9,6 +9,16 @@ import { getStudyDayStart } from './time';
 
 const REVIEW_STATES: SrsCardState[] = ['learning', 'review', 'relearning'];
 
+// Fisher-Yates shuffle algorithm
+const shuffleArray = <T>(array: T[]): T[] => {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+};
+
 export const getDailyLimitsRemaining = async (
   db: Database,
   {
@@ -92,5 +102,6 @@ export const getReviewQueue = async (
     )
     .fetch();
 
-  return [...reviewCards, ...newCards];
+  const allCards = [...reviewCards, ...newCards];
+  return shuffleArray(allCards);
 };

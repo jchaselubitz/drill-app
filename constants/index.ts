@@ -277,6 +277,7 @@ export const DEFAULT_SETTINGS = {
   maxNewPerDay: 20,
   maxReviewsPerDay: 100,
   dayStartHour: 4,
+  autoPlayReviewAudio: false,
   activeDeckId: null,
 };
 
