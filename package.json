@@ -4,9 +4,11 @@
   "version": "1.0.0",
   "scripts": {
     "start:expo": "expo start",
+    "start:expo:tunnel": "expo start --tunnel",
     "new": "rm -rf node_modules && rm -rf .expo && rm -rf ios && rm -rf android && yarn cache clean && yarn install",
     "android": "expo run:android",
     "ios": "expo run:ios",
+    "ios:device": "expo start --dev-client && expo run:ios --device",
     "clean:ios": "npx expo prebuild -p ios --clean",
     "build:ios": "npx expo run:ios --configuration Release",
     "build:device": "npx expo run:ios --configuration Release --device",
