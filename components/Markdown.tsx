@@ -1,4 +1,4 @@
-import { StyleSheet, TextStyle } from 'react-native';
+import { StyleSheet, Text, TextStyle } from 'react-native';
 import MarkdownDisplay from 'react-native-markdown-display';
 
 import { useColors } from '@/hooks';
@@ -6,9 +6,10 @@ import { useColors } from '@/hooks';
 type MarkdownProps = {
   children: string | undefined | null;
   style?: TextStyle;
+  selectable?: boolean;
 };
 
-export function Markdown({ children, style }: MarkdownProps) {
+export function Markdown({ children, style, selectable = true }: MarkdownProps) {
   const colors = useColors();
 
   if (!children || typeof children !== 'string') {
@@ -34,7 +35,22 @@ export function Markdown({ children, style }: MarkdownProps) {
     bullet_list_icon: StyleSheet.flatten([styles.bulletIcon, { color: colors.text }]),
   };
 
-  return <MarkdownDisplay style={markdownStyles}>{children}</MarkdownDisplay>;
+  // Custom rules to enable text selection
+  const rules = selectable
+    ? {
+        textgroup: (node: any, children: any, parent: any, styles: any) => (
+          <Text key={node.key} selectable style={styles.text}>
+            {children}
+          </Text>
+        ),
+      }
+    : undefined;
+
+  return (
+    <MarkdownDisplay style={markdownStyles} rules={rules}>
+      {children}
+    </MarkdownDisplay>
+  );
 }
 
 const styles = StyleSheet.create({

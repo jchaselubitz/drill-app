@@ -213,6 +213,7 @@ function AttemptCardInner({
       <Text
         style={[styles.attemptPreview, { color: colors.text }]}
         numberOfLines={isExpanded ? undefined : 2}
+        selectable
       >
         {attempt.paragraph}
       </Text>
@@ -242,6 +243,7 @@ function AttemptCardInner({
                       styles.feedbackPoint,
                       { color: item.negative ? colors.error : colors.success },
                     ]}
+                    selectable
                   >
                     {item.point}
                   </Text>
@@ -260,7 +262,7 @@ function AttemptCardInner({
               <View style={styles.vocabularyList}>
                 {vocabularyPairs.map((pair, index) => (
                   <View key={index} style={styles.vocabularyItem}>
-                    <Text style={[styles.vocabularyText, { color: colors.text }]}>
+                    <Text style={[styles.vocabularyText, { color: colors.text }]} selectable>
                       <Text style={styles.vocabularyNative}>{pair.nativePhrase.text}</Text>
                       {' → '}
                       <Text style={styles.vocabularyTarget}>{pair.targetPhrase.text}</Text>
