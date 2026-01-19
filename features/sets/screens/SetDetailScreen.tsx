@@ -255,8 +255,10 @@ export default function SetDetailScreen() {
   const renderPhraseItem = ({ item }: { item: PhraseItem }) => (
     <View style={[styles.phraseItem, { borderBottomColor: colors.border }]}>
       <View style={styles.phraseContent}>
-        <Text style={[styles.primaryText, { color: colors.text }]}>{item.primary}</Text>
-        <Text style={[styles.secondaryText, { color: colors.textSecondary }]}>
+        <Text style={[styles.primaryText, { color: colors.text }]} selectable>
+          {item.primary}
+        </Text>
+        <Text style={[styles.secondaryText, { color: colors.textSecondary }]} selectable>
           {item.secondary}
         </Text>
         {item.partOfSpeech && (

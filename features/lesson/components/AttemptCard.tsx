@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useDatabase, withObservables } from '@nozbe/watermelondb/react';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View, ViewStyle } from 'react-native';
 
 import { Card, Markdown } from '@/components';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -104,6 +104,7 @@ function AttemptCardInner({
         paragraph,
         topicLanguage: settings.topicLanguage,
         userLanguage: settings.userLanguage,
+        level: attempt.level,
       });
     } catch (error) {
       console.error('Failed to retry attempt:', error);
@@ -122,8 +123,11 @@ function AttemptCardInner({
 
   // Render pending state
   if (isPending || isFailed) {
+    const cardStyle: ViewStyle = isFailed
+      ? StyleSheet.flatten([styles.attemptCard, { borderColor: colors.error, borderWidth: 1 }])
+      : styles.attemptCard;
     return (
-      <Card style={[styles.attemptCard, isFailed && { borderColor: colors.error, borderWidth: 1 }]}>
+      <Card style={cardStyle}>
         <View style={styles.attemptHeader}>
           <View style={styles.attemptMeta}>
             <Ionicons name="time-outline" size={14} color={colors.textSecondary} />

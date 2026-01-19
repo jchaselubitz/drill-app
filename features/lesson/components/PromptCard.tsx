@@ -18,7 +18,9 @@ export function PromptCard({ lesson }: PromptCardProps) {
         <Ionicons name="bulb" size={20} color={colors.primary} />
         <Text style={[styles.promptLabel, { color: colors.textSecondary }]}>Writing Prompt</Text>
       </View>
-      <Text style={[styles.promptText, { color: colors.text }]}>{lesson.prompt}</Text>
+      <Text style={[styles.promptText, { color: colors.text }]} selectable>
+        {lesson.prompt}
+      </Text>
       <View style={styles.lessonMeta}>
         <View style={[styles.levelBadge, { backgroundColor: colors.primary + '20' }]}>
           <Text style={[styles.levelText, { color: colors.primary }]}>{lesson.level}</Text>

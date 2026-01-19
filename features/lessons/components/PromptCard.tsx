@@ -31,7 +31,9 @@ export function PromptCard({
           Your Writing Prompt
         </Text>
       </View>
-      <Text style={[styles.promptText, { color: colors.text }]}>{prompt}</Text>
+      <Text style={[styles.promptText, { color: colors.text }]} selectable>
+        {prompt}
+      </Text>
       <View style={styles.promptActions}>
         <Button
           text="Shorter"
