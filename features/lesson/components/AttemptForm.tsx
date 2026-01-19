@@ -1,16 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
 import {
   ActivityIndicator,
-  InputAccessoryView,
+
   Platform,
   Pressable,
+  TextInput as RNTextInput,
   StyleSheet,
   Text,
-  TextInput as RNTextInput,
   View,
 } from 'react-native';
 
-import { KeyboardToolbar } from '@/components';
 import { useColors } from '@/hooks';
 
 const INPUT_ACCESSORY_VIEW_ID = 'attempt-form-toolbar';
@@ -21,8 +20,8 @@ type AttemptFormProps = {
   paragraph: string;
   onChangeText: (text: string) => void;
   onSubmit: () => void;
-  onCancel: () => void;
   isLoading: boolean;
+  onCancel: () => void;
 };
 
 export function AttemptForm({
@@ -35,6 +34,12 @@ export function AttemptForm({
   const colors = useColors();
   const isDisabled = !paragraph.trim();
 
+  const getButtonState = () => {
+    if (isLoading) return 'loading';
+    if (!paragraph.trim()) return 'disabled';
+    return 'default';
+  };
+
   return (
     <View style={styles.attemptForm}>
       <Text style={[styles.sectionTitle, { color: colors.text }]}>Your Response</Text>
@@ -43,8 +48,8 @@ export function AttemptForm({
           styles.inputContainer,
           {
             backgroundColor: colors.card,
-            borderColor: colors.border,
-          },
+            borderColor: colors.border
+          }
         ]}
       >
         <RNTextInput
@@ -59,32 +64,24 @@ export function AttemptForm({
           inputAccessoryViewID={Platform.OS === 'ios' ? INPUT_ACCESSORY_VIEW_ID : undefined}
         />
         <View style={styles.buttonRow}>
-          {isLoading && (
-            <Pressable
-              style={({ pressed }) => [
-                styles.iconButton,
-                { backgroundColor: colors.error, opacity: pressed ? 0.8 : 1 },
-              ]}
-              onPress={onCancel}
-              accessibilityLabel="Cancel request"
-            >
-              <Ionicons name="stop" size={20} color={colors.primaryText} />
-            </Pressable>
-          )}
           <Pressable
             style={({ pressed }) => [
               styles.iconButton,
+              isLoading && styles.iconButtonLoading,
               {
                 backgroundColor: isDisabled ? colors.border : colors.primary,
-                opacity: pressed && !isDisabled ? 0.8 : 1,
-              },
+                opacity: pressed && !isDisabled ? 0.8 : 1
+              }
             ]}
-            onPress={onSubmit}
-            disabled={isDisabled || isLoading}
-            accessibilityLabel="Submit attempt"
+            onPress={isLoading ? onCancel : onSubmit}
+            disabled={isDisabled && !isLoading}
+            accessibilityLabel={isLoading ? 'Cancel request' : 'Submit attempt'}
           >
             {isLoading ? (
-              <ActivityIndicator size="small" color={colors.primaryText} />
+              <View style={styles.loadingContent}>
+                <ActivityIndicator size="small" color={colors.primaryText} />
+                <Ionicons name="stop" size={18} color={colors.primaryText} />
+              </View>
             ) : (
               <Ionicons name="send" size={18} color={colors.primaryText} />
             )}
@@ -126,13 +123,22 @@ const styles = StyleSheet.create({
     bottom: BUTTON_GAP,
     right: BUTTON_GAP,
     flexDirection: 'row',
-    gap: BUTTON_GAP,
+    gap: BUTTON_GAP
   },
   iconButton: {
     width: BUTTON_SIZE,
     height: BUTTON_SIZE,
     borderRadius: BUTTON_SIZE / 2,
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'center'
+  },
+  iconButtonLoading: {
+    width: 'auto',
+    paddingHorizontal: 16
+  },
+  loadingContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8
   },
 });
