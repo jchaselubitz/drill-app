@@ -19,7 +19,10 @@ export interface PendingRequestProps {
   updatedAt: number;
 }
 
-type CreatePendingRequestParams = Omit<PendingRequestProps, 'id' | 'createdAt' | 'updatedAt' | 'retryCount'>;
+type CreatePendingRequestParams = Omit<
+  PendingRequestProps,
+  'id' | 'createdAt' | 'updatedAt' | 'retryCount'
+>;
 
 export default class PendingRequest extends Model {
   static table = PENDING_REQUEST_TABLE;

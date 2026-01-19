@@ -29,6 +29,7 @@ export default class Lesson extends Model {
   @field('topic') topic!: string;
   @field('phrases') phrases!: string | null;
   @field('prompt') prompt!: string;
+  @field('user_language') userLanguage!: string;
   @field('lang') lang!: string;
   @field('level') level!: string;
 

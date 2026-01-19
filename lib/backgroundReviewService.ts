@@ -15,6 +15,8 @@ export interface SubmitAttemptParams {
   paragraph: string;
   topicLanguage: LanguageCode;
   userLanguage: LanguageCode;
+  level: string;
+  abortSignal?: AbortSignal;
 }
 
 /**
@@ -29,11 +31,14 @@ export async function submitAttemptForReview({
   paragraph,
   topicLanguage,
   userLanguage,
+  level,
+  abortSignal,
 }: SubmitAttemptParams): Promise<Attempt> {
   // Create pending attempt immediately so it shows in the UI
   const attempt = await Attempt.createPendingAttempt(db, {
     lessonId,
     paragraph: paragraph.trim(),
+    level,
   });
 
   // Create pending request record for recovery
@@ -50,6 +55,7 @@ export async function submitAttemptForReview({
     paragraph: paragraph.trim(),
     topicLanguage,
     userLanguage,
+    level,
   });
 
   return attempt;
@@ -61,6 +67,7 @@ interface ProcessReviewParams {
   paragraph: string;
   topicLanguage: LanguageCode;
   userLanguage: LanguageCode;
+  level: string;
 }
 
 /**
@@ -72,6 +79,7 @@ async function processReview({
   paragraph,
   topicLanguage,
   userLanguage,
+  level,
 }: ProcessReviewParams): Promise<void> {
   const controller = new AbortController();
   activeRequests.set(attemptId, controller);
@@ -81,6 +89,7 @@ async function processReview({
       paragraph,
       topicLanguage,
       userLanguage,
+      level,
       abortSignal: controller.signal,
     });
 
@@ -185,6 +194,7 @@ export async function retryPendingRequests(db: Database): Promise<void> {
           paragraph: attempt.paragraph,
           topicLanguage: pendingRequest.topicLanguage,
           userLanguage: pendingRequest.userLanguage,
+          level: attempt.level,
         });
       } else {
         // Attempt already completed/failed, clean up pending request

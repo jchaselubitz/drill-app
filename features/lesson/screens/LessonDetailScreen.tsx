@@ -40,8 +40,6 @@ function DeleteButton({ onPress, disabled }: { onPress: () => void; disabled: bo
   );
 }
 
-
-
 export default function LessonDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
@@ -56,7 +54,6 @@ export default function LessonDetailScreen() {
   const [expandedAttemptId, setExpandedAttemptId] = useState<string | null>(null);
   const [abortController, setAbortController] = useState<AbortController | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-
 
   useEffect(() => {
     if (!id) return;
@@ -101,7 +98,7 @@ export default function LessonDetailScreen() {
     setAbortController(controller);
     setIsLoading(true);
     setIsSubmitting(true);
-    
+
     try {
       // Submit for background processing - returns immediately with pending attempt
       await submitAttemptForReview({
