@@ -2,15 +2,19 @@
 
 ## Promotional Text
 
-Master any language through AI-powered writing practice. Get instant, personalized feedback on your writing and track your progress as you improve.
+Master any language through AI-powered writing practice and spaced repetition.
+Get instant feedback, hear native pronunciation, and remember what you learn.
 
 ---
 
 ## Description
 
-**Write better. Learn faster. Track your progress.**
+**Write better. Learn faster. Remember longer.**
 
-Drill is your personal AI writing tutor that helps you master a new language through focused writing practice. Unlike flashcard apps that test memorization, Drill develops your real-world communication skills by having you write—then gives you detailed, expert-level feedback in seconds.
+Drill is your personal AI language tutor that combines focused writing practice
+with smart vocabulary review. Develop real-world communication skills through
+writing, build your vocabulary with AI-generated audio, and retain what you
+learn with scientifically-proven spaced repetition.
 
 **How It Works**
 
@@ -22,19 +26,34 @@ Drill is your personal AI writing tutor that helps you master a new language thr
 
 **Intelligent Feedback That Teaches**
 
-Every correction comes with an explanation of *why* it matters. Learn grammar rules, vocabulary nuances, and writing mechanics—all explained in your native language so you truly understand.
+Every correction comes with an explanation of _why_ it matters. Learn grammar
+rules, vocabulary nuances, and writing mechanics—all explained in your native
+language so you truly understand.
 
 **Adaptive to Your Level**
 
-Whether you're a beginner (A1) or advanced learner (C2), prompts and feedback adapt to your proficiency using the internationally recognized CEFR framework. As you improve, the challenge grows with you.
-
-**Track Your Weak Points**
-
-Drill's skill analysis identifies patterns across your writing attempts to pinpoint exactly where you need practice—grammar, vocabulary, sentence structure, punctuation, and more. See your weaknesses transform into strengths.
+Whether you're a beginner (A1) or advanced learner (C2), prompts and feedback
+adapt to your proficiency using the internationally recognized CEFR framework.
+As you improve, the challenge grows with you.
 
 **Build Your Vocabulary**
 
-Create a personal phrase library as you learn. Save words, add translations, mark favorites, and integrate vocabulary into your writing lessons for contextual practice.
+Create a personal phrase library as you learn. Save words, add translations,
+mark favorites, and integrate vocabulary into your writing lessons for
+contextual practice.
+
+**Master Vocabulary with Spaced Repetition**
+
+Organize phrases into sets and review them using scientifically-proven spaced
+repetition. The SuperMemo 2 algorithm schedules reviews at optimal
+intervals—showing you words right before you forget them. Hear native
+pronunciation with AI-generated audio for every phrase.
+
+**Audio-Enhanced Learning**
+
+Listen to AI-generated native pronunciation for any phrase. Auto-play mode lets
+you focus on listening and learning without manual controls. Perfect for
+auditory learners and pronunciation practice.
 
 **Features**
 
@@ -44,6 +63,9 @@ Create a personal phrase library as you learn. Save words, add translations, mar
 - Skill tracking that identifies your specific weak points
 - Attempt history to visualize your progress
 - Personal vocabulary library with translations
+- Spaced repetition review sets with SuperMemo 2 algorithm
+- AI-generated native pronunciation audio for all phrases
+- Auto-play audio mode for hands-free learning
 - Support for multiple languages
 - Light and dark mode
 - Privacy-focused: your data stays on your device
@@ -56,10 +78,12 @@ Create a personal phrase library as you learn. Save words, add translations, mar
 - Students supplementing classroom learning
 - Anyone who learns best by doing
 
-Stop memorizing. Start writing. Download Drill and see the difference focused practice makes.
+Stop forgetting. Start learning smarter. Download Drill and experience the
+perfect blend of writing practice and spaced repetition.
 
 ---
 
 ## Keywords
 
-language learning, writing practice, AI tutor, language tutor, writing feedback, grammar learning, language app
+Language app, Spaced repetition, AI tutor, language tutor, writing feedback,
+vocabulary review, pronunciation

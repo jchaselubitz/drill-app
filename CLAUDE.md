@@ -8,6 +8,7 @@ A React Native mobile app for language learning with AI-powered tutoring.
 - **Expo Router** with native tabs (`expo-router/unstable-native-tabs`)
 - **WatermelonDB** for local database with reactive queries
 - **Google Gemini Flash** (gemini-3.0-flash) for AI features
+- **Expo Audio** for audio playback and text-to-speech
 - **Expo Vector Icons** for iconography
 - **TypeScript** for type safety
 
@@ -55,6 +56,22 @@ Structured writing practice with:
 - Saved prompts with topic, level, and related phrases
 - Attempt history with corrections and feedback
 - Reactive data updates via WatermelonDB
+
+### 6. Sets with Spaced Repetition (`features/set/`)
+Organized vocabulary practice using spaced repetition:
+- Create sets of phrases for focused review
+- AI-generated audio pronunciation for each phrase
+- SuperMemo 2 algorithm for optimal review scheduling
+- Track review performance (easy, good, hard, again)
+- Auto-play audio during reviews
+- Review sessions adapt based on performance
+
+### 7. Audio Generation (`lib/ai/audio.ts`)
+Text-to-speech audio generation:
+- Powered by Google Gemini Flash with audio output
+- Generates native pronunciation for phrases
+- Caches audio files locally for offline playback
+- Supports multiple languages
 
 ## Environment Variables
 
@@ -129,7 +146,7 @@ yarn new
 Key models and their relationships:
 - **Lesson** - Writing prompts with topic, level, language, and optional phrases
 - **Attempt** - User submissions linked to lessons with AI-generated correction/feedback
-- **Phrase** - Vocabulary items with language, source, part of speech, difficulty
+- **Phrase** - Vocabulary items with language, source, part of speech, difficulty, and optional audio URL
 - **Translation** - Links primary/secondary phrases for translation pairs
 - **Tag/PhraseTag** - Tagging system for organizing phrases
 - **Profile** - User settings (languages, preferences)
@@ -137,6 +154,8 @@ Key models and their relationships:
 - **Media** - Media attachments with URLs and metadata
 - **Skill** - Language skills tracked from user attempts
 - **Feedback** - Feedback records for attempts
+- **Set** - Collections of phrases for organized review practice
+- **SetPhrase** - Junction table linking phrases to sets with spaced repetition metadata (due date, interval, ease factor, repetitions)
 
 ## MCP Servers
 
