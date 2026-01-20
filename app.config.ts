@@ -10,7 +10,7 @@ type AppConfig = ExpoConfig & {
 const config: AppConfig = {
   name: 'Drill',
   slug: 'drill-app',
-  version: '1.0.0',
+  version: '1.1.0',
   orientation: 'portrait',
   scheme: 'drillapp',
   userInterfaceStyle: 'automatic',
