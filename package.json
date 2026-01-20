@@ -30,7 +30,7 @@
     "better-sqlite3": "^12.6.0",
     "dotenv": "^17.2.3",
     "expo": "^54.0.31",
-    "expo-audio": "~1.1.1",
+    "expo-audio": "^1.1.1",
     "expo-background-task": "^1.0.10",
     "expo-constants": "^18.0.13",
     "expo-file-system": "^19.0.21",

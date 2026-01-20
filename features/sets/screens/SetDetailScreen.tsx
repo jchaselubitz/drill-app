@@ -3,7 +3,7 @@ import { Q } from '@nozbe/watermelondb';
 import { useDatabase } from '@nozbe/watermelondb/react';
 import Constants from 'expo-constants';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -65,7 +65,50 @@ export default function SetDetailScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [showGenerateMore, setShowGenerateMore] = useState(false);
   const audioStatus = useDeckAudioStatus(id);
+  const [audioProgress, setAudioProgress] = useState<number | null>(null);
+  const [audioInitialRemaining, setAudioInitialRemaining] = useState<number | null>(null);
+  const prevIsGeneratingRef = useRef(audioStatus.isGenerating);
   const { togglePlayPause, isPlayingFile } = useAudioPlayback();
+
+  const loadPhrasesForDeck = useCallback(
+    async (deckId: string) => {
+      const deckTranslations = await db.collections
+        .get(DECK_TRANSLATION_TABLE)
+        .query(Q.where('deck_id', deckId))
+        .fetch();
+
+      const phraseItems: PhraseItem[] = [];
+
+      for (const dt of deckTranslations as DeckTranslation[]) {
+        try {
+          const translation = await db.collections
+            .get<Translation>(TRANSLATION_TABLE)
+            .find(dt.translationId);
+
+          const primaryPhrase = await db.collections.get<Phrase>(PHRASE_TABLE).find(translation.phrasePrimaryId);
+
+          const secondaryPhrase = await db.collections
+            .get<Phrase>(PHRASE_TABLE)
+            .find(translation.phraseSecondaryId);
+
+          phraseItems.push({
+            id: dt.id,
+            primaryPhraseId: primaryPhrase.id,
+            primary: primaryPhrase.text,
+            secondary: secondaryPhrase.text,
+            partOfSpeech: primaryPhrase.partSpeech,
+            primaryFilename: primaryPhrase.filename,
+            secondaryFilename: secondaryPhrase.filename,
+          });
+        } catch (error) {
+          console.error('Error fetching phrase:', error);
+        }
+      }
+
+      setPhrases(phraseItems);
+    },
+    [db]
+  );
 
   useEffect(() => {
     if (!id) return;
@@ -83,38 +126,8 @@ export default function SetDetailScreen() {
       .get(DECK_TRANSLATION_TABLE)
       .query(Q.where('deck_id', id))
       .observe()
-      .subscribe(async (deckTranslations) => {
-        const phraseItems: PhraseItem[] = [];
-
-        for (const dt of deckTranslations as DeckTranslation[]) {
-          try {
-            const translation = await db.collections
-              .get<Translation>(TRANSLATION_TABLE)
-              .find(dt.translationId);
-
-            const primaryPhrase = await db.collections
-              .get<Phrase>(PHRASE_TABLE)
-              .find(translation.phrasePrimaryId);
-
-            const secondaryPhrase = await db.collections
-              .get<Phrase>(PHRASE_TABLE)
-              .find(translation.phraseSecondaryId);
-
-            phraseItems.push({
-              id: dt.id,
-              primaryPhraseId: primaryPhrase.id,
-              primary: primaryPhrase.text,
-              secondary: secondaryPhrase.text,
-              partOfSpeech: primaryPhrase.partSpeech,
-              primaryFilename: primaryPhrase.filename,
-              secondaryFilename: secondaryPhrase.filename,
-            });
-          } catch (error) {
-            console.error('Error fetching phrase:', error);
-          }
-        }
-
-        setPhrases(phraseItems);
+      .subscribe(async () => {
+        await loadPhrasesForDeck(id);
       });
 
     // Subscribe to due cards count
@@ -126,12 +139,42 @@ export default function SetDetailScreen() {
         setDueCount(count);
       });
 
+    // Initial load
+    loadPhrasesForDeck(id);
+
     return () => {
       deckSub.unsubscribe();
       translationsSub.unsubscribe();
       dueCardsSub.unsubscribe();
     };
-  }, [id, db]);
+  }, [id, db, loadPhrasesForDeck]);
+
+  useEffect(() => {
+    const remaining = audioStatus.pendingCount + audioStatus.processingCount;
+
+    if (audioStatus.isGenerating) {
+      if (audioInitialRemaining === null && remaining > 0) {
+        setAudioInitialRemaining(remaining);
+      }
+
+      if (audioInitialRemaining && audioInitialRemaining > 0) {
+        const completed = Math.max(0, audioInitialRemaining - remaining);
+        const progress = Math.max(0, Math.min(1, completed / audioInitialRemaining));
+        setAudioProgress(progress);
+      }
+    } else {
+      setAudioInitialRemaining(null);
+      setAudioProgress(null);
+    }
+
+    const wasGenerating = prevIsGeneratingRef.current;
+    if (wasGenerating && !audioStatus.isGenerating && id) {
+      // Audio generation just finished – refresh phrases so play buttons appear
+      loadPhrasesForDeck(id);
+    }
+
+    prevIsGeneratingRef.current = audioStatus.isGenerating;
+  }, [audioStatus, audioInitialRemaining, id, loadPhrasesForDeck]);
 
   const handleStartReview = () => {
     router.push(`/review/session?deckId=${id}` as any);
@@ -448,12 +491,34 @@ export default function SetDetailScreen() {
                 </View>
               </View>
               {audioStatus.isGenerating && (
-                <View style={[styles.audioStatusBar, { backgroundColor: colors.card }]}>
-                  <Ionicons name="volume-high" size={16} color={colors.primary} />
-                  <Text style={[styles.audioStatusText, { color: colors.textSecondary }]}>
-                    Generating audio: {audioStatus.pendingCount + audioStatus.processingCount}{' '}
-                    remaining
-                  </Text>
+                <View style={[styles.audioStatusContainer, { backgroundColor: colors.card }]}>
+                  <View style={styles.audioStatusHeader}>
+                    <Ionicons name="volume-high" size={16} color={colors.primary} />
+                    <Text style={[styles.audioStatusText, { color: colors.textSecondary }]}>
+                      Generating audio
+                    </Text>
+                    <Text style={[styles.audioStatusMetaText, { color: colors.textSecondary }]}>
+                      {audioStatus.pendingCount + audioStatus.processingCount} remaining
+                    </Text>
+                  </View>
+                  {audioProgress !== null && (
+                    <View
+                      style={[
+                        styles.audioProgressTrack,
+                        { backgroundColor: colors.border },
+                      ]}
+                    >
+                      <View
+                        style={[
+                          styles.audioProgressFill,
+                          {
+                            backgroundColor: colors.primary,
+                            width: `${Math.round(audioProgress * 100)}%`,
+                          },
+                        ]}
+                      />
+                    </View>
+                  )}
                 </View>
               )}
             </View>
@@ -523,16 +588,32 @@ const styles = StyleSheet.create({
   buttonHalf: {
     flex: 1,
   },
-  audioStatusBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  audioStatusContainer: {
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 8,
+    gap: 6,
+  },
+  audioStatusHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
   },
   audioStatusText: {
     fontSize: 13,
+  },
+  audioStatusMetaText: {
+    fontSize: 12,
+  },
+  audioProgressTrack: {
+    height: 6,
+    borderRadius: 999,
+    overflow: 'hidden',
+  },
+  audioProgressFill: {
+    height: '100%',
+    borderRadius: 999,
   },
   sectionTitle: {
     fontSize: 17,

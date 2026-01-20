@@ -1,4 +1,4 @@
-import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
+import { setAudioModeAsync, useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { getAudioFileUriIfExists } from '@/lib/audio/storage';
@@ -10,6 +10,17 @@ export function useAudioPlayback() {
   const [playbackState, setPlaybackState] = useState<AudioPlaybackState>('idle');
   const previousIsLoadedRef = useRef(false);
   const shouldAutoPlayRef = useRef(false);
+
+  // Configure audio mode for speaker playback on iOS
+  useEffect(() => {
+    setAudioModeAsync({
+      playsInSilentMode: true,
+      interruptionMode: 'duckOthers',
+      allowsRecording: false,
+      shouldPlayInBackground: false,
+      shouldRouteThroughEarpiece: false,
+    });
+  }, []);
 
   const player = useAudioPlayer(currentUri ?? undefined);
   const status = useAudioPlayerStatus(player);
@@ -47,13 +58,6 @@ export function useAudioPlayback() {
   }, [currentUri, status.isLoaded, status.playing]);
 
   // Handle playback errors
-  useEffect(() => {
-    if (status.error) {
-      console.error('Audio playback error:', status.error);
-      setPlaybackState('idle');
-      setCurrentUri(null);
-    }
-  }, [status.error]);
 
   // Reset to idle when playback finishes
   useEffect(() => {
