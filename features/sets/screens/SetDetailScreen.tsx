@@ -85,7 +85,9 @@ export default function SetDetailScreen() {
             .get<Translation>(TRANSLATION_TABLE)
             .find(dt.translationId);
 
-          const primaryPhrase = await db.collections.get<Phrase>(PHRASE_TABLE).find(translation.phrasePrimaryId);
+          const primaryPhrase = await db.collections
+            .get<Phrase>(PHRASE_TABLE)
+            .find(translation.phrasePrimaryId);
 
           const secondaryPhrase = await db.collections
             .get<Phrase>(PHRASE_TABLE)
@@ -502,12 +504,7 @@ export default function SetDetailScreen() {
                     </Text>
                   </View>
                   {audioProgress !== null && (
-                    <View
-                      style={[
-                        styles.audioProgressTrack,
-                        { backgroundColor: colors.border },
-                      ]}
-                    >
+                    <View style={[styles.audioProgressTrack, { backgroundColor: colors.border }]}>
                       <View
                         style={[
                           styles.audioProgressFill,
