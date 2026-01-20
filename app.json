@@ -19,7 +19,7 @@
     },
     "infoPlist": {
       "UIDesignRequiresCompatibility": true,
-      "UIBackgroundModes": ["processing", "audio"],
+      "UIBackgroundModes": ["processing"],
       "BGTaskSchedulerPermittedIdentifiers": ["com.drillapp.mobile.background-review-fetch", "com.drillapp.mobile.background-audio-fetch"]
     },
     "android": {

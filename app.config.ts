@@ -22,7 +22,7 @@ const config: AppConfig = {
     bundleIdentifier: 'com.drillapp.mobile',
     infoPlist: {
       ITSAppUsesNonExemptEncryption: false,
-      UIBackgroundModes: ['processing', 'audio'],
+      UIBackgroundModes: ['processing'],
       BGTaskSchedulerPermittedIdentifiers: [
         'com.drillapp.mobile.background-review-fetch',
         'com.drillapp.mobile.background-audio-fetch',
