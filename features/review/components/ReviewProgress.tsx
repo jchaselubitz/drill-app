@@ -3,16 +3,17 @@ import { StyleSheet, Text } from 'react-native';
 import { useColors } from '@/hooks';
 
 type ReviewProgressProps = {
-  current: number;
-  total: number;
+  newRemaining: number;
+  reviewsRemaining: number;
+  completedToday: number;
 };
 
-export function ReviewProgress({ current, total }: ReviewProgressProps) {
+export function ReviewProgress({ newRemaining, reviewsRemaining, completedToday }: ReviewProgressProps) {
   const colors = useColors();
 
   return (
     <Text style={[styles.progress, { color: colors.textSecondary }]}>
-      Card {current} of {total}
+      New: {newRemaining} • Reviews: {reviewsRemaining} • Completed: {completedToday}
     </Text>
   );
 }
