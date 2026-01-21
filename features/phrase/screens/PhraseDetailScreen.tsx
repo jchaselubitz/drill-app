@@ -4,6 +4,7 @@ import { useDatabase } from '@nozbe/watermelondb/react';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Platform,
@@ -16,10 +17,9 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Button } from '@/components/Button';
-import { LanguageChooser } from '@/components/LanguageChooser';
+import { CollapsibleSection } from '@/components/CollapsibleSection';
+import { MetadataChip } from '@/components/MetadataChip';
 import { Select } from '@/components/Select';
-import { TextInput } from '@/components/TextInput';
 import { Languages, PARTS_OF_SPEECH } from '@/constants';
 import { useSettings } from '@/contexts/SettingsContext';
 import database from '@/database';
@@ -69,7 +69,6 @@ export default function PhraseDetailScreen() {
   const [targetLanguage, setTargetLanguage] = useState<string>(settings.topicLanguage);
 
   const scrollViewRef = useRef<ScrollView>(null);
-  const noteInputY = useRef<number>(0);
   const textInputRef = useRef<any>(null);
 
   useEffect(() => {
@@ -170,11 +169,10 @@ export default function PhraseDetailScreen() {
     if (!phrase) return;
 
     const excludedLanguages = new Set([
-      phrase.lang, // Current phrase language
-      ...linkedTranslations.map((item) => item.phrase.lang), // Already translated languages
+      phrase.lang,
+      ...linkedTranslations.map((item) => item.phrase.lang),
     ]);
 
-    // If current target language is excluded, reset to topic language (if available) or first available
     setTargetLanguage((currentTarget) => {
       if (excludedLanguages.has(currentTarget)) {
         const availableLanguages = Languages.filter((l) => !excludedLanguages.has(l.code));
@@ -204,23 +202,6 @@ export default function PhraseDetailScreen() {
     setIsNoteDirty(true);
   };
 
-  const handleNoteLayout = (event: any) => {
-    const { y } = event.nativeEvent.layout;
-    noteInputY.current = y;
-  };
-
-  const handleNoteFocus = () => {
-    // Scroll to input after a short delay to ensure keyboard is shown
-    setTimeout(() => {
-      if (noteInputY.current > 0) {
-        scrollViewRef.current?.scrollTo({
-          y: noteInputY.current - 40,
-          animated: true,
-        });
-      }
-    }, 100);
-  };
-
   const handleNoteBlur = async () => {
     if (!phrase || !isNoteDirty) return;
     await phrase.updateNote(note.trim() || null);
@@ -236,7 +217,6 @@ export default function PhraseDetailScreen() {
     if (!phrase) return;
     setEditedText(phrase.text);
     setIsEditingText(true);
-    // Focus the input after render
     setTimeout(() => {
       textInputRef.current?.focus();
     }, 50);
@@ -266,7 +246,6 @@ export default function PhraseDetailScreen() {
         targetLanguage,
       });
 
-      // Create the translated phrase
       const newPhrase = await Phrase.findOrCreatePhrase(db, {
         text: result.output_text,
         lang: result.output_lang,
@@ -281,7 +260,6 @@ export default function PhraseDetailScreen() {
         attemptId: null,
       });
 
-      // Link the phrases via Translation
       await Translation.addTranslation(db, {
         phrasePrimaryId: phrase.id,
         phraseSecondaryId: newPhrase.id,
@@ -401,9 +379,14 @@ export default function PhraseDetailScreen() {
     );
   };
 
+  // Build options for dropdowns
+  const languageOptions = Languages.map((l) => ({
+    value: l.code,
+    label: `${l.icon} ${l.name}`,
+  }));
+
   const partSpeechOptions = [{ value: '', label: 'None' }, ...PARTS_OF_SPEECH];
 
-  // Get available languages for translation (exclude current phrase language and already translated languages)
   const excludedLanguages = phrase
     ? new Set([phrase.lang, ...linkedTranslations.map((item) => item.phrase.lang)])
     : new Set<string>();
@@ -425,6 +408,7 @@ export default function PhraseDetailScreen() {
   }
 
   const language = Languages.find((l) => l.code === phrase.lang);
+  const partSpeech = PARTS_OF_SPEECH.find((p) => p.value === phrase.partSpeech);
   const deckOptions = [{ value: '', label: 'Not in a deck' }].concat(
     decks.map((deck) => ({ value: deck.id, label: deck.name }))
   );
@@ -457,6 +441,7 @@ export default function PhraseDetailScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={true}
         >
+          {/* Phrase Header Card */}
           <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <View style={styles.phraseHeader}>
               {isEditingText ? (
@@ -501,37 +486,47 @@ export default function PhraseDetailScreen() {
                 </Pressable>
               </View>
             </View>
-            {language && (
-              <Text style={[styles.languageText, { color: colors.textSecondary }]}>
-                {language.icon} {language.name}
-              </Text>
-            )}
+
+            {/* Inline Metadata Chips */}
+            <View style={styles.metadataRow}>
+              <MetadataChip
+                icon={language?.icon}
+                label="Language"
+                options={languageOptions}
+                value={phrase.lang}
+                onValueChange={handleLanguageChange}
+              />
+              <MetadataChip
+                iconName="pricetag-outline"
+                label="Part of Speech"
+                options={partSpeechOptions}
+                value={phrase.partSpeech ?? ''}
+                onValueChange={handlePartSpeechChange}
+                showLabel={true}
+              />
+            </View>
           </View>
 
-          <View style={styles.translateRow}>
-            <Button
-              text="Translate"
-              onPress={handleTranslate}
-              buttonState={isTranslating ? 'loading' : 'default'}
-              loadingText="Translating..."
-              variant="secondary"
-              style={styles.translateButton}
-            />
-            {translationLanguageOptions.length > 0 && (
-              <View style={styles.translateSelect}>
-                <Select
-                  options={translationLanguageOptions}
-                  value={targetLanguage}
-                  onValueChange={setTargetLanguage}
-                />
+          {/* Translations Section */}
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>TRANSLATIONS</Text>
+
+            {linkedTranslations.length === 0 ? (
+              /* Empty State */
+              <View
+                style={[
+                  styles.emptyState,
+                  { backgroundColor: colors.card, borderColor: colors.border },
+                ]}
+              >
+                <Ionicons name="language-outline" size={32} color={colors.textSecondary} />
+                <Text style={[styles.emptyStateText, { color: colors.textSecondary }]}>
+                  No translations yet
+                </Text>
               </View>
-            )}
-          </View>
-
-          {linkedTranslations.length > 0 && (
-            <View style={styles.translationsSection}>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>Translations</Text>
-              {linkedTranslations.map(({ translation, phrase: linkedPhrase }) => {
+            ) : (
+              /* Translation Cards */
+              linkedTranslations.map(({ translation, phrase: linkedPhrase }) => {
                 const linkedLang = Languages.find((l) => l.code === linkedPhrase.lang);
                 const deckAssignment = deckAssignments[translation.id] ?? '';
                 return (
@@ -542,7 +537,10 @@ export default function PhraseDetailScreen() {
                       { backgroundColor: colors.card, borderColor: colors.border },
                     ]}
                   >
-                    <Pressable onPress={() => router.push(`/phrase/${linkedPhrase.id}` as any)}>
+                    <Pressable
+                      onPress={() => router.push(`/phrase/${linkedPhrase.id}` as any)}
+                      style={styles.translationContent}
+                    >
                       <Text style={[styles.translationText, { color: colors.text }]}>
                         {linkedPhrase.text}
                       </Text>
@@ -566,38 +564,69 @@ export default function PhraseDetailScreen() {
                     )}
                   </View>
                 );
-              })}
-            </View>
-          )}
+              })
+            )}
 
-          <View style={styles.form}>
-            <LanguageChooser
-              label="Language"
-              value={phrase.lang}
-              onValueChange={handleLanguageChange}
-            />
-
-            <Select
-              label="Part of Speech"
-              options={partSpeechOptions}
-              value={phrase.partSpeech ?? ''}
-              onValueChange={handlePartSpeechChange}
-            />
-
-            <View onLayout={handleNoteLayout}>
-              <TextInput
-                label="Note"
-                placeholder="Add a note..."
-                value={note}
-                onChangeText={handleNoteChange}
-                onFocus={handleNoteFocus}
-                onBlur={handleNoteBlur}
-                multiline
-                numberOfLines={4}
-                style={styles.noteInput}
-              />
-            </View>
+            {/* Add Translation Row */}
+            {translationLanguageOptions.length > 0 && (
+              <Pressable
+                style={[
+                  styles.addTranslationRow,
+                  { backgroundColor: colors.card, borderColor: colors.border },
+                ]}
+                onPress={handleTranslate}
+                disabled={isTranslating}
+              >
+                <View style={styles.addTranslationLeft}>
+                  {isTranslating ? (
+                    <ActivityIndicator size="small" color={colors.primary} />
+                  ) : (
+                    <Ionicons name="add-circle-outline" size={22} color={colors.primary} />
+                  )}
+                  <Text style={[styles.addTranslationText, { color: colors.primary }]}>
+                    {isTranslating ? 'Translating...' : 'Add Translation'}
+                  </Text>
+                </View>
+                <View style={styles.addTranslationRight}>
+                  <Pressable
+                    onPress={(e) => e.stopPropagation()}
+                    style={styles.targetLanguageChip}
+                  >
+                    <MetadataChip
+                      icon={Languages.find((l) => l.code === targetLanguage)?.icon}
+                      label="Target Language"
+                      options={translationLanguageOptions}
+                      value={targetLanguage}
+                      onValueChange={setTargetLanguage}
+                    />
+                  </Pressable>
+                </View>
+              </Pressable>
+            )}
           </View>
+
+          {/* Notes Section */}
+          <CollapsibleSection
+            title="Notes"
+            icon="document-text-outline"
+            defaultExpanded={!!note}
+            preview={note || 'Add a note...'}
+          >
+            <RNTextInput
+              style={[
+                styles.noteInput,
+                { color: colors.text, backgroundColor: colors.background },
+              ]}
+              placeholder="Add a note about this phrase..."
+              placeholderTextColor={colors.textSecondary}
+              value={note}
+              onChangeText={handleNoteChange}
+              onBlur={handleNoteBlur}
+              multiline
+              numberOfLines={4}
+              textAlignVertical="top"
+            />
+          </CollapsibleSection>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -619,13 +648,13 @@ const styles = StyleSheet.create({
   content: {
     padding: 16,
     paddingBottom: 32,
-    gap: 24,
+    gap: 20,
   },
   card: {
     padding: 16,
     borderRadius: 12,
     borderWidth: 1,
-    gap: 8,
+    gap: 12,
   },
   phraseHeader: {
     flexDirection: 'row',
@@ -639,9 +668,10 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   phraseText: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '600',
     flex: 1,
+    lineHeight: 30,
   },
   phraseTextPressable: {
     flex: 1,
@@ -649,53 +679,85 @@ const styles = StyleSheet.create({
   phraseTextInput: {
     padding: 0,
     margin: 0,
-    minHeight: 28,
+    minHeight: 30,
   },
-  languageText: {
-    fontSize: 14,
+  metadataRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
   },
-  form: {
-    gap: 16,
-  },
-  noteInput: {
-    minHeight: 100,
-    textAlignVertical: 'top',
-  },
-  deleteButton: {
-    padding: 8,
-    marginRight: 4,
-  },
-  translationsSection: {
-    gap: 12,
+  section: {
+    gap: 10,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 12,
     fontWeight: '600',
+    letterSpacing: 0.5,
+    marginLeft: 4,
+  },
+  emptyState: {
+    padding: 24,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    alignItems: 'center',
+    gap: 8,
+  },
+  emptyStateText: {
+    fontSize: 14,
   },
   translationCard: {
-    padding: 12,
+    padding: 14,
     borderRadius: 10,
     borderWidth: 1,
+    gap: 8,
+  },
+  translationContent: {
     gap: 4,
   },
   translationText: {
     fontSize: 16,
+    fontWeight: '500',
   },
   translationLang: {
     fontSize: 13,
   },
   deckSelect: {
-    marginTop: 8,
+    marginTop: 4,
   },
-  translateRow: {
+  addTranslationRow: {
     flexDirection: 'row',
-    gap: 12,
-    alignItems: 'flex-end',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 12,
+    borderRadius: 10,
+    borderWidth: 1,
   },
-  translateButton: {
-    flex: 1,
+  addTranslationLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
-  translateSelect: {
-    flex: 1,
+  addTranslationText: {
+    fontSize: 15,
+    fontWeight: '500',
+  },
+  addTranslationRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  targetLanguageChip: {
+    // Allow chip to be interactive within the pressable row
+  },
+  noteInput: {
+    minHeight: 80,
+    padding: 12,
+    borderRadius: 8,
+    fontSize: 15,
+    lineHeight: 22,
+  },
+  deleteButton: {
+    padding: 8,
+    marginRight: 4,
   },
 });
