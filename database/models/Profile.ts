@@ -11,5 +11,6 @@ export default class Profile extends Model {
   @field('username') username!: string | null;
   @field('image_url') imageUrl!: string | null;
   @field('user_language') userLanguage!: string | null;
-  @field('pref_language') prefLanguage!: string | null;
+  @field('study_language') studyLanguage!: string | null;
+  @field('level') level!: string | null;
 }
