@@ -8,7 +8,11 @@ type ReviewProgressProps = {
   completedToday: number;
 };
 
-export function ReviewProgress({ newRemaining, reviewsRemaining, completedToday }: ReviewProgressProps) {
+export function ReviewProgress({
+  newRemaining,
+  reviewsRemaining,
+  completedToday,
+}: ReviewProgressProps) {
   const colors = useColors();
 
   return (

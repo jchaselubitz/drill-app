@@ -140,9 +140,7 @@ export default function LibraryScreen() {
         </View>
         <FlatList
           data={phrases}
-          renderItem={({ item }) => (
-            <PhraseCard phrase={item} onPress={handlePhrasePress} />
-          )}
+          renderItem={({ item }) => <PhraseCard phrase={item} onPress={handlePhrasePress} />}
           keyExtractor={(item) => item.id}
           contentContainerStyle={[
             styles.listContent,

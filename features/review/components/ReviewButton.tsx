@@ -144,14 +144,23 @@ export function ReviewButton({
     const iconSize = icon?.size || 24;
     const iconPosition = icon?.position || 'left';
 
+    const renderText = () => {
+      if (typeof text === 'string') {
+        return (
+          <Text style={[styles.text, { color: textColor }]} numberOfLines={1}>
+            {text}
+          </Text>
+        );
+      }
+      return text;
+    };
+
     return (
       <View style={styles.contentContainer}>
         {iconName && iconPosition === 'left' && (
           <Ionicons name={iconName} size={iconSize} color={textColor} style={{ marginRight: 8 }} />
         )}
-        <Text style={[styles.text, { color: textColor }]} numberOfLines={1}>
-          {text}
-        </Text>
+        {renderText()}
         {iconName && iconPosition === 'right' && (
           <Ionicons name={iconName} size={iconSize} color={textColor} style={{ marginLeft: 8 }} />
         )}

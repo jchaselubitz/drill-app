@@ -1,5 +1,6 @@
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
+import { useColors } from '@/hooks';
 import type { SrsRating } from '@/types';
 
 import { ReviewButton } from './ReviewButton';
@@ -24,15 +25,26 @@ type RatingButtonsProps = {
 };
 
 export function RatingButtons({ onRate, intervals }: RatingButtonsProps) {
+  const colors = useColors();
+
   return (
     <View style={styles.ratingRow}>
       {ratingButtons.map((button) => {
         const intervalText = intervals?.[button.rating];
-        const label = intervalText ? `${button.label} (${intervalText})` : button.label;
+        const textColor =
+          button.variant === 'primary' ? colors.primaryText : colors.text;
+        const buttonContent = (
+          <View style={styles.buttonContent}>
+            <Text style={[styles.buttonLabel, { color: textColor }]}>{button.label}</Text>
+            {intervalText && (
+              <Text style={[styles.intervalText, { color: textColor }]}>{intervalText}</Text>
+            )}
+          </View>
+        );
         return (
           <View key={button.rating} style={styles.ratingButton}>
             <ReviewButton
-              text={label}
+              text={buttonContent}
               onPress={() => onRate(button.rating)}
               variant={button.variant}
               tintColor={button.tintColor}
@@ -51,5 +63,19 @@ const styles = StyleSheet.create({
   },
   ratingButton: {
     flex: 1,
+  },
+  buttonContent: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buttonLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  intervalText: {
+    fontSize: 12,
+    fontWeight: '400',
+    marginTop: 2,
+    opacity: 0.8,
   },
 });

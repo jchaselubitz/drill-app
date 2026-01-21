@@ -27,7 +27,7 @@ export function MetadataChip<T extends string>({
   const colors = useColors();
 
   const selectedOption = options.find((o) => o.value === value);
-  const displayText = showLabel ? selectedOption?.label ?? label : '';
+  const displayText = showLabel ? (selectedOption?.label ?? label) : '';
 
   return (
     <>
@@ -36,9 +36,7 @@ export function MetadataChip<T extends string>({
         onPress={() => setVisible(true)}
       >
         {icon && <Text style={styles.icon}>{icon}</Text>}
-        {iconName && !icon && (
-          <Ionicons name={iconName} size={14} color={colors.textSecondary} />
-        )}
+        {iconName && !icon && <Ionicons name={iconName} size={14} color={colors.textSecondary} />}
         {displayText ? (
           <Text style={[styles.chipText, { color: colors.text }]} numberOfLines={1}>
             {displayText}

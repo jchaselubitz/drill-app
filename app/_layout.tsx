@@ -40,21 +40,21 @@ function AppContent() {
   const colorScheme = useColorScheme();
 
   return (
-    <DatabaseProvider database={database}>
-      <BackgroundRequestHandler>
-        <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-        <Stack screenOptions={{ headerShown: false }} />
-      </BackgroundRequestHandler>
-    </DatabaseProvider>
+    <BackgroundRequestHandler>
+      <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+      <Stack screenOptions={{ headerShown: false }} />
+    </BackgroundRequestHandler>
   );
 }
 
 export default function RootLayout() {
   return (
     <SafeAreaProvider>
-      <SettingsProvider>
-        <AppContent />
-      </SettingsProvider>
+      <DatabaseProvider database={database}>
+        <SettingsProvider>
+          <AppContent />
+        </SettingsProvider>
+      </DatabaseProvider>
     </SafeAreaProvider>
   );
 }

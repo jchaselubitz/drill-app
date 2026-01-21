@@ -1,6 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
 import { ReactNode, useState } from 'react';
-import { LayoutAnimation, Platform, Pressable, StyleSheet, Text, UIManager, View } from 'react-native';
+import {
+  LayoutAnimation,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  UIManager,
+  View,
+} from 'react-native';
 
 import { useColors } from '@/hooks';
 
@@ -41,10 +49,7 @@ export function CollapsibleSection({
         </View>
         <View style={styles.headerRight}>
           {!isExpanded && preview && (
-            <Text
-              style={[styles.preview, { color: colors.textSecondary }]}
-              numberOfLines={1}
-            >
+            <Text style={[styles.preview, { color: colors.textSecondary }]} numberOfLines={1}>
               {preview}
             </Text>
           )}

@@ -1,13 +1,12 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Q } from '@nozbe/watermelondb';
 import { useDatabase } from '@nozbe/watermelondb/react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 
 import { DEFAULT_SETTINGS } from '@/constants';
 import Deck from '@/database/models/Deck';
 import Profile from '@/database/models/Profile';
 import { DECK_TABLE, PROFILE_TABLE } from '@/database/schema';
-import type { UserSettings } from '@/types';
+import type { CEFRLevel, LanguageCode, UserSettings } from '@/types';
 
 const APP_SETTINGS_KEY = '@drill_app_settings';
 
@@ -31,11 +30,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }): R
   const [settings, setSettings] = useState<UserSettings>(DEFAULT_SETTINGS);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    loadSettings();
-  }, []);
-
-  const getOrCreateProfile = async (): Promise<Profile> => {
+  const getOrCreateProfile = useCallback(async (): Promise<Profile> => {
     const profiles = await database.collections.get<Profile>(PROFILE_TABLE).query().fetch();
 
     if (profiles.length > 0) {
@@ -50,15 +45,13 @@ export function SettingsProvider({ children }: { children: React.ReactNode }): R
         profile.userLanguage = DEFAULT_SETTINGS.userLanguage;
         profile.studyLanguage = DEFAULT_SETTINGS.topicLanguage;
         profile.level = DEFAULT_SETTINGS.level;
-        // @ts-expect-error - WatermelonDB manages these fields
         profile.createdAt = Date.now();
-        // @ts-expect-error - WatermelonDB manages these fields
         profile.updatedAt = Date.now();
       });
     });
-  };
+  }, [database]);
 
-  const loadSettings = async () => {
+  const loadSettings = useCallback(async () => {
     try {
       // Load from Profile
       const profile = await getOrCreateProfile();
@@ -92,9 +85,9 @@ export function SettingsProvider({ children }: { children: React.ReactNode }): R
       }
 
       const mergedSettings: UserSettings = {
-        userLanguage: profile.userLanguage || DEFAULT_SETTINGS.userLanguage,
-        topicLanguage: profile.studyLanguage || DEFAULT_SETTINGS.topicLanguage,
-        level: profile.level || DEFAULT_SETTINGS.level,
+        userLanguage: (profile.userLanguage as LanguageCode) || DEFAULT_SETTINGS.userLanguage,
+        topicLanguage: (profile.studyLanguage as LanguageCode) || DEFAULT_SETTINGS.topicLanguage,
+        level: (profile.level as CEFRLevel) || DEFAULT_SETTINGS.level,
         theme: appSettings.theme,
         dayStartHour: appSettings.dayStartHour,
         autoPlayReviewAudio: appSettings.autoPlayReviewAudio,
@@ -109,7 +102,11 @@ export function SettingsProvider({ children }: { children: React.ReactNode }): R
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [database, getOrCreateProfile]);
+
+  useEffect(() => {
+    loadSettings();
+  }, [loadSettings]);
 
   const updateSettings = useCallback(
     async (updates: Partial<UserSettings>) => {
@@ -134,7 +131,6 @@ export function SettingsProvider({ children }: { children: React.ReactNode }): R
               if (updates.level !== undefined) {
                 p.level = updates.level;
               }
-              // @ts-expect-error - WatermelonDB manages these fields
               p.updatedAt = Date.now();
             });
           });
@@ -166,7 +162,6 @@ export function SettingsProvider({ children }: { children: React.ReactNode }): R
               if (updates.maxReviewsPerDay !== undefined) {
                 deck.maxReviewsPerDay = updates.maxReviewsPerDay;
               }
-              // @ts-expect-error - WatermelonDB manages these fields
               deck.updatedAt = Date.now();
             });
           });
@@ -208,7 +203,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }): R
         throw error;
       }
     },
-    [settings, database]
+    [settings, database, getOrCreateProfile]
   );
 
   return (

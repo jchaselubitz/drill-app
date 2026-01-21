@@ -18,8 +18,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CollapsibleSection } from '@/components/CollapsibleSection';
-import { MetadataChip } from '@/components/MetadataChip';
 import { FavoriteButton } from '@/components/FavoriteButton';
+import { MetadataChip } from '@/components/MetadataChip';
 import { Select } from '@/components/Select';
 import { Languages, PARTS_OF_SPEECH } from '@/constants';
 import { useSettings } from '@/contexts/SettingsContext';
@@ -578,10 +578,7 @@ export default function PhraseDetailScreen() {
                   </Text>
                 </View>
                 <View style={styles.addTranslationRight}>
-                  <Pressable
-                    onPress={(e) => e.stopPropagation()}
-                    style={styles.targetLanguageChip}
-                  >
+                  <Pressable onPress={(e) => e.stopPropagation()} style={styles.targetLanguageChip}>
                     <MetadataChip
                       icon={Languages.find((l) => l.code === targetLanguage)?.icon}
                       label="Target Language"
@@ -603,10 +600,7 @@ export default function PhraseDetailScreen() {
             preview={note || 'Add a note...'}
           >
             <RNTextInput
-              style={[
-                styles.noteInput,
-                { color: colors.text, backgroundColor: colors.background },
-              ]}
+              style={[styles.noteInput, { color: colors.text, backgroundColor: colors.background }]}
               placeholder="Add a note about this phrase..."
               placeholderTextColor={colors.textSecondary}
               value={note}
