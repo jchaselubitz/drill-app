@@ -76,10 +76,6 @@ export default function LibraryScreen() {
     return () => subscription.unsubscribe();
   }, [db, languageFilter]);
 
-  const handleToggleFavorite = async (phrase: Phrase) => {
-    await phrase.updateFavorite(!phrase.favorite);
-  };
-
   const handlePhrasePress = (phraseId: string) => {
     router.push(`/phrase/${phraseId}` as any);
   };
@@ -145,11 +141,7 @@ export default function LibraryScreen() {
         <FlatList
           data={phrases}
           renderItem={({ item }) => (
-            <PhraseCard
-              phrase={item}
-              onPress={handlePhrasePress}
-              onToggleFavorite={handleToggleFavorite}
-            />
+            <PhraseCard phrase={item} onPress={handlePhrasePress} />
           )}
           keyExtractor={(item) => item.id}
           contentContainerStyle={[

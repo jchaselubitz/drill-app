@@ -17,6 +17,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/Button';
+import { FavoriteButton } from '@/components/FavoriteButton';
 import { LanguageChooser } from '@/components/LanguageChooser';
 import { Select } from '@/components/Select';
 import { TextInput } from '@/components/TextInput';
@@ -225,11 +226,6 @@ export default function PhraseDetailScreen() {
     if (!phrase || !isNoteDirty) return;
     await phrase.updateNote(note.trim() || null);
     setIsNoteDirty(false);
-  };
-
-  const handleToggleFavorite = async () => {
-    if (!phrase) return;
-    await phrase.updateFavorite(!phrase.favorite);
   };
 
   const handleStartEditText = () => {
@@ -492,13 +488,7 @@ export default function PhraseDetailScreen() {
                     />
                   </Pressable>
                 )}
-                <Pressable onPress={handleToggleFavorite} hitSlop={8}>
-                  <Ionicons
-                    name={phrase.favorite ? 'heart' : 'heart-outline'}
-                    size={24}
-                    color={phrase.favorite ? colors.error : colors.textSecondary}
-                  />
-                </Pressable>
+                <FavoriteButton phrase={phrase} size={24} hitSlop={8} />
               </View>
             </View>
             {language && (
