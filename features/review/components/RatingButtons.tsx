@@ -20,21 +20,26 @@ const ratingButtons: RatingButtonConfig[] = [
 
 type RatingButtonsProps = {
   onRate: (rating: SrsRating) => void;
+  intervals?: Record<SrsRating, string>;
 };
 
-export function RatingButtons({ onRate }: RatingButtonsProps) {
+export function RatingButtons({ onRate, intervals }: RatingButtonsProps) {
   return (
     <View style={styles.ratingRow}>
-      {ratingButtons.map((button) => (
-        <View key={button.rating} style={styles.ratingButton}>
-          <ReviewButton
-            text={button.label}
-            onPress={() => onRate(button.rating)}
-            variant={button.variant}
-            tintColor={button.tintColor}
-          />
-        </View>
-      ))}
+      {ratingButtons.map((button) => {
+        const intervalText = intervals?.[button.rating];
+        const label = intervalText ? `${button.label} (${intervalText})` : button.label;
+        return (
+          <View key={button.rating} style={styles.ratingButton}>
+            <ReviewButton
+              text={label}
+              onPress={() => onRate(button.rating)}
+              variant={button.variant}
+              tintColor={button.tintColor}
+            />
+          </View>
+        );
+      })}
     </View>
   );
 }

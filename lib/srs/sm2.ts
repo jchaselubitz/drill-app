@@ -157,3 +157,35 @@ export const scheduleSm2Review = (
     },
   };
 };
+
+export type RatingPreview = {
+  rating: SrsRating;
+  intervalMs: number;
+};
+
+/**
+ * Calculate preview intervals for all rating options
+ * Returns the time until next review for each rating
+ */
+export const getRatingPreviews = (card: SrsCardSnapshot, nowMs: number): RatingPreview[] => {
+  const ratings: SrsRating[] = ['failed', 'hard', 'good', 'easy'];
+  return ratings.map((rating) => {
+    const result = scheduleSm2Review(card, rating, nowMs);
+    const intervalMs = result.update.dueAt - nowMs;
+    return { rating, intervalMs };
+  });
+};
+
+/**
+ * Format interval in milliseconds to human-readable string
+ * Uses M for minutes, D for days
+ */
+export const formatInterval = (intervalMs: number): string => {
+  const minutes = Math.round(intervalMs / (60 * 1000));
+  const days = intervalMs / (24 * 60 * 60 * 1000);
+
+  if (days >= 1) {
+    return `${Math.round(days)}D`;
+  }
+  return `${minutes}M`;
+};

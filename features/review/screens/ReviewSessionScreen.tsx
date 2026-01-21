@@ -10,7 +10,7 @@ import { Phrase, SrsCard, SrsReviewLog, Translation } from '@/database/models';
 import { PHRASE_TABLE, SRS_REVIEW_LOG_TABLE, TRANSLATION_TABLE } from '@/database/schema';
 import { useAudioPlayback, useColors } from '@/hooks';
 import { getDailyLimitsRemaining, getReviewQueue } from '@/lib/srs/queue';
-import { scheduleSm2Review } from '@/lib/srs/sm2';
+import { formatInterval, getRatingPreviews, scheduleSm2Review } from '@/lib/srs/sm2';
 import type { SrsCardState, SrsDirection, SrsRating } from '@/types';
 
 import {
@@ -46,6 +46,12 @@ export default function ReviewSessionScreen() {
   const [index, setIndex] = useState(0);
   const [showBack, setShowBack] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [dailyStats, setDailyStats] = useState<{
+    newRemaining: number;
+    reviewsRemaining: number;
+    newDone: number;
+    reviewsDone: number;
+  } | null>(null);
 
   const loadQueue = useCallback(async () => {
     if (!deckId) return;
@@ -58,6 +64,8 @@ export default function ReviewSessionScreen() {
       maxNewPerDay: settings.maxNewPerDay,
       maxReviewsPerDay: settings.maxReviewsPerDay,
     });
+
+    setDailyStats(limits);
 
     const cards = await getReviewQueue(db, {
       deckId,
@@ -103,6 +111,31 @@ export default function ReviewSessionScreen() {
 
   const current = queue[index] ?? null;
 
+  const ratingIntervals = useMemo(() => {
+    if (!current || !showBack) return undefined;
+
+    const previews = getRatingPreviews(
+      {
+        state: current.card.state as SrsCardState,
+        dueAt: current.card.dueAt,
+        intervalDays: current.card.intervalDays,
+        ease: current.card.ease,
+        reps: current.card.reps,
+        lapses: current.card.lapses,
+        stepIndex: current.card.stepIndex,
+        lastReviewedAt: current.card.lastReviewedAt,
+      },
+      Date.now()
+    );
+
+    return {
+      failed: formatInterval(previews[0].intervalMs),
+      hard: formatInterval(previews[1].intervalMs),
+      good: formatInterval(previews[2].intervalMs),
+      easy: formatInterval(previews[3].intervalMs),
+    };
+  }, [current, showBack]);
+
   useEffect(() => {
     if (!settings.autoPlayReviewAudio || !current) return;
     const filename = showBack ? current.back.filename : current.front.filename;
@@ -115,7 +148,7 @@ export default function ReviewSessionScreen() {
   }, [current, showBack, settings.autoPlayReviewAudio, play]);
 
   const handleRate = async (rating: SrsRating) => {
-    if (!current) return;
+    if (!current || !deckId) return;
     const nowMs = Date.now();
     const { update, log } = scheduleSm2Review(
       {
@@ -165,6 +198,17 @@ export default function ReviewSessionScreen() {
       });
     });
 
+    // Refresh daily stats after rating
+    const now = new Date();
+    const limits = await getDailyLimitsRemaining(db, {
+      deckId,
+      now,
+      dayStartHour: settings.dayStartHour,
+      maxNewPerDay: settings.maxNewPerDay,
+      maxReviewsPerDay: settings.maxReviewsPerDay,
+    });
+    setDailyStats(limits);
+
     const nextIndex = index + 1;
     if (nextIndex >= queue.length) {
       await loadQueue();
@@ -200,7 +244,13 @@ export default function ReviewSessionScreen() {
         }}
       />
       <View style={styles.content}>
-        <ReviewProgress current={index + 1} total={queue.length} />
+        {dailyStats && (
+          <ReviewProgress
+            newRemaining={dailyStats.newRemaining}
+            reviewsRemaining={dailyStats.reviewsRemaining}
+            completedToday={dailyStats.newDone + dailyStats.reviewsDone}
+          />
+        )}
         <ReviewCard
           front={current.front}
           back={current.back}
@@ -212,7 +262,7 @@ export default function ReviewSessionScreen() {
         {!showBack ? (
           <Button text="Show Answer" onPress={() => setShowBack(true)} variant="secondary" />
         ) : (
-          <RatingButtons onRate={handleRate} />
+          <RatingButtons onRate={handleRate} intervals={ratingIntervals} />
         )}
       </View>
     </SafeAreaView>
