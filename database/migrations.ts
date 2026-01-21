@@ -169,7 +169,17 @@ export default schemaMigrations({
       steps: [
         addColumns({
           table: 'profile',
-          columns: [{ name: 'study_language', type: 'string', isOptional: true }],
+          columns: [
+            { name: 'study_language', type: 'string', isOptional: true },
+            { name: 'level', type: 'string', isOptional: true },
+          ],
+        }),
+        addColumns({
+          table: 'deck',
+          columns: [
+            { name: 'max_new_per_day', type: 'number', isOptional: true },
+            { name: 'max_reviews_per_day', type: 'number', isOptional: true },
+          ],
         }),
       ],
     },

@@ -22,6 +22,8 @@ export default class Deck extends Model {
   @field('primary_lang') primaryLang!: string | null;
   @field('secondary_lang') secondaryLang!: string | null;
   @field('level') level!: string | null;
+  @field('max_new_per_day') maxNewPerDay!: number | null;
+  @field('max_reviews_per_day') maxReviewsPerDay!: number | null;
 
   static async getDefault(db: Database): Promise<Deck | null> {
     const decks = await db.collections

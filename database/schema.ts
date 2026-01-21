@@ -61,6 +61,7 @@ const schema = appSchema({
         { name: 'image_url', type: 'string', isOptional: true },
         { name: 'user_language', type: 'string', isOptional: true },
         { name: 'study_language', type: 'string', isOptional: true },
+        { name: 'level', type: 'string', isOptional: true },
       ],
     }),
     tableSchema({
@@ -114,6 +115,8 @@ const schema = appSchema({
         { name: 'primary_lang', type: 'string', isOptional: true },
         { name: 'secondary_lang', type: 'string', isOptional: true },
         { name: 'level', type: 'string', isOptional: true },
+        { name: 'max_new_per_day', type: 'number', isOptional: true },
+        { name: 'max_reviews_per_day', type: 'number', isOptional: true },
       ],
     }),
     tableSchema({
