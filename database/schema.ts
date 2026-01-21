@@ -19,7 +19,7 @@ export const PENDING_REQUEST_TABLE = 'pending_request';
 export const PENDING_AUDIO_REQUEST_TABLE = 'pending_audio_request';
 
 const schema = appSchema({
-  version: 9,
+  version: 10,
   tables: [
     tableSchema({
       name: PHRASE_TABLE,
@@ -60,7 +60,7 @@ const schema = appSchema({
         { name: 'username', type: 'string', isOptional: true },
         { name: 'image_url', type: 'string', isOptional: true },
         { name: 'user_language', type: 'string', isOptional: true },
-        { name: 'pref_language', type: 'string', isOptional: true },
+        { name: 'study_language', type: 'string', isOptional: true },
       ],
     }),
     tableSchema({

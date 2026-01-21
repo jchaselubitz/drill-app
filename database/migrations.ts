@@ -164,5 +164,14 @@ export default schemaMigrations({
         }),
       ],
     },
+    {
+      toVersion: 10,
+      steps: [
+        addColumns({
+          table: 'profile',
+          columns: [{ name: 'study_language', type: 'string', isOptional: true }],
+        }),
+      ],
+    },
   ],
 });

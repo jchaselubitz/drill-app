@@ -342,15 +342,15 @@ export const sourceOptions = sourceOptionBase as SourceOptionType[];
 export const getContentSuggestions = ({
   contentLang,
   userLanguage,
-  prefLanguage,
+  studyLanguage,
   suggestionList,
 }: {
   contentLang: Iso639LanguageCode | null | undefined;
   userLanguage: Iso639LanguageCode | null | undefined;
-  prefLanguage: Iso639LanguageCode | null | undefined;
+  studyLanguage: Iso639LanguageCode | null | undefined;
   suggestionList: string[];
 }) => {
-  const suggestedTranslationLang = contentLang === userLanguage ? prefLanguage : userLanguage;
+  const suggestedTranslationLang = contentLang === userLanguage ? studyLanguage : userLanguage;
 
   return [
     ...suggestionList,
