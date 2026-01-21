@@ -211,7 +211,17 @@ export default function ReviewSessionScreen() {
 
     const nextIndex = index + 1;
     if (nextIndex >= queue.length) {
-      await loadQueue();
+      // Only reload if there are cards potentially available:
+      // - New cards remaining > 0, OR
+      // - Review cards might be due (reviewsRemaining > 0)
+      // This prevents showing cards beyond daily limits
+      if (limits.newRemaining > 0 || limits.reviewsRemaining > 0) {
+        await loadQueue();
+      } else {
+        // No more cards available today - end session
+        setQueue([]);
+        setIndex(0);
+      }
       return;
     }
 

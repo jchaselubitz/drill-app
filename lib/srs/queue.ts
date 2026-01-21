@@ -80,6 +80,7 @@ export const getReviewQueue = async (
 ): Promise<SrsCard[]> => {
   const cardCollection = db.collections.get<SrsCard>(SRS_CARD_TABLE);
 
+  // Only fetch due review cards (cards in learning/review/relearning state that are actually due)
   const reviewCards = await cardCollection
     .query(
       Q.where('deck_id', deckId),
@@ -91,16 +92,20 @@ export const getReviewQueue = async (
     )
     .fetch();
 
-  const newCards = await cardCollection
-    .query(
-      Q.where('deck_id', deckId),
-      Q.where('suspended', false),
-      Q.where('state', 'new'),
-      Q.where('due_at', Q.lte(nowMs)),
-      Q.sortBy('created_at', Q.asc),
-      Q.take(newRemaining)
-    )
-    .fetch();
+  // Only fetch new cards if we have remaining quota AND haven't already hit max for the day
+  const newCards =
+    newRemaining > 0
+      ? await cardCollection
+          .query(
+            Q.where('deck_id', deckId),
+            Q.where('suspended', false),
+            Q.where('state', 'new'),
+            Q.where('due_at', Q.lte(nowMs)),
+            Q.sortBy('created_at', Q.asc),
+            Q.take(newRemaining)
+          )
+          .fetch()
+      : [];
 
   const allCards = [...reviewCards, ...newCards];
   return shuffleArray(allCards);

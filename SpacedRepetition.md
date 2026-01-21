@@ -47,19 +47,61 @@ This document describes the translation-based spaced repetition system, its data
 ## Daily Limits and Rollover
 
 - Daily limits are per-deck:
-  - `maxNewPerDay`
-  - `maxReviewsPerDay`
+  - `maxNewPerDay` - Maximum number of cards in 'new' state that can be seen for the first time each day
+  - `maxReviewsPerDay` - Maximum number of review sessions for cards in 'learning', 'review', or 'relearning' states each day
 - Day rollover is computed with a configurable `dayStartHour` (default: 4am).
-- Counts are derived from `srs_review_log` using the day start boundary.
+- Counts are derived from `srs_review_log` using the day start boundary:
+  - New cards are counted by `state_before = 'new'` in the review log
+  - Reviews are counted by `state_before != 'new'` in the review log
+- **Important**: Daily limits are strictly enforced - once reached, no additional cards of that type will be shown until the next day
 
 ## Study Queue
 
-- The queue is built per deck:
-  1. Due reviews (`learning`, `review`, `relearning`) up to `maxReviewsPerDay` remaining.
-  2. Due new cards up to `maxNewPerDay` remaining.
-- Ordering:
-  - reviews by `due_at` ascending
-  - new by `created_at` ascending
+The queue is built per deck following these rules:
+
+1. **New cards**: Only shown if under the daily limit (`maxNewPerDay`)
+   - Fetches cards in 'new' state that are due (`due_at <= now`)
+   - Limited to `maxNewPerDay - newCardsReviewedToday`
+   - Sorted by `created_at` ascending (oldest first)
+
+2. **Review cards**: Only shows cards that are actually due
+   - Fetches cards in 'learning', 'review', or 'relearning' states where `due_at <= now`
+   - Limited to `maxReviewsPerDay - reviewsCompletedToday`
+   - Sorted by `due_at` ascending (most overdue first)
+
+3. **Queue behavior**:
+   - New and review cards are combined and shuffled for variety
+   - When the queue is exhausted, it will reload ONLY if:
+     - There are new cards remaining under the daily limit, OR
+     - There are review cards that are now due
+   - If both limits are reached, the session ends
+
+### Example Scenario
+
+Assume a deck with:
+- 44 cards in 'new' state
+- Settings: `maxNewPerDay = 20`, `maxReviewsPerDay = 200`
+
+**Day 1 (First Session)**:
+- User sees 20 new cards (maxNewPerDay limit)
+- Each card reviewed with 'good' transitions to 'learning' state with first step (10 minutes)
+- Remaining 24 new cards are NOT shown - they wait for subsequent days
+- Session ends or shows only due review cards
+
+**Day 1 (10+ minutes later)**:
+- The 20 'learning' cards are now due for their next review
+- User sees those 20 cards again (as reviews, not new cards)
+- After completing learning steps, cards graduate to 'review' state
+
+**Day 2**:
+- User sees 20 more new cards (next batch from the 24 remaining)
+- Plus any cards from Day 1 that are due for review
+- Pattern continues until all new cards have been introduced
+
+**Day 3**:
+- User sees final 4 new cards
+- Plus any reviews that are scheduled for today
+- No new cards remain after this
 
 ## UI Flow
 
