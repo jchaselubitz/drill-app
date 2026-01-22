@@ -110,3 +110,26 @@ export const getReviewQueue = async (
   const allCards = [...reviewCards, ...newCards];
   return shuffleArray(allCards);
 };
+
+export const getNextSessionCard = async (
+  db: Database,
+  cardIds: string[]
+): Promise<SrsCard | null> => {
+  if (cardIds.length === 0) return null;
+  const cardCollection = db.collections.get<SrsCard>(SRS_CARD_TABLE);
+  const cards = await cardCollection
+    .query(Q.where('id', Q.oneOf(cardIds)), Q.sortBy('due_at', Q.asc), Q.take(1))
+    .fetch();
+  return cards.length > 0 ? cards[0] : null;
+};
+
+export const countCardsStillDueToday = async (
+  db: Database,
+  { cardIds, tomorrowStartMs }: { cardIds: string[]; tomorrowStartMs: number }
+): Promise<number> => {
+  if (cardIds.length === 0) return 0;
+  const cardCollection = db.collections.get<SrsCard>(SRS_CARD_TABLE);
+  return cardCollection
+    .query(Q.where('id', Q.oneOf(cardIds)), Q.where('due_at', Q.lt(tomorrowStartMs)))
+    .fetchCount();
+};

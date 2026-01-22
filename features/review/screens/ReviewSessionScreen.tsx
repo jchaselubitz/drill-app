@@ -9,8 +9,14 @@ import { useSettings } from '@/contexts/SettingsContext';
 import { Phrase, SrsCard, SrsReviewLog, Translation } from '@/database/models';
 import { PHRASE_TABLE, SRS_REVIEW_LOG_TABLE, TRANSLATION_TABLE } from '@/database/schema';
 import { useAudioPlayback, useColors } from '@/hooks';
-import { getDailyLimitsRemaining, getReviewQueue } from '@/lib/srs/queue';
+import {
+  countCardsStillDueToday,
+  getDailyLimitsRemaining,
+  getNextSessionCard,
+  getReviewQueue,
+} from '@/lib/srs/queue';
 import { formatInterval, getRatingPreviews, scheduleSm2Review } from '@/lib/srs/sm2';
+import { getNextStudyDayStart } from '@/lib/srs/time';
 import type { SrsCardState, SrsDirection, SrsRating } from '@/types';
 
 import {
@@ -42,21 +48,79 @@ export default function ReviewSessionScreen() {
 
   const { play, togglePlayPause, isPlayingFile } = useAudioPlayback();
   const lastAutoPlayKeyRef = useRef<string | null>(null);
-  const [queue, setQueue] = useState<ReviewItem[]>([]);
-  const [index, setIndex] = useState(0);
+
+  // Session state
+  const [sessionCardIds, setSessionCardIds] = useState<string[]>([]);
+  const [tomorrowStartMs, setTomorrowStartMs] = useState<number>(0);
+  const [currentItem, setCurrentItem] = useState<ReviewItem | null>(null);
   const [showBack, setShowBack] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [dailyStats, setDailyStats] = useState<{
-    newRemaining: number;
-    reviewsRemaining: number;
-    newDone: number;
-    reviewsDone: number;
-  } | null>(null);
+  const [sessionInitialized, setSessionInitialized] = useState(false);
 
-  const loadQueue = useCallback(async () => {
+  // Session stats
+  const [sessionStats, setSessionStats] = useState<{
+    totalInSession: number;
+    remainingToday: number;
+    completedThisSession: number;
+  }>({ totalInSession: 0, remainingToday: 0, completedThisSession: 0 });
+
+  // Hydrate a card into a ReviewItem
+  const hydrateCard = useCallback(
+    async (card: SrsCard): Promise<ReviewItem | null> => {
+      try {
+        const translation = await db.collections
+          .get<Translation>(TRANSLATION_TABLE)
+          .find(card.translationId);
+        const primary = await db.collections
+          .get<Phrase>(PHRASE_TABLE)
+          .find(translation.phrasePrimaryId);
+        const secondary = await db.collections
+          .get<Phrase>(PHRASE_TABLE)
+          .find(translation.phraseSecondaryId);
+
+        const direction = card.direction as SrsDirection;
+        const front = direction === 'primary_to_secondary' ? primary : secondary;
+        const back = direction === 'primary_to_secondary' ? secondary : primary;
+
+        return { card, translation, front, back };
+      } catch (error) {
+        console.warn('Failed to hydrate review card:', error);
+        return null;
+      }
+    },
+    [db]
+  );
+
+  // Load the next card from the session
+  const loadNextCard = useCallback(async () => {
+    if (sessionCardIds.length === 0) {
+      setCurrentItem(null);
+      return;
+    }
+
+    const nextCard = await getNextSessionCard(db, sessionCardIds);
+    if (!nextCard) {
+      setCurrentItem(null);
+      return;
+    }
+
+    const item = await hydrateCard(nextCard);
+    setCurrentItem(item);
+    setShowBack(false);
+  }, [db, sessionCardIds, hydrateCard]);
+
+  // Initialize the session (runs once)
+  const initializeSession = useCallback(async () => {
     if (!deckId) return;
     setIsLoading(true);
+
     const now = new Date();
+
+    // Calculate tomorrow's start time (session completion threshold)
+    const tomorrowStart = getNextStudyDayStart(now, settings.dayStartHour);
+    setTomorrowStartMs(tomorrowStart.getTime());
+
+    // Get daily limits for initial deck building
     const limits = await getDailyLimitsRemaining(db, {
       deckId,
       now,
@@ -65,8 +129,7 @@ export default function ReviewSessionScreen() {
       maxReviewsPerDay: settings.maxReviewsPerDay,
     });
 
-    setDailyStats(limits);
-
+    // Fetch initial cards (daily limits apply here only)
     const cards = await getReviewQueue(db, {
       deckId,
       nowMs: now.getTime(),
@@ -74,56 +137,74 @@ export default function ReviewSessionScreen() {
       newRemaining: limits.newRemaining,
     });
 
-    const items = await Promise.all(
-      cards.map(async (card) => {
-        try {
-          const translation = await db.collections
-            .get<Translation>(TRANSLATION_TABLE)
-            .find(card.translationId);
-          const primary = await db.collections
-            .get<Phrase>(PHRASE_TABLE)
-            .find(translation.phrasePrimaryId);
-          const secondary = await db.collections
-            .get<Phrase>(PHRASE_TABLE)
-            .find(translation.phraseSecondaryId);
+    // Store card IDs for session tracking
+    const cardIds = cards.map((c) => c.id);
+    setSessionCardIds(cardIds);
 
-          const direction = card.direction as SrsDirection;
-          const front = direction === 'primary_to_secondary' ? primary : secondary;
-          const back = direction === 'primary_to_secondary' ? secondary : primary;
+    // Calculate initial stats
+    const remainingToday = await countCardsStillDueToday(db, {
+      cardIds,
+      tomorrowStartMs: tomorrowStart.getTime(),
+    });
 
-          return { card, translation, front, back };
-        } catch (error) {
-          console.warn('Failed to hydrate review card:', error);
-          return null;
-        }
-      })
-    );
+    setSessionStats({
+      totalInSession: cardIds.length,
+      remainingToday,
+      completedThisSession: 0,
+    });
 
-    setQueue(items.filter((item): item is ReviewItem => item !== null));
-    setIndex(0);
-    setShowBack(false);
+    // Load first card
+    if (cards.length > 0) {
+      const firstCard = await getNextSessionCard(db, cardIds);
+      if (firstCard) {
+        const item = await hydrateCard(firstCard);
+        setCurrentItem(item);
+      }
+    }
+
+    setSessionInitialized(true);
     setIsLoading(false);
-  }, [db, deckId, settings.dayStartHour, settings.maxNewPerDay, settings.maxReviewsPerDay]);
+  }, [
+    db,
+    deckId,
+    settings.dayStartHour,
+    settings.maxNewPerDay,
+    settings.maxReviewsPerDay,
+    hydrateCard,
+  ]);
 
+  // Initialize session on mount
   useEffect(() => {
-    loadQueue();
-  }, [loadQueue]);
+    if (!sessionInitialized) {
+      initializeSession();
+    }
+  }, [initializeSession, sessionInitialized]);
 
-  const current = queue[index] ?? null;
+  // Auto-play audio
+  useEffect(() => {
+    if (!settings.autoPlayReviewAudio || !currentItem) return;
+    const filename = showBack ? currentItem.back.filename : currentItem.front.filename;
+    const autoPlayKey = `${currentItem.card.id}-${showBack ? 'back' : 'front'}`;
+    if (lastAutoPlayKeyRef.current === autoPlayKey) return;
+    lastAutoPlayKeyRef.current = autoPlayKey;
+    if (filename) {
+      play(filename);
+    }
+  }, [currentItem, showBack, settings.autoPlayReviewAudio, play]);
 
   const ratingIntervals = useMemo(() => {
-    if (!current || !showBack) return undefined;
+    if (!currentItem || !showBack) return undefined;
 
     const previews = getRatingPreviews(
       {
-        state: current.card.state as SrsCardState,
-        dueAt: current.card.dueAt,
-        intervalDays: current.card.intervalDays,
-        ease: current.card.ease,
-        reps: current.card.reps,
-        lapses: current.card.lapses,
-        stepIndex: current.card.stepIndex,
-        lastReviewedAt: current.card.lastReviewedAt,
+        state: currentItem.card.state as SrsCardState,
+        dueAt: currentItem.card.dueAt,
+        intervalDays: currentItem.card.intervalDays,
+        ease: currentItem.card.ease,
+        reps: currentItem.card.reps,
+        lapses: currentItem.card.lapses,
+        stepIndex: currentItem.card.stepIndex,
+        lastReviewedAt: currentItem.card.lastReviewedAt,
       },
       Date.now()
     );
@@ -134,39 +215,29 @@ export default function ReviewSessionScreen() {
       good: formatInterval(previews[2].intervalMs),
       easy: formatInterval(previews[3].intervalMs),
     };
-  }, [current, showBack]);
-
-  useEffect(() => {
-    if (!settings.autoPlayReviewAudio || !current) return;
-    const filename = showBack ? current.back.filename : current.front.filename;
-    const autoPlayKey = `${current.card.id}-${showBack ? 'back' : 'front'}`;
-    if (lastAutoPlayKeyRef.current === autoPlayKey) return;
-    lastAutoPlayKeyRef.current = autoPlayKey;
-    if (filename) {
-      play(filename);
-    }
-  }, [current, showBack, settings.autoPlayReviewAudio, play]);
+  }, [currentItem, showBack]);
 
   const handleRate = async (rating: SrsRating) => {
-    if (!current || !deckId) return;
+    if (!currentItem || !deckId) return;
     const nowMs = Date.now();
     const { update, log } = scheduleSm2Review(
       {
-        state: current.card.state as SrsCardState,
-        dueAt: current.card.dueAt,
-        intervalDays: current.card.intervalDays,
-        ease: current.card.ease,
-        reps: current.card.reps,
-        lapses: current.card.lapses,
-        stepIndex: current.card.stepIndex,
-        lastReviewedAt: current.card.lastReviewedAt,
+        state: currentItem.card.state as SrsCardState,
+        dueAt: currentItem.card.dueAt,
+        intervalDays: currentItem.card.intervalDays,
+        ease: currentItem.card.ease,
+        reps: currentItem.card.reps,
+        lapses: currentItem.card.lapses,
+        stepIndex: currentItem.card.stepIndex,
+        lastReviewedAt: currentItem.card.lastReviewedAt,
       },
       rating,
       nowMs
     );
 
+    // Update card in database
     await db.write(async () => {
-      await current.card.update((card) => {
+      await currentItem.card.update((card) => {
         card.state = update.state;
         card.dueAt = update.dueAt;
         card.intervalDays = update.intervalDays;
@@ -179,10 +250,10 @@ export default function ReviewSessionScreen() {
       });
 
       await db.collections.get<SrsReviewLog>(SRS_REVIEW_LOG_TABLE).create((logEntry) => {
-        logEntry.srsCardId = current.card.id;
-        logEntry.deckId = current.card.deckId;
-        logEntry.translationId = current.card.translationId;
-        logEntry.direction = current.card.direction;
+        logEntry.srsCardId = currentItem.card.id;
+        logEntry.deckId = currentItem.card.deckId;
+        logEntry.translationId = currentItem.card.translationId;
+        logEntry.direction = currentItem.card.direction;
         logEntry.reviewedAt = nowMs;
         logEntry.rating = rating;
         logEntry.stateBefore = log.stateBefore;
@@ -198,35 +269,27 @@ export default function ReviewSessionScreen() {
       });
     });
 
-    // Refresh daily stats after rating
-    const now = new Date();
-    const limits = await getDailyLimitsRemaining(db, {
-      deckId,
-      now,
-      dayStartHour: settings.dayStartHour,
-      maxNewPerDay: settings.maxNewPerDay,
-      maxReviewsPerDay: settings.maxReviewsPerDay,
+    // Check if session is complete (all cards scheduled for tomorrow or later)
+    const remainingToday = await countCardsStillDueToday(db, {
+      cardIds: sessionCardIds,
+      tomorrowStartMs,
     });
-    setDailyStats(limits);
 
-    const nextIndex = index + 1;
-    if (nextIndex >= queue.length) {
-      // Only reload if there are cards potentially available:
-      // - New cards remaining > 0, OR
-      // - Review cards might be due (reviewsRemaining > 0)
-      // This prevents showing cards beyond daily limits
-      if (limits.newRemaining > 0 || limits.reviewsRemaining > 0) {
-        await loadQueue();
-      } else {
-        // No more cards available today - end session
-        setQueue([]);
-        setIndex(0);
-      }
+    // Update session stats
+    setSessionStats((prev) => ({
+      ...prev,
+      remainingToday,
+      completedThisSession: prev.completedThisSession + 1,
+    }));
+
+    if (remainingToday === 0) {
+      // Session complete - all cards scheduled for tomorrow or later
+      setCurrentItem(null);
       return;
     }
 
-    setIndex(nextIndex);
-    setShowBack(false);
+    // Load next card from session (shows immediately regardless of dueAt)
+    await loadNextCard();
   };
 
   if (!deckId) {
@@ -237,7 +300,7 @@ export default function ReviewSessionScreen() {
     return <ReviewLoadingState />;
   }
 
-  if (!current) {
+  if (!currentItem) {
     return <ReviewEmptyState />;
   }
 
@@ -254,16 +317,14 @@ export default function ReviewSessionScreen() {
         }}
       />
       <View style={styles.content}>
-        {dailyStats && (
-          <ReviewProgress
-            newRemaining={dailyStats.newRemaining}
-            reviewsRemaining={dailyStats.reviewsRemaining}
-            completedToday={dailyStats.newDone + dailyStats.reviewsDone}
-          />
-        )}
+        <ReviewProgress
+          totalInSession={sessionStats.totalInSession}
+          remainingToday={sessionStats.remainingToday}
+          completedThisSession={sessionStats.completedThisSession}
+        />
         <ReviewCard
-          front={current.front}
-          back={current.back}
+          front={currentItem.front}
+          back={currentItem.back}
           showBack={showBack}
           onTogglePlayPause={togglePlayPause}
           isPlayingFile={isPlayingFile}
