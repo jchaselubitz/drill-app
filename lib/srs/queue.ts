@@ -19,6 +19,49 @@ const shuffleArray = <T>(array: T[]): T[] => {
   return shuffled;
 };
 
+// Shuffle cards ensuring that cards with the same translation_id are separated
+// This prevents users from seeing opposite directions of the same translation pair consecutively
+const shuffleCardsSeparatingOpposites = (cards: SrsCard[]): SrsCard[] => {
+  if (cards.length <= 1) return cards;
+
+  // First, do a random shuffle
+  let shuffled = shuffleArray(cards);
+
+  // Then, fix any adjacent cards with the same translation_id
+  const maxAttempts = shuffled.length * 2; // Reasonable limit to avoid infinite loops
+  let attempts = 0;
+
+  while (attempts < maxAttempts) {
+    let hasAdjacentPairs = false;
+
+    // Check for adjacent cards with the same translation_id and fix them
+    for (let i = 0; i < shuffled.length - 1; i++) {
+      if (shuffled[i].translationId === shuffled[i + 1].translationId) {
+        hasAdjacentPairs = true;
+
+        // Find any card with a different translation_id to swap with
+        for (let j = 0; j < shuffled.length; j++) {
+          if (j !== i && j !== i + 1 && shuffled[j].translationId !== shuffled[i].translationId) {
+            [shuffled[i + 1], shuffled[j]] = [shuffled[j], shuffled[i + 1]];
+            break;
+          }
+        }
+      }
+    }
+
+    // If no adjacent pairs found, we're done
+    if (!hasAdjacentPairs) {
+      break;
+    }
+
+    // If we still have adjacent pairs, reshuffle and try again
+    shuffled = shuffleArray(cards);
+    attempts++;
+  }
+
+  return shuffled;
+};
+
 export const getDailyLimitsRemaining = async (
   db: Database,
   {
@@ -108,7 +151,7 @@ export const getReviewQueue = async (
       : [];
 
   const allCards = [...reviewCards, ...newCards];
-  return shuffleArray(allCards);
+  return shuffleCardsSeparatingOpposites(allCards);
 };
 
 export const getNextSessionCard = async (
