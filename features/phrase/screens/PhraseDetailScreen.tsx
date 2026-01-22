@@ -9,10 +9,10 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  TextInput as RNTextInput,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput as RNTextInput,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -56,7 +56,7 @@ export default function PhraseDetailScreen() {
   const { settings } = useSettings();
   const { togglePlayPause, isPlayingFile } = useAudioPlayback();
 
-  const [phrase, setPhrase] = useState<Phrase | null>(null);
+  const [phraseState, setPhraseState] = useState<{ phrase: Phrase; _key: number } | null>(null);
   const [note, setNote] = useState('');
   const [isNoteDirty, setIsNoteDirty] = useState(false);
   const [isTranslating, setIsTranslating] = useState(false);
@@ -71,6 +71,8 @@ export default function PhraseDetailScreen() {
 
   const scrollViewRef = useRef<ScrollView>(null);
   const textInputRef = useRef<any>(null);
+
+  const phrase = phraseState?.phrase ?? null;
 
   useEffect(() => {
     Deck.getOrCreateDefault(db).catch((error) => {
@@ -95,7 +97,7 @@ export default function PhraseDetailScreen() {
       .get<Phrase>(PHRASE_TABLE)
       .findAndObserve(id)
       .subscribe((result) => {
-        setPhrase(result);
+        setPhraseState({ phrase: result, _key: result.updatedAt });
         if (!isNoteDirty) {
           setNote(result.note ?? '');
         }
@@ -480,7 +482,7 @@ export default function PhraseDetailScreen() {
             {/* Inline Metadata Chips */}
             <View style={styles.metadataRow}>
               <MetadataChip
-                icon={language?.icon}
+             
                 label="Language"
                 options={languageOptions}
                 value={phrase.lang}
@@ -580,7 +582,6 @@ export default function PhraseDetailScreen() {
                 <View style={styles.addTranslationRight}>
                   <Pressable onPress={(e) => e.stopPropagation()} style={styles.targetLanguageChip}>
                     <MetadataChip
-                      icon={Languages.find((l) => l.code === targetLanguage)?.icon}
                       label="Target Language"
                       options={translationLanguageOptions}
                       value={targetLanguage}

@@ -1,85 +1,118 @@
 ---
 name: watermelondb-model
-description: [TODO: Complete and informative explanation of what the skill does and when to use it. Include WHEN to use this skill - specific scenarios, file types, or tasks that trigger it.]
+description: WatermelonDB models, observation patterns, and React integration. Use when writing or debugging model code, observers (findAndObserve, query.observe), or screens that display live-updating DB data.
 ---
 
-# Watermelondb Model
+# WatermelonDB Model & Observation
 
 ## Overview
 
-[TODO: 1-2 sentences explaining what this skill enables]
-
-## Structuring This Skill
-
-[TODO: Choose the structure that best fits this skill's purpose. Common patterns:
-
-**1. Workflow-Based** (best for sequential processes)
-- Works well when there are clear step-by-step procedures
-- Example: DOCX skill with "Workflow Decision Tree" -> "Reading" -> "Creating" -> "Editing"
-- Structure: ## Overview -> ## Workflow Decision Tree -> ## Step 1 -> ## Step 2...
-
-**2. Task-Based** (best for tool collections)
-- Works well when the skill offers different operations/capabilities
-- Example: PDF skill with "Quick Start" -> "Merge PDFs" -> "Split PDFs" -> "Extract Text"
-- Structure: ## Overview -> ## Quick Start -> ## Task Category 1 -> ## Task Category 2...
-
-**3. Reference/Guidelines** (best for standards or specifications)
-- Works well for brand guidelines, coding standards, or requirements
-- Example: Brand styling with "Brand Guidelines" -> "Colors" -> "Typography" -> "Features"
-- Structure: ## Overview -> ## Guidelines -> ## Specifications -> ## Usage...
-
-**4. Capabilities-Based** (best for integrated systems)
-- Works well when the skill provides multiple interrelated features
-- Example: Product Management with "Core Capabilities" -> numbered capability list
-- Structure: ## Overview -> ## Core Capabilities -> ### 1. Feature -> ### 2. Feature...
-
-Patterns can be mixed and matched as needed. Most skills combine patterns (e.g., start with task-based, add workflow for complex operations).
-
-Delete this entire "Structuring This Skill" section when done - it's just guidance.]
-
-## [TODO: Replace with the first main section based on chosen structure]
-
-[TODO: Add content here. See examples in existing skills:
-- Code samples for technical skills
-- Decision trees for complex workflows
-- Concrete examples with realistic user requests
-- References to scripts/templates/references as needed]
-
-## Resources (optional)
-
-Create only the resource directories this skill actually needs. Delete this section if no resources are required.
-
-### scripts/
-Executable code (Python/Bash/etc.) that can be run directly to perform specific operations.
-
-**Examples from other skills:**
-- PDF skill: `fill_fillable_fields.py`, `extract_form_field_info.py` - utilities for PDF manipulation
-- DOCX skill: `document.py`, `utilities.py` - Python modules for document processing
-
-**Appropriate for:** Python scripts, shell scripts, or any executable code that performs automation, data processing, or specific operations.
-
-**Note:** Scripts may be executed without loading into context, but can still be read by Codex for patching or environment adjustments.
-
-### references/
-Documentation and reference material intended to be loaded into context to inform Codex's process and thinking.
-
-**Examples from other skills:**
-- Product management: `communication.md`, `context_building.md` - detailed workflow guides
-- BigQuery: API reference documentation and query examples
-- Finance: Schema documentation, company policies
-
-**Appropriate for:** In-depth documentation, API references, database schemas, comprehensive guides, or any detailed information that Codex should reference while working.
-
-### assets/
-Files not intended to be loaded into context, but rather used within the output Codex produces.
-
-**Examples from other skills:**
-- Brand styling: PowerPoint template files (.pptx), logo files
-- Frontend builder: HTML/React boilerplate project directories
-- Typography: Font files (.ttf, .woff2)
-
-**Appropriate for:** Templates, boilerplate code, document templates, images, icons, fonts, or any files meant to be copied or used in the final output.
+This skill covers WatermelonDB models (`database/models/`), observation
+(reactive queries), and **ensuring React re-renders when observed data
+changes**. Use it when working with `findAndObserve`, `query.observe()`,
+`withObservables`, or any screen that subscribes to DB changes.
 
 ---
 
-**Not every skill requires all three types of resources.**
+## Observation & React Re-rendering
+
+### `findAndObserve` and same-reference emission
+
+- **`findAndObserve(id)`** (on a collection): Fetches a record by ID, returns an
+  Observable that emits **immediately** on subscribe and **whenever the record
+  is updated or deleted**.
+- When a model is updated (e.g. via `model.update()` or `@writer` methods), the
+  observable **emits the same object reference** with updated properties — it
+  does **not** emit a new model instance.
+
+### React `useState` bailout
+
+- `useState` uses `Object.is` to decide whether to re-render. Passing the **same
+  reference** (e.g. `setPhrase(model)`) after an update means **no re-render**.
+- Result: DB updates (text, note, language, etc.) **don’t appear** until the
+  user navigates away and back, when a new subscription yields a fresh
+  reference.
+
+### Fix: store a wrapper so each emit is a new reference
+
+When subscribing to a **single model** (e.g. `findAndObserve`) and storing it in
+React state, **don’t** store the raw model. Store a wrapper so every emission
+updates state with a **new object**:
+
+```ts
+const [phraseState, setPhraseState] = useState<
+ { phrase: Phrase; _key: number } | null
+>(null);
+
+useEffect(() => {
+ if (!id) return;
+ const sub = db.collections
+  .get<Phrase>(PHRASE_TABLE)
+  .findAndObserve(id)
+  .subscribe((result) => {
+   setPhraseState({ phrase: result, _key: result.updatedAt });
+  });
+ return () => sub.unsubscribe();
+}, [id, db]);
+
+const phrase = phraseState?.phrase ?? null;
+```
+
+- Use `phrase` (derived) everywhere in the component. Updates persisted to the
+  DB will re-emit, update `phraseState` with a new wrapper, and trigger a
+  re-render.
+
+### Query `observe()` and arrays
+
+- **`query.observe()`** emits **arrays** of models. When the query result set
+  changes, WatermelonDB typically emits a **new array** reference, so
+  `setState(results)` usually triggers re-renders.
+- If you **build derived data** (e.g. `linked.filter(...)`, `assignments`) in
+  the subscribe callback and `setState` that, you’re already passing new
+  references — no extra wrapper needed.
+
+---
+
+## `withObservables` (HOC)
+
+- **`withObservables(triggerProps, getObservables)`** injects observable values
+  as props and **always** passes a **new state object** into `setState` (e.g.
+  `{ values, isFetching }`), so React re-renders on each emission even when
+  model references are unchanged.
+- Use it when you can **observe a model (or query) passed as a prop**: e.g.
+  `withObservables(['attempt'], ({ attempt }) => ({ attempt: attempt.observe(), ... }))`.
+  See `AttemptCard` in `features/lesson/components/AttemptCard.tsx`.
+- For **route params** (e.g. `id`) you typically **subscribe manually** in
+  `useEffect` (e.g. `findAndObserve(id)`). In that case, use the **wrapper
+  pattern** above instead of storing the raw model.
+
+---
+
+## Model patterns in this project
+
+- **Models**: `database/models/` (e.g. `Phrase`, `Lesson`, `Attempt`,
+  `Translation`, `Deck`). Use `@field`, `@writer`, and static helpers (e.g.
+  `Phrase.findOrCreatePhrase`, `Lesson.addLesson`).
+- **Observation**: `useDatabase()` from `@nozbe/watermelondb/react`; then
+  `collection.findAndObserve(id)` or `query.observe().subscribe(...)`.
+- **Schema/tables**: `database/schema.ts`; collection access via
+  `db.collections.get<Model>(TABLE)`.
+
+---
+
+## Quick reference
+
+| Scenario                                  | Pattern                                                                   | Re-render guarantee            |
+| ----------------------------------------- | ------------------------------------------------------------------------- | ------------------------------ |
+| Single model by `id` (e.g. detail screen) | `findAndObserve` + **wrapper state** `{ model, _key }`                    | Yes                            |
+| Query results (list)                      | `query.observe()` + `setState(results)` or derived structures             | Yes (new array/refs)           |
+| Model passed as prop                      | `withObservables(['model'], ({ model }) => ({ model: model.observe() }))` | Yes (HOC uses new state shape) |
+
+---
+
+## Resources
+
+- **DeepWiki**: [Nozbe/WatermelonDB](https://github.com/Nozbe/WatermelonDB) —
+  `findAndObserve`, `observe()`, `withObservables`, model updates.
+- **Project**: `PhraseDetailScreen`, `LessonDetailScreen`, `SetDetailScreen` (findAndObserve +
+  wrapper); `AttemptCard` (withObservables).
