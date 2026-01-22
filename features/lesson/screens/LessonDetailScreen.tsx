@@ -47,23 +47,24 @@ export default function LessonDetailScreen() {
   const { settings } = useSettings();
   const db = useDatabase();
 
-  const [lesson, setLesson] = useState<Lesson | null>(null);
+  const [lessonState, setLessonState] = useState<{ lesson: Lesson; _key: number } | null>(null);
   const [attempts, setAttempts] = useState<Attempt[]>([]);
   const [paragraph, setParagraph] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [expandedAttemptId, setExpandedAttemptId] = useState<string | null>(null);
   const [abortController, setAbortController] = useState<AbortController | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+
+  const lesson = lessonState?.lesson ?? null;
 
   useEffect(() => {
     if (!id) return;
 
-    // Subscribe to lesson
+    // Subscribe to lesson (wrapper ensures re-render when model updates — see watermelondb-model skill)
     const lessonSub = db.collections
       .get<Lesson>(LESSON_TABLE)
       .findAndObserve(id)
       .subscribe((result) => {
-        setLesson(result);
+        setLessonState({ lesson: result, _key: result.updatedAt });
       });
 
     // Subscribe to attempts for this lesson
@@ -96,7 +97,6 @@ export default function LessonDetailScreen() {
     }
     const controller = new AbortController();
     setAbortController(controller);
-    setIsLoading(true);
     setIsSubmitting(true);
 
     try {
@@ -123,7 +123,6 @@ export default function LessonDetailScreen() {
   const handleCancelAttempt = () => {
     abortController?.abort();
     setAbortController(null);
-    setIsLoading(false);
   };
 
   const toggleAttemptExpand = (attemptId: string) => {

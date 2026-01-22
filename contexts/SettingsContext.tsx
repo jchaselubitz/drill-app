@@ -20,6 +20,7 @@ type AppSettings = {
 type SettingsContextType = {
   settings: UserSettings;
   updateSettings: (updates: Partial<UserSettings>) => Promise<void>;
+  refreshSettings: () => Promise<void>;
   isLoading: boolean;
 };
 
@@ -106,6 +107,10 @@ export function SettingsProvider({ children }: { children: React.ReactNode }): R
 
   useEffect(() => {
     loadSettings();
+  }, [loadSettings]);
+
+  const refreshSettings = useCallback(async () => {
+    await loadSettings();
   }, [loadSettings]);
 
   const updateSettings = useCallback(
@@ -207,7 +212,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }): R
   );
 
   return (
-    <SettingsContext.Provider value={{ settings, updateSettings, isLoading }}>
+    <SettingsContext.Provider value={{ settings, updateSettings, refreshSettings, isLoading }}>
       {children}
     </SettingsContext.Provider>
   );

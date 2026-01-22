@@ -59,7 +59,7 @@ export default function SetDetailScreen() {
   const { settings } = useSettings();
   const db = useDatabase();
 
-  const [deck, setDeck] = useState<Deck | null>(null);
+  const [deckState, setDeckState] = useState<{ deck: Deck; _key: number } | null>(null);
   const [phrases, setPhrases] = useState<PhraseItem[]>([]);
   const [dueCount, setDueCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
@@ -69,6 +69,8 @@ export default function SetDetailScreen() {
   const [audioInitialRemaining, setAudioInitialRemaining] = useState<number | null>(null);
   const prevIsGeneratingRef = useRef(audioStatus.isGenerating);
   const { togglePlayPause, isPlayingFile } = useAudioPlayback();
+
+  const deck = deckState?.deck ?? null;
 
   const loadPhrasesForDeck = useCallback(
     async (deckId: string) => {
@@ -115,12 +117,12 @@ export default function SetDetailScreen() {
   useEffect(() => {
     if (!id) return;
 
-    // Subscribe to deck
+    // Subscribe to deck (wrapper ensures re-render when model updates — see watermelondb-model skill)
     const deckSub = db.collections
       .get<Deck>(DECK_TABLE)
       .findAndObserve(id)
       .subscribe((result) => {
-        setDeck(result);
+        setDeckState({ deck: result, _key: result.updatedAt });
       });
 
     // Subscribe to deck translations and fetch phrase data
