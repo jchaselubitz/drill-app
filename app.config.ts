@@ -10,7 +10,7 @@ type AppConfig = ExpoConfig & {
 const config: AppConfig = {
   name: 'Drill',
   slug: 'drill-app',
-  version: '1.1.2',
+  version: '1.1.3',
   orientation: 'portrait',
   scheme: 'drillapp',
   userInterfaceStyle: 'automatic',
@@ -22,6 +22,7 @@ const config: AppConfig = {
     bundleIdentifier: 'com.drillapp.mobile',
     infoPlist: {
       ITSAppUsesNonExemptEncryption: false,
+      UIDesignRequiresCompatibility: true,
       UIBackgroundModes: ['processing'],
       BGTaskSchedulerPermittedIdentifiers: [
         'com.drillapp.mobile.background-review-fetch',
@@ -32,15 +33,33 @@ const config: AppConfig = {
   android: {
     package: 'com.drillapp.mobile',
     adaptiveIcon: {
-      backgroundColor: '#ffffff',
+      backgroundColor: '#E6F4FE',
+      foregroundImage: './assets/images/android-icon-foreground.png',
+      backgroundImage: './assets/images/android-icon-background.png',
+      monochromeImage: './assets/images/android-icon-monochrome.png',
     },
+    edgeToEdgeEnabled: true,
+    predictiveBackGestureEnabled: false,
   },
   web: {
     bundler: 'metro',
     output: 'static',
+    favicon: './assets/images/favicon.png',
   },
   plugins: [
     'expo-router',
+    [
+      'expo-splash-screen',
+      {
+        image: './assets/images/1024.png',
+        imageWidth: 200,
+        resizeMode: 'contain',
+        backgroundColor: '#ffffff',
+        dark: {
+          backgroundColor: '#000000',
+        },
+      },
+    ],
     [
       'expo-audio',
       {
@@ -50,6 +69,7 @@ const config: AppConfig = {
   ],
   experiments: {
     typedRoutes: true,
+    reactCompiler: true,
   },
   extra: {
     geminiApiKey: process.env.EXPO_PUBLIC_GEMINI_API_KEY,
