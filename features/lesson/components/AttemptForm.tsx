@@ -1,7 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import {
   ActivityIndicator,
-  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -11,7 +10,6 @@ import {
 
 import { useColors } from '@/hooks';
 
-const INPUT_ACCESSORY_VIEW_ID = 'attempt-form-toolbar';
 const BUTTON_SIZE = 44;
 const BUTTON_GAP = 8;
 
@@ -32,12 +30,6 @@ export function AttemptForm({
 }: AttemptFormProps) {
   const colors = useColors();
   const isDisabled = !paragraph.trim();
-
-  const getButtonState = () => {
-    if (isLoading) return 'loading';
-    if (!paragraph.trim()) return 'disabled';
-    return 'default';
-  };
 
   return (
     <View style={styles.attemptForm}>
@@ -60,7 +52,6 @@ export function AttemptForm({
           style={[styles.textArea, { color: colors.text }]}
           placeholderTextColor={colors.textSecondary}
           textAlignVertical="top"
-          inputAccessoryViewID={Platform.OS === 'ios' ? INPUT_ACCESSORY_VIEW_ID : undefined}
         />
         <View style={styles.buttonRow}>
           <Pressable
@@ -87,11 +78,6 @@ export function AttemptForm({
           </Pressable>
         </View>
       </View>
-      {/* {Platform.OS === 'ios' && (
-        <InputAccessoryView nativeID={INPUT_ACCESSORY_VIEW_ID}>
-          <KeyboardToolbar />
-        </InputAccessoryView>
-      )} */}
     </View>
   );
 }

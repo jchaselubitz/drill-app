@@ -53,7 +53,6 @@ export default function LessonDetailScreen() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [expandedAttemptId, setExpandedAttemptId] = useState<string | null>(null);
   const [abortController, setAbortController] = useState<AbortController | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -96,7 +95,6 @@ export default function LessonDetailScreen() {
     }
     const controller = new AbortController();
     setAbortController(controller);
-    setIsLoading(true);
     setIsSubmitting(true);
 
     try {
@@ -123,7 +121,6 @@ export default function LessonDetailScreen() {
   const handleCancelAttempt = () => {
     abortController?.abort();
     setAbortController(null);
-    setIsLoading(false);
   };
 
   const toggleAttemptExpand = (attemptId: string) => {

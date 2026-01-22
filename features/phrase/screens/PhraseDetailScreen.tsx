@@ -34,7 +34,7 @@ import {
 } from '@/database/schema';
 import { useAudioPlayback, useColors } from '@/hooks';
 import { translatePhrase } from '@/lib/ai/translate';
-import { SRS_DEFAULT_EASE } from '@/lib/srs/constants';
+import { ensureSrsCardsForTranslation } from '@/lib/srs/cards';
 
 function DeleteButton({ onPress }: { onPress: () => void }) {
   const colors = useColors();
@@ -311,30 +311,11 @@ export default function PhraseDetailScreen() {
       }
 
       if (existingCards.length === 0) {
-        const directions: Array<'primary_to_secondary' | 'secondary_to_primary'> = [
-          'primary_to_secondary',
-          'secondary_to_primary',
-        ];
-        for (const direction of directions) {
-          await db.collections.get<SrsCard>(SRS_CARD_TABLE).create((card) => {
-            card.deckId = selectedDeckId;
-            card.translationId = translationId;
-            card.direction = direction;
-            card.state = 'new';
-            card.dueAt = nowMs;
-            card.intervalDays = 0;
-            card.ease = SRS_DEFAULT_EASE;
-            card.reps = 0;
-            card.lapses = 0;
-            card.stepIndex = 0;
-            card.lastReviewedAt = null;
-            card.suspended = false;
-            card.stability = null;
-            card.difficulty = null;
-            card.createdAt = nowMs;
-            card.updatedAt = nowMs;
-          });
-        }
+        await ensureSrsCardsForTranslation(db, {
+          deckId: selectedDeckId,
+          translationId,
+          nowMs,
+        });
       } else {
         for (const card of existingCards) {
           await card.update((record) => {
@@ -404,7 +385,6 @@ export default function PhraseDetailScreen() {
   }
 
   const language = Languages.find((l) => l.code === phrase.lang);
-  const partSpeech = PARTS_OF_SPEECH.find((p) => p.value === phrase.partSpeech);
   const deckOptions = [{ value: '', label: 'Not in a deck' }].concat(
     decks.map((deck) => ({ value: deck.id, label: deck.name }))
   );

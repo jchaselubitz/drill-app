@@ -19,13 +19,6 @@ export function NewLessonForm({ topic, onTopicChange, onGenerate, isLoading }: N
         onChangeText={onTopicChange}
       />
 
-      {/* <TextInput
-        label="Related phrases (optional)"
-        placeholder="Comma-separated phrases to practice"
-        value={phrases}
-        onChangeText={setPhrases}
-      /> */}
-
       <Button
         text="Generate Lesson"
         onPress={onGenerate}
