@@ -1,4 +1,6 @@
+import { useCallback } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Card, LanguageChooser, Select } from '@/components';
@@ -10,8 +12,14 @@ import type { CEFRLevel, LanguageCode, ThemeMode } from '@/types';
 
 export default function SettingsScreen() {
   const colors = useColors();
-  const { settings, updateSettings, isLoading } = useSettings();
+  const { settings, updateSettings, refreshSettings, isLoading } = useSettings();
   const { skills, isAnalyzing, error, runAnalysis, lastAnalyzedAt, staleDays } = useSkillAnalysis();
+
+  useFocusEffect(
+    useCallback(() => {
+      refreshSettings();
+    }, [refreshSettings])
+  );
 
   const levelOptions = CEFR_LEVELS.map((level) => ({
     value: level.level,
