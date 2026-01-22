@@ -1,5 +1,5 @@
 ---
-name: watermelondb-model
+name: watermelondb
 description: WatermelonDB models, observation patterns, and React integration. Use when writing or debugging model code, observers (findAndObserve, query.observe), or screens that display live-updating DB data.
 ---
 
@@ -41,18 +41,18 @@ updates state with a **new object**:
 
 ```ts
 const [phraseState, setPhraseState] = useState<
- { phrase: Phrase; _key: number } | null
+  { phrase: Phrase; _key: number } | null
 >(null);
 
 useEffect(() => {
- if (!id) return;
- const sub = db.collections
-  .get<Phrase>(PHRASE_TABLE)
-  .findAndObserve(id)
-  .subscribe((result) => {
-   setPhraseState({ phrase: result, _key: result.updatedAt });
-  });
- return () => sub.unsubscribe();
+  if (!id) return;
+  const sub = db.collections
+    .get<Phrase>(PHRASE_TABLE)
+    .findAndObserve(id)
+    .subscribe((result) => {
+      setPhraseState({ phrase: result, _key: result.updatedAt });
+    });
+  return () => sub.unsubscribe();
 }, [id, db]);
 
 const phrase = phraseState?.phrase ?? null;
@@ -114,5 +114,5 @@ const phrase = phraseState?.phrase ?? null;
 
 - **DeepWiki**: [Nozbe/WatermelonDB](https://github.com/Nozbe/WatermelonDB) —
   `findAndObserve`, `observe()`, `withObservables`, model updates.
-- **Project**: `PhraseDetailScreen`, `LessonDetailScreen`, `SetDetailScreen` (findAndObserve +
-  wrapper); `AttemptCard` (withObservables).
+- **Project**: `PhraseDetailScreen`, `LessonDetailScreen`, `SetDetailScreen`
+  (findAndObserve + wrapper); `AttemptCard` (withObservables).

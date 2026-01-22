@@ -1,3 +1,9 @@
+---
+name: expo-glass-effect
+description: Guide for using expo-glass-effect to create iOS native liquid glass UI effects. Apply when implementing glass effect UI components, cards, or surfaces on iOS.
+allowed-tools: Read, Edit, Write, Grep, Glob
+---
+
 # Expo Glass Effect
 
 Guide for using `expo-glass-effect` to create iOS native liquid glass UI effects.

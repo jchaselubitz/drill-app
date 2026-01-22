@@ -1,3 +1,9 @@
+---
+name: expo-router
+description: Patterns for Expo Router including Stack configuration, native tabs, and file-based routing best practices. Apply when working with navigation, routing, or screen configuration.
+allowed-tools: Read, Edit, Write, Grep, Glob
+---
+
 # Expo Router Patterns
 
 ## Stack Navigator Configuration

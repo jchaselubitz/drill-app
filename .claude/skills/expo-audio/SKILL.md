@@ -1,3 +1,9 @@
+---
+name: expo-audio
+description: Guide for using expo-audio to implement audio playback and recording in React Native apps. Apply when working with audio features, sound playback, recording, or text-to-speech functionality.
+allowed-tools: Read, Edit, Write, Grep, Glob
+---
+
 # Expo Audio (expo-audio)
 
 Guide for using `expo-audio` to implement audio playback and recording in React

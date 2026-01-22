@@ -1,3 +1,9 @@
+---
+name: gemini-api
+description: Patterns for using Google Gemini API with structured output, JSON mode, and proper configuration. Apply when implementing AI features, text generation, or working with Gemini models.
+allowed-tools: Read, Edit, Write, Grep, Glob
+---
+
 # Gemini API Patterns
 
 ## SDK Setup

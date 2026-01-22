@@ -1,3 +1,9 @@
+---
+name: rn-button-component
+description: Ensures buttons use the unified Button component with proper state management, icon support, and glass effect integration. Apply when creating or modifying buttons in the app.
+allowed-tools: Read, Edit, Write, Grep, Glob
+---
+
 # Button Component
 
 Guide for using the unified `Button` component with state management, icon support, and glass effect integration.
