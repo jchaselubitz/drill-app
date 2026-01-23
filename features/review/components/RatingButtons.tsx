@@ -31,8 +31,7 @@ export function RatingButtons({ onRate, intervals }: RatingButtonsProps) {
     <View style={styles.ratingRow}>
       {ratingButtons.map((button) => {
         const intervalText = intervals?.[button.rating];
-        const textColor =
-          button.variant === 'primary' ? colors.primaryText : colors.text;
+        const textColor = button.variant === 'primary' ? colors.primaryText : colors.text;
         const buttonContent = (
           <View style={styles.buttonContent}>
             <Text style={[styles.buttonLabel, { color: textColor }]}>{button.label}</Text>

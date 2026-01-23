@@ -9,10 +9,10 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
-  TextInput as RNTextInput,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput as RNTextInput,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -24,16 +24,26 @@ import { Select } from '@/components/Select';
 import { Languages, PARTS_OF_SPEECH } from '@/constants';
 import { useSettings } from '@/contexts/SettingsContext';
 import database from '@/database';
-import { Deck, DeckTranslation, Phrase, SrsCard, Translation } from '@/database/models';
+import {
+  Deck,
+  DeckTranslation,
+  PendingAudioRequest,
+  Phrase,
+  SrsCard,
+  Translation,
+} from '@/database/models';
 import {
   DECK_TABLE,
   DECK_TRANSLATION_TABLE,
+  PENDING_AUDIO_REQUEST_TABLE,
   PHRASE_TABLE,
   SRS_CARD_TABLE,
   TRANSLATION_TABLE,
 } from '@/database/schema';
 import { useAudioPlayback, useColors } from '@/hooks';
 import { translatePhrase } from '@/lib/ai/translate';
+import { isLanguageSupported } from '@/lib/audio/voiceMapping';
+import { queueAudioGeneration } from '@/lib/backgroundAudioService';
 import { ensureSrsCardsForTranslation } from '@/lib/srs/cards';
 
 function DeleteButton({ onPress }: { onPress: () => void }) {
@@ -68,6 +78,8 @@ export default function PhraseDetailScreen() {
   const [decks, setDecks] = useState<Deck[]>([]);
   const [deckAssignments, setDeckAssignments] = useState<Record<string, string | null>>({});
   const [targetLanguage, setTargetLanguage] = useState<string>(settings.topicLanguage);
+  const [isDownloadingAudio, setIsDownloadingAudio] = useState(false);
+  const [defaultDeck, setDefaultDeck] = useState<Deck | null>(null);
 
   const scrollViewRef = useRef<ScrollView>(null);
   const textInputRef = useRef<any>(null);
@@ -75,9 +87,13 @@ export default function PhraseDetailScreen() {
   const phrase = phraseState?.phrase ?? null;
 
   useEffect(() => {
-    Deck.getOrCreateDefault(db).catch((error) => {
-      console.error('Failed to ensure default deck:', error);
-    });
+    Deck.getOrCreateDefault(db)
+      .then((deck) => {
+        setDefaultDeck(deck);
+      })
+      .catch((error) => {
+        console.error('Failed to ensure default deck:', error);
+      });
 
     const subscription = db.collections
       .get<Deck>(DECK_TABLE)
@@ -162,6 +178,21 @@ export default function PhraseDetailScreen() {
           setLinkedTranslations([]);
           setDeckAssignments({});
         }
+      });
+
+    return () => subscription.unsubscribe();
+  }, [id, db]);
+
+  // Check for pending audio request
+  useEffect(() => {
+    if (!id) return;
+
+    const subscription = db.collections
+      .get<PendingAudioRequest>(PENDING_AUDIO_REQUEST_TABLE)
+      .query(Q.where('phrase_id', id), Q.where('status', Q.oneOf(['pending', 'processing'])))
+      .observe()
+      .subscribe((requests) => {
+        setIsDownloadingAudio(requests.length > 0);
       });
 
     return () => subscription.unsubscribe();
@@ -267,6 +298,37 @@ export default function PhraseDetailScreen() {
       console.error(error);
     } finally {
       setIsTranslating(false);
+    }
+  };
+
+  const handleDownloadAudio = async () => {
+    if (!phrase || !defaultDeck || isDownloadingAudio) return;
+
+    const languageCode = phrase.lang as any;
+    if (!isLanguageSupported(languageCode)) {
+      Alert.alert('Not Supported', `Audio generation is not available for this language yet.`);
+      return;
+    }
+
+    // Check for existing pending request
+    const existingRequest = await PendingAudioRequest.findByPhraseId(db, phrase.id);
+    if (existingRequest) {
+      return; // Already queued
+    }
+
+    try {
+      setIsDownloadingAudio(true);
+      await queueAudioGeneration({
+        db,
+        phraseId: phrase.id,
+        phraseText: phrase.text,
+        deckId: defaultDeck.id,
+        languageCode,
+      });
+    } catch (error) {
+      Alert.alert('Error', 'Failed to start audio generation. Please try again.');
+      console.error('Audio generation error:', error);
+      setIsDownloadingAudio(false);
     }
   };
 
@@ -442,7 +504,7 @@ export default function PhraseDetailScreen() {
                 </Pressable>
               )}
               <View style={styles.phraseActions}>
-                {phrase.filename && (
+                {phrase.filename ? (
                   <Pressable
                     onPress={() => togglePlayPause(phrase.filename!)}
                     hitSlop={8}
@@ -454,6 +516,19 @@ export default function PhraseDetailScreen() {
                       color={colors.primary}
                     />
                   </Pressable>
+                ) : (
+                  <Pressable
+                    onPress={handleDownloadAudio}
+                    hitSlop={8}
+                    disabled={isDownloadingAudio || !defaultDeck}
+                    style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1 }]}
+                  >
+                    {isDownloadingAudio ? (
+                      <ActivityIndicator size="small" color={colors.primary} />
+                    ) : (
+                      <Ionicons name="download-outline" size={24} color={colors.primary} />
+                    )}
+                  </Pressable>
                 )}
                 <FavoriteButton phrase={phrase} size={24} hitSlop={8} />
               </View>
@@ -462,7 +537,6 @@ export default function PhraseDetailScreen() {
             {/* Inline Metadata Chips */}
             <View style={styles.metadataRow}>
               <MetadataChip
-             
                 label="Language"
                 options={languageOptions}
                 value={phrase.lang}

@@ -9,59 +9,6 @@ import { getStudyDayStart } from './time';
 
 const REVIEW_STATES: SrsCardState[] = ['learning', 'review', 'relearning'];
 
-// Fisher-Yates shuffle algorithm
-const shuffleArray = <T>(array: T[]): T[] => {
-  const shuffled = [...array];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-  return shuffled;
-};
-
-// Shuffle cards ensuring that cards with the same translation_id are separated
-// This prevents users from seeing opposite directions of the same translation pair consecutively
-const shuffleCardsSeparatingOpposites = (cards: SrsCard[]): SrsCard[] => {
-  if (cards.length <= 1) return cards;
-
-  // First, do a random shuffle
-  let shuffled = shuffleArray(cards);
-
-  // Then, fix any adjacent cards with the same translation_id
-  const maxAttempts = shuffled.length * 2; // Reasonable limit to avoid infinite loops
-  let attempts = 0;
-
-  while (attempts < maxAttempts) {
-    let hasAdjacentPairs = false;
-
-    // Check for adjacent cards with the same translation_id and fix them
-    for (let i = 0; i < shuffled.length - 1; i++) {
-      if (shuffled[i].translationId === shuffled[i + 1].translationId) {
-        hasAdjacentPairs = true;
-
-        // Find any card with a different translation_id to swap with
-        for (let j = 0; j < shuffled.length; j++) {
-          if (j !== i && j !== i + 1 && shuffled[j].translationId !== shuffled[i].translationId) {
-            [shuffled[i + 1], shuffled[j]] = [shuffled[j], shuffled[i + 1]];
-            break;
-          }
-        }
-      }
-    }
-
-    // If no adjacent pairs found, we're done
-    if (!hasAdjacentPairs) {
-      break;
-    }
-
-    // If we still have adjacent pairs, reshuffle and try again
-    shuffled = shuffleArray(cards);
-    attempts++;
-  }
-
-  return shuffled;
-};
-
 export const getDailyLimitsRemaining = async (
   db: Database,
   {
@@ -151,19 +98,197 @@ export const getReviewQueue = async (
       : [];
 
   const allCards = [...reviewCards, ...newCards];
-  return shuffleCardsSeparatingOpposites(allCards);
+  // Sort by urgency (due_at) while maintaining separation of opposite pairs
+  return sortCardsMaintainingSeparation(allCards);
 };
 
-export const getNextSessionCard = async (
-  db: Database,
-  cardIds: string[]
-): Promise<SrsCard | null> => {
-  if (cardIds.length === 0) return null;
-  const cardCollection = db.collections.get<SrsCard>(SRS_CARD_TABLE);
-  const cards = await cardCollection
-    .query(Q.where('id', Q.oneOf(cardIds)), Q.sortBy('due_at', Q.asc), Q.take(1))
-    .fetch();
-  return cards.length > 0 ? cards[0] : null;
+/**
+ * Given a queue of cards, find the index of the next card that is actually due.
+ */
+export const getNextDueCardIndex = ({
+  queue,
+  nowMs,
+  startIndex,
+}: {
+  queue: SrsCard[];
+  nowMs: number;
+  startIndex: number;
+}): number | null => {
+  let index = startIndex;
+
+  while (index < queue.length) {
+    const card = queue[index];
+    if (card.dueAt <= nowMs) {
+      return index;
+    }
+    index++;
+  }
+
+  return null;
+};
+
+/**
+ * Insert a card into a queue, maintaining urgency order (by due_at) while
+ * ensuring no adjacent cards have the same translation_id.
+ *
+ * Strategy:
+ * 1. Find the earliest position where the card's due_at fits
+ * 2. If that position would create an adjacent pair, find the next valid position
+ * 3. If no valid position exists (all cards have same translation_id), append to end
+ */
+export const insertCardMaintainingSeparation = (queue: SrsCard[], card: SrsCard): SrsCard[] => {
+  const newQueue = [...queue];
+
+  // Find the earliest position where this card's due_at fits
+  let insertIndex = 0;
+  for (let i = 0; i < newQueue.length; i++) {
+    if (card.dueAt <= newQueue[i].dueAt) {
+      insertIndex = i;
+      break;
+    }
+    insertIndex = i + 1;
+  }
+
+  // Check if inserting at this position would create an adjacent pair
+  const wouldCreatePair =
+    (insertIndex > 0 && newQueue[insertIndex - 1]?.translationId === card.translationId) ||
+    (insertIndex < newQueue.length && newQueue[insertIndex]?.translationId === card.translationId);
+
+  if (!wouldCreatePair) {
+    // Safe to insert at the ideal position
+    newQueue.splice(insertIndex, 0, card);
+    return newQueue;
+  }
+
+  // Find the next valid position that maintains urgency while avoiding pairs
+  // We'll look for positions where neither neighbor has the same translation_id
+  for (let i = insertIndex + 1; i <= newQueue.length; i++) {
+    const prevCard = i > 0 ? newQueue[i - 1] : null;
+    const nextCard = i < newQueue.length ? newQueue[i] : null;
+
+    // Check if this position is valid (no adjacent pairs)
+    const isValid =
+      (!prevCard || prevCard.translationId !== card.translationId) &&
+      (!nextCard || nextCard.translationId !== card.translationId);
+
+    if (isValid) {
+      newQueue.splice(i, 0, card);
+      return newQueue;
+    }
+  }
+
+  // If we couldn't find a valid position (edge case: all cards have same translation_id),
+  // append to end - this maintains urgency as much as possible
+  newQueue.push(card);
+  return newQueue;
+};
+
+/**
+ * Apply a rescheduled card to the in-memory queue.
+ * - Removes the current card from the queue
+ * - If the card is still due today, reinserts it using separation-aware insertion
+ * - Computes the next starting index for iteration
+ */
+export const applyCardRescheduleToQueue = ({
+  queue,
+  currentCardId,
+  refreshedCard,
+  tomorrowStartMs,
+  currentIndex,
+}: {
+  queue: SrsCard[];
+  currentCardId: string;
+  refreshedCard: SrsCard | null;
+  tomorrowStartMs: number;
+  currentIndex: number;
+}): { queue: SrsCard[]; nextStartIndex: number } => {
+  const isDueToday = refreshedCard !== null && refreshedCard.dueAt < tomorrowStartMs;
+
+  // Remove the current card from the queue
+  let newQueue = queue.filter((card) => card.id !== currentCardId);
+
+  // Optionally reinsert if still due today
+  if (isDueToday && refreshedCard) {
+    newQueue = insertCardMaintainingSeparation(newQueue, refreshedCard);
+  }
+
+  // Determine the next index to start from
+  let nextStartIndex = currentIndex;
+
+  if (isDueToday && refreshedCard) {
+    const reinsertedIndex = newQueue.findIndex((card) => card.id === refreshedCard.id);
+    if (reinsertedIndex !== -1 && reinsertedIndex <= currentIndex) {
+      // Card was inserted at or before our position, skip over it
+      nextStartIndex = currentIndex + 1;
+    }
+  }
+
+  // If the queue shrank and nextStartIndex is now out of bounds, clamp it
+  if (nextStartIndex >= newQueue.length) {
+    nextStartIndex = Math.max(0, newQueue.length - 1);
+  }
+
+  return { queue: newQueue, nextStartIndex };
+};
+
+/**
+ * Sort cards by due_at while maintaining separation of opposite pairs.
+ * This is used for the initial queue creation.
+ */
+export const sortCardsMaintainingSeparation = (cards: SrsCard[]): SrsCard[] => {
+  if (cards.length <= 1) return cards;
+
+  // First, sort by due_at
+  const sorted = [...cards].sort((a, b) => a.dueAt - b.dueAt);
+
+  // Then, fix any adjacent pairs by swapping with nearby cards
+  const result = [...sorted];
+  let changed = true;
+  let iterations = 0;
+  const maxIterations = result.length * 2;
+
+  while (changed && iterations < maxIterations) {
+    changed = false;
+    iterations++;
+
+    for (let i = 0; i < result.length - 1; i++) {
+      if (result[i].translationId === result[i + 1].translationId) {
+        // Try to find a swap candidate within a reasonable range
+        // Look ahead up to 5 positions to find a card with different translation_id
+        let swapped = false;
+        for (let j = i + 2; j < Math.min(i + 7, result.length); j++) {
+          if (result[j].translationId !== result[i].translationId) {
+            // Check if swapping maintains reasonable urgency order
+            // Allow swap if the due_at difference is small (within 1 hour)
+            const urgencyDiff = Math.abs(result[j].dueAt - result[i + 1].dueAt);
+            if (urgencyDiff < 60 * 60 * 1000) {
+              [result[i + 1], result[j]] = [result[j], result[i + 1]];
+              swapped = true;
+              changed = true;
+              break;
+            }
+          }
+        }
+
+        // If we couldn't find a good swap, try looking backward
+        if (!swapped && i > 0) {
+          for (let j = i - 1; j >= Math.max(0, i - 5); j--) {
+            if (result[j].translationId !== result[i].translationId) {
+              const urgencyDiff = Math.abs(result[j].dueAt - result[i].dueAt);
+              if (urgencyDiff < 60 * 60 * 1000) {
+                [result[i], result[j]] = [result[j], result[i]];
+                swapped = true;
+                changed = true;
+                break;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return result;
 };
 
 export const countCardsStillDueToday = async (

@@ -1,6 +1,7 @@
+import { useFocusEffect } from '@react-navigation/native';
+import Constants from 'expo-constants';
 import { useCallback } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Card, LanguageChooser, Select } from '@/components';
@@ -132,7 +133,9 @@ export default function SettingsScreen() {
             Drill helps you improve your writing skills in a new language through AI-powered prompts
             and feedback.
           </Text>
-          <Text style={[styles.version, { color: colors.textSecondary }]}>Version 1.0.0</Text>
+          <Text style={[styles.version, { color: colors.textSecondary }]}>
+            Version {Constants.expoConfig?.extra?.version as string}
+          </Text>
         </Card>
       </ScrollView>
     </SafeAreaView>

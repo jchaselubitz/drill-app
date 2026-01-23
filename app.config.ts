@@ -10,7 +10,7 @@ type AppConfig = ExpoConfig & {
 const config: AppConfig = {
   name: 'Drill',
   slug: 'drill-app',
-  version: '1.1.3',
+  version: process.env.EXPO_PUBLIC_VERSION,
   orientation: 'portrait',
   scheme: 'drillapp',
   userInterfaceStyle: 'automatic',
@@ -72,6 +72,7 @@ const config: AppConfig = {
     reactCompiler: true,
   },
   extra: {
+    version: process.env.EXPO_PUBLIC_VERSION,
     geminiApiKey: process.env.EXPO_PUBLIC_GEMINI_API_KEY,
     googleCloudTtsApiKey: process.env.EXPO_PUBLIC_GEMINI_API_KEY,
     supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,

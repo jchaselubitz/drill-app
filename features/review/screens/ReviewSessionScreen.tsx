@@ -1,4 +1,5 @@
 import { useDatabase } from '@nozbe/watermelondb/react';
+import { useFocusEffect } from '@react-navigation/native';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
@@ -7,12 +8,18 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/Button';
 import { useSettings } from '@/contexts/SettingsContext';
 import { Phrase, SrsCard, SrsReviewLog, Translation } from '@/database/models';
-import { PHRASE_TABLE, SRS_REVIEW_LOG_TABLE, TRANSLATION_TABLE } from '@/database/schema';
+import {
+  PHRASE_TABLE,
+  SRS_CARD_TABLE,
+  SRS_REVIEW_LOG_TABLE,
+  TRANSLATION_TABLE,
+} from '@/database/schema';
 import { useAudioPlayback, useColors } from '@/hooks';
 import {
+  applyCardRescheduleToQueue,
   countCardsStillDueToday,
   getDailyLimitsRemaining,
-  getNextSessionCard,
+  getNextDueCardIndex,
   getReviewQueue,
 } from '@/lib/srs/queue';
 import { formatInterval, getRatingPreviews, scheduleSm2Review } from '@/lib/srs/sm2';
@@ -50,9 +57,10 @@ export default function ReviewSessionScreen() {
   const lastAutoPlayKeyRef = useRef<string | null>(null);
 
   // Session state
-  const [sessionCardIds, setSessionCardIds] = useState<string[]>([]);
+  const [sessionCards, setSessionCards] = useState<SrsCard[]>([]);
   const [tomorrowStartMs, setTomorrowStartMs] = useState<number>(0);
   const [currentItem, setCurrentItem] = useState<ReviewItem | null>(null);
+  const [currentIndex, setCurrentIndex] = useState<number>(0);
   const [showBack, setShowBack] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [sessionInitialized, setSessionInitialized] = useState(false);
@@ -61,8 +69,9 @@ export default function ReviewSessionScreen() {
   const [sessionStats, setSessionStats] = useState<{
     totalInSession: number;
     remainingToday: number;
-    completedThisSession: number;
-  }>({ totalInSession: 0, remainingToday: 0, completedThisSession: 0 });
+  }>({ totalInSession: 0, remainingToday: 0 });
+  // Track unique cards completed this session (scheduled for tomorrow or later)
+  const [completedCardIds, setCompletedCardIds] = useState<Set<string>>(new Set());
 
   // Hydrate a card into a ReviewItem
   const hydrateCard = useCallback(
@@ -92,22 +101,61 @@ export default function ReviewSessionScreen() {
   );
 
   // Load the next card from the session
-  const loadNextCard = useCallback(async () => {
-    if (sessionCardIds.length === 0) {
-      setCurrentItem(null);
-      return;
-    }
+  // Finds the first card that's actually due (dueAt <= now) starting from startIndex.
+  // If no due card is found forward, wraps around to search from the beginning.
+  const loadNextCard = useCallback(
+    async (queueOverride?: SrsCard[], indexOverride?: number) => {
+      const queue = queueOverride ?? sessionCards;
+      const startIndex = indexOverride ?? currentIndex;
 
-    const nextCard = await getNextSessionCard(db, sessionCardIds);
-    if (!nextCard) {
-      setCurrentItem(null);
-      return;
-    }
+      if (queue.length === 0) {
+        setCurrentItem(null);
+        return;
+      }
 
-    const item = await hydrateCard(nextCard);
-    setCurrentItem(item);
-    setShowBack(false);
-  }, [db, sessionCardIds, hydrateCard]);
+      const nowMs = Date.now();
+      let nextIndex = getNextDueCardIndex({
+        queue,
+        nowMs,
+        startIndex,
+      });
+
+      // If no due card found forward and we didn't start at 0, wrap around to check earlier cards
+      // (cards earlier in the queue may have become due after being rescheduled)
+      if (nextIndex === null && startIndex > 0) {
+        nextIndex = getNextDueCardIndex({
+          queue,
+          nowMs,
+          startIndex: 0,
+        });
+      }
+
+      if (nextIndex === null) {
+        // No due cards anywhere in the queue
+        setCurrentItem(null);
+        return;
+      }
+
+      // Re-fetch the card from the database to ensure fresh scheduling data
+      const staleCard = queue[nextIndex];
+      const freshCard = await db.collections.get<SrsCard>(SRS_CARD_TABLE).find(staleCard.id);
+      const item = await hydrateCard(freshCard);
+
+      if (item === null) {
+        // Hydration failed - remove this card from queue and try next
+        const filteredQueue = queue.filter((_, i) => i !== nextIndex);
+        setSessionCards(filteredQueue);
+        // Continue searching from same index (next card shifted into this position)
+        await loadNextCard(filteredQueue, nextIndex);
+        return;
+      }
+
+      setCurrentItem(item);
+      setShowBack(false);
+      setCurrentIndex(nextIndex);
+    },
+    [currentIndex, sessionCards, hydrateCard, db]
+  );
 
   // Initialize the session (runs once)
   const initializeSession = useCallback(async () => {
@@ -137,9 +185,9 @@ export default function ReviewSessionScreen() {
       newRemaining: limits.newRemaining,
     });
 
-    // Store card IDs for session tracking
+    // Store cards and IDs for session tracking
+    setSessionCards(cards);
     const cardIds = cards.map((c) => c.id);
-    setSessionCardIds(cardIds);
 
     // Calculate initial stats
     const remainingToday = await countCardsStillDueToday(db, {
@@ -150,16 +198,15 @@ export default function ReviewSessionScreen() {
     setSessionStats({
       totalInSession: cardIds.length,
       remainingToday,
-      completedThisSession: 0,
     });
+    setCompletedCardIds(new Set());
 
     // Load first card
     if (cards.length > 0) {
-      const firstCard = await getNextSessionCard(db, cardIds);
-      if (firstCard) {
-        const item = await hydrateCard(firstCard);
-        setCurrentItem(item);
-      }
+      const firstCard = cards[0];
+      const item = await hydrateCard(firstCard);
+      setCurrentItem(item);
+      setCurrentIndex(0);
     }
 
     setSessionInitialized(true);
@@ -191,6 +238,23 @@ export default function ReviewSessionScreen() {
       play(filename);
     }
   }, [currentItem, showBack, settings.autoPlayReviewAudio, play]);
+
+  // Reset session when screen loses focus so a fresh session starts on return
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        // Cleanup on blur - reset session state
+        setSessionInitialized(false);
+        setSessionCards([]);
+        setCurrentItem(null);
+        setCurrentIndex(0);
+        setShowBack(false);
+        setSessionStats({ totalInSession: 0, remainingToday: 0 });
+        setCompletedCardIds(new Set());
+        lastAutoPlayKeyRef.current = null;
+      };
+    }, [])
+  );
 
   const ratingIntervals = useMemo(() => {
     if (!currentItem || !showBack) return undefined;
@@ -269,9 +333,26 @@ export default function ReviewSessionScreen() {
       });
     });
 
+    // Refresh card if it's still due today so the queue logic can work with latest values
+    const refreshedCard =
+      update.dueAt < tomorrowStartMs
+        ? await db.collections.get<SrsCard>(SRS_CARD_TABLE).find(currentItem.card.id)
+        : null;
+
+    // Let the queue helper handle removal / optional reinsertion and next start index
+    const { queue: newQueue, nextStartIndex } = applyCardRescheduleToQueue({
+      queue: sessionCards,
+      currentCardId: currentItem.card.id,
+      refreshedCard,
+      tomorrowStartMs,
+      currentIndex,
+    });
+
+    setSessionCards(newQueue);
+
     // Check if session is complete (all cards scheduled for tomorrow or later)
     const remainingToday = await countCardsStillDueToday(db, {
-      cardIds: sessionCardIds,
+      cardIds: newQueue.map((c) => c.id),
       tomorrowStartMs,
     });
 
@@ -279,8 +360,13 @@ export default function ReviewSessionScreen() {
     setSessionStats((prev) => ({
       ...prev,
       remainingToday,
-      completedThisSession: prev.completedThisSession + 1,
     }));
+
+    // Track unique completed cards (cards scheduled for tomorrow or later)
+    const cardWasCompleted = update.dueAt >= tomorrowStartMs;
+    if (cardWasCompleted) {
+      setCompletedCardIds((prev) => new Set(prev).add(currentItem.card.id));
+    }
 
     if (remainingToday === 0) {
       // Session complete - all cards scheduled for tomorrow or later
@@ -288,8 +374,8 @@ export default function ReviewSessionScreen() {
       return;
     }
 
-    // Load next card from session (shows immediately regardless of dueAt)
-    await loadNextCard();
+    // Load next card using the updated queue
+    await loadNextCard(newQueue, nextStartIndex);
   };
 
   if (!deckId) {
@@ -320,7 +406,7 @@ export default function ReviewSessionScreen() {
         <ReviewProgress
           totalInSession={sessionStats.totalInSession}
           remainingToday={sessionStats.remainingToday}
-          completedThisSession={sessionStats.completedThisSession}
+          completedThisSession={completedCardIds.size}
         />
         <ReviewCard
           front={currentItem.front}

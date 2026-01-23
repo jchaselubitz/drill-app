@@ -9,8 +9,3 @@ These instructions apply to ChatGPT agents working in this repo.
 ## Skills
 
 Use the project skills in `.claude/skills` when the task matches:
-
-- `./.claude/skills/expo-glass-effect.md`
-- `./.claude/skills/expo-router/SKILL.md`
-- `./.claude/skills/gemini-api/SKILL.md`
-- `./.claude/skills/zod-v4-patterns/SKILL.md`
