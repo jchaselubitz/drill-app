@@ -127,13 +127,42 @@ export const getNextDueCardIndex = ({
   return null;
 };
 
+// Minimum spacing between cards with the same translation_id
+const MIN_CARD_SPACING = 4;
+
+/**
+ * Check if a position in the queue would place a card too close to another
+ * card with the same translation_id. Cards must be at least MIN_CARD_SPACING apart.
+ */
+const wouldViolateSpacing = (
+  queue: SrsCard[],
+  insertIndex: number,
+  translationId: string
+): boolean => {
+  // Check cards within MIN_CARD_SPACING-1 positions before and after the insert position
+  const checkRange = MIN_CARD_SPACING - 1; // Cards at distance < MIN_CARD_SPACING would violate
+
+  for (let offset = -checkRange; offset <= checkRange; offset++) {
+    if (offset === 0) continue; // Skip the insertion position itself
+
+    const checkIndex = insertIndex + (offset < 0 ? offset : offset - 1);
+    if (checkIndex >= 0 && checkIndex < queue.length) {
+      if (queue[checkIndex].translationId === translationId) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+};
+
 /**
  * Insert a card into a queue, maintaining urgency order (by due_at) while
- * ensuring no adjacent cards have the same translation_id.
+ * ensuring cards with the same translation_id are at least MIN_CARD_SPACING apart.
  *
  * Strategy:
  * 1. Find the earliest position where the card's due_at fits
- * 2. If that position would create an adjacent pair, find the next valid position
+ * 2. If that position would violate spacing, find the next valid position
  * 3. If no valid position exists (all cards have same translation_id), append to end
  */
 export const insertCardMaintainingSeparation = (queue: SrsCard[], card: SrsCard): SrsCard[] => {
@@ -149,29 +178,24 @@ export const insertCardMaintainingSeparation = (queue: SrsCard[], card: SrsCard)
     insertIndex = i + 1;
   }
 
-  // Check if inserting at this position would create an adjacent pair
-  const wouldCreatePair =
-    (insertIndex > 0 && newQueue[insertIndex - 1]?.translationId === card.translationId) ||
-    (insertIndex < newQueue.length && newQueue[insertIndex]?.translationId === card.translationId);
-
-  if (!wouldCreatePair) {
+  // Check if inserting at this position would violate spacing requirements
+  if (!wouldViolateSpacing(newQueue, insertIndex, card.translationId)) {
     // Safe to insert at the ideal position
     newQueue.splice(insertIndex, 0, card);
     return newQueue;
   }
 
-  // Find the next valid position that maintains urgency while avoiding pairs
-  // We'll look for positions where neither neighbor has the same translation_id
+  // Find the next valid position that maintains urgency while respecting spacing
   for (let i = insertIndex + 1; i <= newQueue.length; i++) {
-    const prevCard = i > 0 ? newQueue[i - 1] : null;
-    const nextCard = i < newQueue.length ? newQueue[i] : null;
+    if (!wouldViolateSpacing(newQueue, i, card.translationId)) {
+      newQueue.splice(i, 0, card);
+      return newQueue;
+    }
+  }
 
-    // Check if this position is valid (no adjacent pairs)
-    const isValid =
-      (!prevCard || prevCard.translationId !== card.translationId) &&
-      (!nextCard || nextCard.translationId !== card.translationId);
-
-    if (isValid) {
+  // Try looking backward from the ideal position
+  for (let i = insertIndex - 1; i >= 0; i--) {
+    if (!wouldViolateSpacing(newQueue, i, card.translationId)) {
       newQueue.splice(i, 0, card);
       return newQueue;
     }
@@ -232,7 +256,71 @@ export const applyCardRescheduleToQueue = ({
 };
 
 /**
- * Sort cards by due_at while maintaining separation of opposite pairs.
+ * Find the first spacing violation in the result array.
+ * Returns the indices [i, j] where cards are too close, or null if no violation.
+ */
+const findSpacingViolation = (result: SrsCard[]): [number, number] | null => {
+  for (let i = 0; i < result.length; i++) {
+    // Check cards within MIN_CARD_SPACING-1 positions ahead
+    for (let offset = 1; offset < MIN_CARD_SPACING && i + offset < result.length; offset++) {
+      if (result[i].translationId === result[i + offset].translationId) {
+        return [i, i + offset];
+      }
+    }
+  }
+  return null;
+};
+
+/**
+ * Check if swapping positions a and b would create any new spacing violations.
+ */
+const wouldSwapCreateViolation = (
+  result: SrsCard[],
+  posA: number,
+  posB: number
+): boolean => {
+  // Temporarily swap to check
+  const cardA = result[posA];
+  const cardB = result[posB];
+
+  // Check if cardB at posA would violate spacing
+  for (let offset = 1; offset < MIN_CARD_SPACING; offset++) {
+    // Check positions before posA
+    if (posA - offset >= 0 && posA - offset !== posB) {
+      if (result[posA - offset].translationId === cardB.translationId) {
+        return true;
+      }
+    }
+    // Check positions after posA
+    if (posA + offset < result.length && posA + offset !== posB) {
+      if (result[posA + offset].translationId === cardB.translationId) {
+        return true;
+      }
+    }
+  }
+
+  // Check if cardA at posB would violate spacing
+  for (let offset = 1; offset < MIN_CARD_SPACING; offset++) {
+    // Check positions before posB
+    if (posB - offset >= 0 && posB - offset !== posA) {
+      if (result[posB - offset].translationId === cardA.translationId) {
+        return true;
+      }
+    }
+    // Check positions after posB
+    if (posB + offset < result.length && posB + offset !== posA) {
+      if (result[posB + offset].translationId === cardA.translationId) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+};
+
+/**
+ * Sort cards by due_at while ensuring cards with the same translation_id
+ * are at least MIN_CARD_SPACING positions apart.
  * This is used for the initial queue creation.
  */
 export const sortCardsMaintainingSeparation = (cards: SrsCard[]): SrsCard[] => {
@@ -241,47 +329,64 @@ export const sortCardsMaintainingSeparation = (cards: SrsCard[]): SrsCard[] => {
   // First, sort by due_at
   const sorted = [...cards].sort((a, b) => a.dueAt - b.dueAt);
 
-  // Then, fix any adjacent pairs by swapping with nearby cards
+  // Then, fix any spacing violations by swapping with nearby cards
   const result = [...sorted];
-  let changed = true;
   let iterations = 0;
-  const maxIterations = result.length * 2;
+  const maxIterations = result.length * 3;
 
-  while (changed && iterations < maxIterations) {
-    changed = false;
+  while (iterations < maxIterations) {
+    const violation = findSpacingViolation(result);
+    if (!violation) break;
+
     iterations++;
+    const [i, j] = violation;
 
-    for (let i = 0; i < result.length - 1; i++) {
-      if (result[i].translationId === result[i + 1].translationId) {
-        // Try to find a swap candidate within a reasonable range
-        // Look ahead up to 5 positions to find a card with different translation_id
-        let swapped = false;
-        for (let j = i + 2; j < Math.min(i + 7, result.length); j++) {
-          if (result[j].translationId !== result[i].translationId) {
-            // Check if swapping maintains reasonable urgency order
-            // Allow swap if the due_at difference is small (within 1 hour)
-            const urgencyDiff = Math.abs(result[j].dueAt - result[i + 1].dueAt);
+    // Try to find a swap candidate for the second card (j)
+    // Look ahead to find a card with different translation_id that won't create new violations
+    let swapped = false;
+    const searchRange = Math.max(10, MIN_CARD_SPACING * 2);
+
+    for (let k = j + 1; k < Math.min(j + searchRange, result.length); k++) {
+      if (result[k].translationId !== result[i].translationId) {
+        // Check if swapping j and k would create new violations
+        if (!wouldSwapCreateViolation(result, j, k)) {
+          // Check if swapping maintains reasonable urgency order
+          const urgencyDiff = Math.abs(result[k].dueAt - result[j].dueAt);
+          if (urgencyDiff < 60 * 60 * 1000) {
+            [result[j], result[k]] = [result[k], result[j]];
+            swapped = true;
+            break;
+          }
+        }
+      }
+    }
+
+    // If we couldn't find a good swap forward, try looking backward from i
+    if (!swapped && i > 0) {
+      for (let k = i - 1; k >= Math.max(0, i - searchRange); k--) {
+        if (result[k].translationId !== result[i].translationId) {
+          // Check if swapping i and k would create new violations
+          if (!wouldSwapCreateViolation(result, i, k)) {
+            const urgencyDiff = Math.abs(result[k].dueAt - result[i].dueAt);
             if (urgencyDiff < 60 * 60 * 1000) {
-              [result[i + 1], result[j]] = [result[j], result[i + 1]];
+              [result[i], result[k]] = [result[k], result[i]];
               swapped = true;
-              changed = true;
               break;
             }
           }
         }
+      }
+    }
 
-        // If we couldn't find a good swap, try looking backward
-        if (!swapped && i > 0) {
-          for (let j = i - 1; j >= Math.max(0, i - 5); j--) {
-            if (result[j].translationId !== result[i].translationId) {
-              const urgencyDiff = Math.abs(result[j].dueAt - result[i].dueAt);
-              if (urgencyDiff < 60 * 60 * 1000) {
-                [result[i], result[j]] = [result[j], result[i]];
-                swapped = true;
-                changed = true;
-                break;
-              }
-            }
+    // If still no swap found, try swapping j forward without the violation check
+    // (as a fallback to make progress even if it creates a new violation elsewhere)
+    if (!swapped) {
+      for (let k = j + 1; k < Math.min(j + searchRange, result.length); k++) {
+        if (result[k].translationId !== result[i].translationId) {
+          const urgencyDiff = Math.abs(result[k].dueAt - result[j].dueAt);
+          if (urgencyDiff < 60 * 60 * 1000) {
+            [result[j], result[k]] = [result[k], result[j]];
+            break;
           }
         }
       }
