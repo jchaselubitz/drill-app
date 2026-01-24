@@ -157,6 +157,8 @@ export const phraseSetSchema = z.object({
 
 export type PhraseSetResponse = z.infer<typeof phraseSetSchema>;
 
+export type PhraseType = 'words' | 'phrases' | 'sentences';
+
 export type GeneratePhraseSetParams = {
   topic: string;
   primaryLanguage: LanguageCode;
@@ -164,4 +166,5 @@ export type GeneratePhraseSetParams = {
   level: CEFRLevel;
   count?: number;
   existingPhrases?: string[];
+  phraseType?: PhraseType;
 };
