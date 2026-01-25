@@ -123,6 +123,7 @@ export default function ReviewSessionScreen() {
   // Load the next card from the session
   // Finds the first card that's actually due (dueAt <= now) starting from startIndex.
   // If no due card is found forward, wraps around to search from the beginning.
+  // If still no due cards but there are cards scheduled for later today, accelerates the earliest one.
   const loadNextCard = useCallback(
     async (queueOverride?: SrsCard[], indexOverride?: number) => {
       const queue = queueOverride ?? sessionCards;
@@ -150,6 +151,26 @@ export default function ReviewSessionScreen() {
         });
       }
 
+      // If still no due cards but there are cards scheduled for later today, accelerate the earliest one
+      // This allows users to complete all cards for the day in one sitting
+      if (nextIndex === null && queue.length > 0 && tomorrowStartMs > 0) {
+        // Find the card with the earliest dueAt that is still due today
+        let earliestIndex = -1;
+        let earliestDueAt = Infinity;
+
+        for (let i = 0; i < queue.length; i++) {
+          const card = queue[i];
+          if (card.dueAt < tomorrowStartMs && card.dueAt < earliestDueAt) {
+            earliestDueAt = card.dueAt;
+            earliestIndex = i;
+          }
+        }
+
+        if (earliestIndex !== -1) {
+          nextIndex = earliestIndex;
+        }
+      }
+
       if (nextIndex === null) {
         // No due cards anywhere in the queue
         setCurrentItem(null);
@@ -174,7 +195,7 @@ export default function ReviewSessionScreen() {
       setShowBack(false);
       setCurrentIndex(nextIndex);
     },
-    [currentIndex, sessionCards, hydrateCard, db]
+    [currentIndex, sessionCards, hydrateCard, db, tomorrowStartMs]
   );
 
   // Initialize the session (runs once)
