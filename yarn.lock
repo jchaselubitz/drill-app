@@ -4745,7 +4745,6 @@ __metadata:
     "@google/genai": "npm:^1.35.0"
     "@nozbe/watermelondb": "npm:^0.28.0"
     "@react-native-async-storage/async-storage": "npm:^2.2.0"
-    "@react-navigation/bottom-tabs": "npm:^7.4.0"
     "@react-navigation/elements": "npm:^2.6.3"
     "@react-navigation/native": "npm:^7.1.8"
     "@supabase/supabase-js": "npm:^2.39.3"

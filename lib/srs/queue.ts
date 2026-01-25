@@ -274,11 +274,7 @@ const findSpacingViolation = (result: SrsCard[]): [number, number] | null => {
 /**
  * Check if swapping positions a and b would create any new spacing violations.
  */
-const wouldSwapCreateViolation = (
-  result: SrsCard[],
-  posA: number,
-  posB: number
-): boolean => {
+const wouldSwapCreateViolation = (result: SrsCard[], posA: number, posB: number): boolean => {
   // Temporarily swap to check
   const cardA = result[posA];
   const cardB = result[posB];

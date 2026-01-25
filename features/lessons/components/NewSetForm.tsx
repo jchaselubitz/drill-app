@@ -50,12 +50,7 @@ export function NewSetForm({
                 ]}
                 onPress={() => onPhraseTypeChange(option.value)}
               >
-                <Text
-                  style={[
-                    styles.segmentText,
-                    { color: isSelected ? '#fff' : colors.text },
-                  ]}
-                >
+                <Text style={[styles.segmentText, { color: isSelected ? '#fff' : colors.text }]}>
                   {option.label}
                 </Text>
               </Pressable>

@@ -461,7 +461,9 @@ export default function ReviewSessionScreen() {
       });
 
       // Delete the review log entry
-      const logEntry = await db.collections.get<SrsReviewLog>(SRS_REVIEW_LOG_TABLE).find(reviewLogId);
+      const logEntry = await db.collections
+        .get<SrsReviewLog>(SRS_REVIEW_LOG_TABLE)
+        .find(reviewLogId);
       await logEntry.destroyPermanently();
     });
 
@@ -548,7 +550,7 @@ export default function ReviewSessionScreen() {
             <Button
               text="Show Answer"
               onPress={() => setShowBack(true)}
-              variant="secondary"
+              variant="primary"
               style={styles.showAnswerButton}
             />
           </View>
@@ -572,12 +574,12 @@ const styles = StyleSheet.create({
   buttonRow: {
     flexDirection: 'row',
     gap: 12,
+    justifyContent: 'space-between',
   },
   undoButton: {
-    flex: 1,
+    width: 'auto',
   },
   showAnswerButton: {
-    flexGrow: 1,
-    flex: 2,
+    width: 'auto',
   },
 });
