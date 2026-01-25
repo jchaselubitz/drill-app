@@ -89,12 +89,7 @@ export function SpacedRepetitionStats({
                   <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
                     Next Review
                   </Text>
-                  <Text
-                    style={[
-                      styles.statValue,
-                      { color: isOverdue ? '#ef4444' : colors.text },
-                    ]}
-                  >
+                  <Text style={[styles.statValue, { color: isOverdue ? '#ef4444' : colors.text }]}>
                     {card.state === 'new'
                       ? 'Not started'
                       : isOverdue

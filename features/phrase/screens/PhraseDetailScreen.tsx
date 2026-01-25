@@ -9,10 +9,10 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
-  TextInput as RNTextInput,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput as RNTextInput,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -21,7 +21,6 @@ import { CollapsibleSection } from '@/components/CollapsibleSection';
 import { FavoriteButton } from '@/components/FavoriteButton';
 import { MetadataChip } from '@/components/MetadataChip';
 import { Select } from '@/components/Select';
-import { SpacedRepetitionStats } from '../components';
 import { Languages, PARTS_OF_SPEECH } from '@/constants';
 import { useSettings } from '@/contexts/SettingsContext';
 import database from '@/database';
@@ -46,6 +45,8 @@ import { translatePhrase } from '@/lib/ai/translate';
 import { isLanguageSupported } from '@/lib/audio/voiceMapping';
 import { queueAudioGeneration } from '@/lib/backgroundAudioService';
 import { ensureSrsCardsForTranslation } from '@/lib/srs/cards';
+
+import { SpacedRepetitionStats } from '../components';
 
 function DeleteButton({ onPress }: { onPress: () => void }) {
   const colors = useColors();
