@@ -23,7 +23,7 @@ import { generatePhraseSet } from '@/lib/ai/generatePhraseSet';
 import { isLanguageSupported } from '@/lib/audio/voiceMapping';
 import { queueDeckAudioGeneration } from '@/lib/backgroundAudioService';
 import { ensureSrsCardsForTranslation } from '@/lib/srs/cards';
-import type { CEFRLevel, GeneratedPhrase, LanguageCode } from '@/types';
+import type { CEFRLevel, GeneratedPhrase, LanguageCode, PhraseType } from '@/types';
 
 import { GenerateMoreSheet } from '../components/GenerateMoreSheet';
 
@@ -184,7 +184,7 @@ export default function SetDetailScreen() {
     router.push(`/review/session?deckId=${id}` as any);
   };
 
-  const handleGenerateMore = async (count: number) => {
+  const handleGenerateMore = async (count: number, phraseType: PhraseType) => {
     if (!deck || !geminiApiKey) {
       Alert.alert('Error', 'Unable to generate more phrases');
       return;
@@ -203,6 +203,7 @@ export default function SetDetailScreen() {
         level: (deck.level ?? settings.level) as CEFRLevel,
         count,
         existingPhrases,
+        phraseType,
       });
 
       // Save the new phrases

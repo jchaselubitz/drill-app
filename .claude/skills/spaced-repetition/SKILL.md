@@ -46,10 +46,19 @@ model, and study flow.
 
 ## Scheduling
 
-- Scheduling is SM-2 inspired with learning steps:
-  - new steps: `10m`, `1d`
-  - relearn steps: `10m`
-- Ratings (`failed`, `hard`, `good`, `easy`) update state, interval, and ease.
+- Scheduling is SM-2 inspired (Anki-aligned) with learning steps.
+- **Learning phase (new cards)**:
+  - Failed: 1 minute (resets to step 0)
+  - Hard: 5 minutes (stays at current step, doesn't advance)
+  - Good: 10 minutes → 1 day (first press: 10m, second press: graduates to 1 day)
+  - Easy: 4 days (immediately graduates)
+- **Relearn steps**: `10m` (after lapsing a review card)
+- **Review phase**:
+  - Failed: -0.20 ease penalty, interval resets to 1 day, enters relearning
+  - Hard: -0.15 ease, interval × 1.2
+  - Good: interval × ease (no ease change)
+  - Easy: +0.15 ease, interval × ease × 1.3
+- Ease factor is clamped to minimum 1.3 (matching Anki).
 - The next due time is stored as a timestamp to support intra-day learning
   steps.
 - Review history is logged for each rating event.

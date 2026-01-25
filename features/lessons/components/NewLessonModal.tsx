@@ -22,7 +22,7 @@ import { useColors } from '@/hooks';
 import { generatePhraseSet } from '@/lib/ai/generatePhraseSet';
 import { changePromptLength, generateTutorPrompt } from '@/lib/ai/tutor';
 import { ensureSrsCardsForTranslation } from '@/lib/srs/cards';
-import type { GeneratedPhrase } from '@/types';
+import type { GeneratedPhrase, PhraseType } from '@/types';
 
 import { LessonSettingsDisplay } from './LessonSettingsDisplay';
 import { ModalHeader } from './ModalHeader';
@@ -56,6 +56,7 @@ export function NewLessonModal({ visible, onClose }: NewLessonModalProps) {
 
   // Set mode state
   const [phraseSetTopic, setPhraseSetTopic] = useState('');
+  const [phraseType, setPhraseType] = useState<PhraseType>('phrases');
   const [generatedPhrases, setGeneratedPhrases] = useState<GeneratedPhrase[]>([]);
 
   // Sync mode when modal opens
@@ -70,6 +71,7 @@ export function NewLessonModal({ visible, onClose }: NewLessonModalProps) {
     setPhrases('');
     setPrompt('');
     setPhraseSetTopic('');
+    setPhraseType('phrases');
     setGeneratedPhrases([]);
     setMode('lesson');
     onClose();
@@ -126,6 +128,7 @@ export function NewLessonModal({ visible, onClose }: NewLessonModalProps) {
         secondaryLanguage: settings.userLanguage,
         level: settings.level,
         count: 20,
+        phraseType,
       });
       setGeneratedPhrases(result);
     } catch (error) {
@@ -337,6 +340,8 @@ export function NewLessonModal({ visible, onClose }: NewLessonModalProps) {
                 <NewSetForm
                   topic={phraseSetTopic}
                   onTopicChange={setPhraseSetTopic}
+                  phraseType={phraseType}
+                  onPhraseTypeChange={setPhraseType}
                   onGenerate={handleGeneratePhraseSet}
                   isLoading={isLoading}
                 />

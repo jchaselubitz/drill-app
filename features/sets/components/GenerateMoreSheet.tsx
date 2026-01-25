@@ -5,21 +5,29 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components';
 import { useColors } from '@/hooks';
+import type { PhraseType } from '@/types';
 
 type GenerateMoreSheetProps = {
   visible: boolean;
   onClose: () => void;
-  onGenerate: (count: number) => void;
+  onGenerate: (count: number, phraseType: PhraseType) => void;
 };
 
 const COUNT_OPTIONS = [5, 10, 20];
 
+const PHRASE_TYPE_OPTIONS: { value: PhraseType; label: string }[] = [
+  { value: 'words', label: 'Words' },
+  { value: 'phrases', label: 'Phrases' },
+  { value: 'sentences', label: 'Sentences' },
+];
+
 export function GenerateMoreSheet({ visible, onClose, onGenerate }: GenerateMoreSheetProps) {
   const colors = useColors();
   const [selectedCount, setSelectedCount] = useState(10);
+  const [selectedPhraseType, setSelectedPhraseType] = useState<PhraseType>('phrases');
 
   const handleGenerate = () => {
-    onGenerate(selectedCount);
+    onGenerate(selectedCount, selectedPhraseType);
   };
 
   return (
@@ -42,45 +50,72 @@ export function GenerateMoreSheet({ visible, onClose, onGenerate }: GenerateMore
         </View>
 
         <View style={styles.content}>
-          <Text style={[styles.label, { color: colors.textSecondary }]}>
-            How many phrases would you like to add?
-          </Text>
+          <View>
+            <Text style={[styles.label, { color: colors.textSecondary }]}>Type</Text>
+            <View style={styles.segmentedControl}>
+              {PHRASE_TYPE_OPTIONS.map((option, index) => {
+                const isSelected = selectedPhraseType === option.value;
+                const isLast = index === PHRASE_TYPE_OPTIONS.length - 1;
+                return (
+                  <Pressable
+                    key={option.value}
+                    style={[
+                      styles.segment,
+                      { borderColor: colors.border },
+                      isLast && { borderRightWidth: 1 },
+                      isSelected && {
+                        backgroundColor: colors.primary,
+                      },
+                    ]}
+                    onPress={() => setSelectedPhraseType(option.value)}
+                  >
+                    <Text
+                      style={[
+                        styles.segmentText,
+                        { color: isSelected ? '#fff' : colors.text },
+                      ]}
+                    >
+                      {option.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
 
-          <View style={styles.options}>
-            {COUNT_OPTIONS.map((count) => {
-              const isSelected = selectedCount === count;
-              return (
-                <Pressable
-                  key={count}
-                  style={[
-                    styles.option,
-                    { borderColor: colors.border },
-                    isSelected && {
-                      borderColor: colors.primary,
-                      backgroundColor: colors.primary + '10',
-                    },
-                  ]}
-                  onPress={() => setSelectedCount(count)}
-                >
-                  <Text
+          <View>
+            <Text style={[styles.label, { color: colors.textSecondary }]}>
+              How many would you like to add?
+            </Text>
+
+            <View style={styles.options}>
+              {COUNT_OPTIONS.map((count) => {
+                const isSelected = selectedCount === count;
+                return (
+                  <Pressable
+                    key={count}
                     style={[
-                      styles.optionText,
-                      { color: isSelected ? colors.primary : colors.text },
+                      styles.option,
+                      { borderColor: colors.border },
+                      isSelected && {
+                        borderColor: colors.primary,
+                        backgroundColor: colors.primary + '10',
+                      },
                     ]}
+                    onPress={() => setSelectedCount(count)}
                   >
-                    {count}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.optionSubtext,
-                      { color: isSelected ? colors.primary : colors.textSecondary },
-                    ]}
-                  >
-                    phrases
-                  </Text>
-                </Pressable>
-              );
-            })}
+                    <Text
+                      style={[
+                        styles.optionText,
+                        { color: isSelected ? colors.primary : colors.text },
+                      ]}
+                    >
+                      {count}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
           </View>
 
           <View style={styles.actions}>
@@ -117,8 +152,27 @@ const styles = StyleSheet.create({
     gap: 24,
   },
   label: {
-    fontSize: 16,
-    textAlign: 'center',
+    fontSize: 14,
+    fontWeight: '500',
+    marginBottom: 12,
+  },
+  segmentedControl: {
+    flexDirection: 'row',
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  segment: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderRightWidth: 0,
+  },
+  segmentText: {
+    fontSize: 14,
+    fontWeight: '500',
   },
   options: {
     flexDirection: 'row',

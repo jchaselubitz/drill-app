@@ -2,13 +2,18 @@ import type { SrsCardState, SrsRating } from '@/types';
 
 import {
   SRS_DEFAULT_EASE,
+  SRS_EASE_AGAIN,
   SRS_EASE_EASY,
   SRS_EASE_HARD,
   SRS_EASY_BONUS,
   SRS_EASY_INTERVAL_DAYS,
+  SRS_GRADUATING_INTERVAL_DAYS,
   SRS_HARD_FACTOR,
+  SRS_LAPSE_MULTIPLIER,
   SRS_MIN_EASE,
-  SRS_NEW_STEPS_MS,
+  SRS_NEW_FAILED_MS,
+  SRS_NEW_GOOD_STEPS_MS,
+  SRS_NEW_HARD_MS,
   SRS_RELEARN_STEPS_MS,
 } from './constants';
 
@@ -64,26 +69,32 @@ export const scheduleSm2Review = (
   let dueAt = card.dueAt;
 
   if (state === 'new' || state === 'learning') {
-    const steps = SRS_NEW_STEPS_MS;
     if (rating === 'failed') {
+      // Failed: 1 minute, reset to step 0
       state = 'learning';
       stepIndex = 0;
-      dueAt = nowMs + steps[0];
+      dueAt = nowMs + SRS_NEW_FAILED_MS;
     } else if (rating === 'hard') {
+      // Hard: 5 minutes, stay at current step (doesn't advance)
       state = 'learning';
-      dueAt = nowMs + (steps[stepIndex] ?? steps[0]);
+      dueAt = nowMs + SRS_NEW_HARD_MS;
     } else if (rating === 'good') {
-      state = 'learning';
-      stepIndex = stepIndex + 1;
-      if (stepIndex >= steps.length) {
+      // Good: progress through steps, then graduate
+      const goodSteps = SRS_NEW_GOOD_STEPS_MS;
+      if (stepIndex >= goodSteps.length) {
+        // Completed all good steps, graduate to review
         state = 'review';
-        intervalDays = 1;
+        intervalDays = SRS_GRADUATING_INTERVAL_DAYS;
         stepIndex = 0;
         dueAt = nowMs + toMsFromDays(intervalDays);
       } else {
-        dueAt = nowMs + steps[stepIndex];
+        // Use current step interval, then advance
+        state = 'learning';
+        dueAt = nowMs + goodSteps[stepIndex];
+        stepIndex = stepIndex + 1;
       }
     } else {
+      // Easy: immediately graduate to 4 days
       state = 'review';
       intervalDays = SRS_EASY_INTERVAL_DAYS;
       stepIndex = 0;
@@ -116,9 +127,10 @@ export const scheduleSm2Review = (
     reps += 1;
     if (rating === 'failed') {
       lapses += 1;
+      ease = clampEase(ease + SRS_EASE_AGAIN); // Anki: -0.20 ease penalty on lapse
       state = 'relearning';
       stepIndex = 0;
-      intervalDays = Math.max(1, Math.round(intervalDays * 0.5));
+      intervalDays = Math.max(1, Math.round(intervalDays * SRS_LAPSE_MULTIPLIER)); // Anki default: reset to 1 day
       dueAt = nowMs + SRS_RELEARN_STEPS_MS[0];
     } else if (rating === 'hard') {
       ease = clampEase(ease + SRS_EASE_HARD);
