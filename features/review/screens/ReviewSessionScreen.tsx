@@ -42,6 +42,24 @@ type ReviewItem = {
   back: Phrase;
 };
 
+type UndoState = {
+  previousItem: ReviewItem;
+  previousQueue: SrsCard[];
+  previousIndex: number;
+  reviewLogId: string;
+  cardSnapshot: {
+    state: SrsCardState;
+    dueAt: number;
+    intervalDays: number;
+    ease: number;
+    reps: number;
+    lapses: number;
+    stepIndex: number;
+    lastReviewedAt: number | null;
+  };
+  wasCompleted: boolean;
+};
+
 export default function ReviewSessionScreen() {
   const colors = useColors();
   const db = useDatabase();
@@ -72,6 +90,8 @@ export default function ReviewSessionScreen() {
   }>({ totalInSession: 0, remainingToday: 0 });
   // Track unique cards completed this session (scheduled for tomorrow or later)
   const [completedCardIds, setCompletedCardIds] = useState<Set<string>>(new Set());
+  // Undo state - stores the previous state to allow undoing the last rating
+  const [undoState, setUndoState] = useState<UndoState | null>(null);
 
   // Hydrate a card into a ReviewItem
   const hydrateCard = useCallback(
@@ -251,6 +271,7 @@ export default function ReviewSessionScreen() {
         setShowBack(false);
         setSessionStats({ totalInSession: 0, remainingToday: 0 });
         setCompletedCardIds(new Set());
+        setUndoState(null);
         lastAutoPlayKeyRef.current = null;
       };
     }, [])
@@ -284,22 +305,23 @@ export default function ReviewSessionScreen() {
   const handleRate = async (rating: SrsRating) => {
     if (!currentItem || !deckId) return;
     const nowMs = Date.now();
-    const { update, log } = scheduleSm2Review(
-      {
-        state: currentItem.card.state as SrsCardState,
-        dueAt: currentItem.card.dueAt,
-        intervalDays: currentItem.card.intervalDays,
-        ease: currentItem.card.ease,
-        reps: currentItem.card.reps,
-        lapses: currentItem.card.lapses,
-        stepIndex: currentItem.card.stepIndex,
-        lastReviewedAt: currentItem.card.lastReviewedAt,
-      },
-      rating,
-      nowMs
-    );
 
-    // Update card in database
+    // Capture card state before update for undo
+    const cardSnapshot = {
+      state: currentItem.card.state as SrsCardState,
+      dueAt: currentItem.card.dueAt,
+      intervalDays: currentItem.card.intervalDays,
+      ease: currentItem.card.ease,
+      reps: currentItem.card.reps,
+      lapses: currentItem.card.lapses,
+      stepIndex: currentItem.card.stepIndex,
+      lastReviewedAt: currentItem.card.lastReviewedAt,
+    };
+
+    const { update, log } = scheduleSm2Review(cardSnapshot, rating, nowMs);
+
+    // Update card in database and create review log
+    let reviewLogId = '';
     await db.write(async () => {
       await currentItem.card.update((card) => {
         card.state = update.state;
@@ -313,25 +335,33 @@ export default function ReviewSessionScreen() {
         card.updatedAt = nowMs;
       });
 
-      await db.collections.get<SrsReviewLog>(SRS_REVIEW_LOG_TABLE).create((logEntry) => {
-        logEntry.srsCardId = currentItem.card.id;
-        logEntry.deckId = currentItem.card.deckId;
-        logEntry.translationId = currentItem.card.translationId;
-        logEntry.direction = currentItem.card.direction;
-        logEntry.reviewedAt = nowMs;
-        logEntry.rating = rating;
-        logEntry.stateBefore = log.stateBefore;
-        logEntry.stateAfter = log.stateAfter;
-        logEntry.intervalBefore = log.intervalBefore;
-        logEntry.intervalAfter = log.intervalAfter;
-        logEntry.easeBefore = log.easeBefore;
-        logEntry.easeAfter = log.easeAfter;
-        logEntry.dueBefore = log.dueBefore;
-        logEntry.dueAfter = log.dueAfter;
-        logEntry.createdAt = nowMs;
-        logEntry.updatedAt = nowMs;
-      });
+      const logEntry = await db.collections
+        .get<SrsReviewLog>(SRS_REVIEW_LOG_TABLE)
+        .create((entry) => {
+          entry.srsCardId = currentItem.card.id;
+          entry.deckId = currentItem.card.deckId;
+          entry.translationId = currentItem.card.translationId;
+          entry.direction = currentItem.card.direction;
+          entry.reviewedAt = nowMs;
+          entry.rating = rating;
+          entry.stateBefore = log.stateBefore;
+          entry.stateAfter = log.stateAfter;
+          entry.intervalBefore = log.intervalBefore;
+          entry.intervalAfter = log.intervalAfter;
+          entry.easeBefore = log.easeBefore;
+          entry.easeAfter = log.easeAfter;
+          entry.dueBefore = log.dueBefore;
+          entry.dueAfter = log.dueAfter;
+          entry.createdAt = nowMs;
+          entry.updatedAt = nowMs;
+        });
+      reviewLogId = logEntry.id;
     });
+
+    // Store undo state before updating queue
+    const previousQueue = [...sessionCards];
+    const previousIndex = currentIndex;
+    const cardWasCompleted = update.dueAt >= tomorrowStartMs;
 
     // Refresh card if it's still due today so the queue logic can work with latest values
     const refreshedCard =
@@ -346,6 +376,16 @@ export default function ReviewSessionScreen() {
       refreshedCard,
       tomorrowStartMs,
       currentIndex,
+    });
+
+    // Save undo state
+    setUndoState({
+      previousItem: currentItem,
+      previousQueue,
+      previousIndex,
+      reviewLogId,
+      cardSnapshot,
+      wasCompleted: cardWasCompleted,
     });
 
     setSessionCards(newQueue);
@@ -363,7 +403,6 @@ export default function ReviewSessionScreen() {
     }));
 
     // Track unique completed cards (cards scheduled for tomorrow or later)
-    const cardWasCompleted = update.dueAt >= tomorrowStartMs;
     if (cardWasCompleted) {
       setCompletedCardIds((prev) => new Set(prev).add(currentItem.card.id));
     }
@@ -376,6 +415,66 @@ export default function ReviewSessionScreen() {
 
     // Load next card using the updated queue
     await loadNextCard(newQueue, nextStartIndex);
+  };
+
+  const handleUndo = async () => {
+    if (!undoState) return;
+
+    const { previousItem, previousQueue, previousIndex, reviewLogId, cardSnapshot, wasCompleted } =
+      undoState;
+
+    // Revert card state and delete review log in database
+    await db.write(async () => {
+      // Restore card to previous state
+      const card = await db.collections.get<SrsCard>(SRS_CARD_TABLE).find(previousItem.card.id);
+      await card.update((c) => {
+        c.state = cardSnapshot.state;
+        c.dueAt = cardSnapshot.dueAt;
+        c.intervalDays = cardSnapshot.intervalDays;
+        c.ease = cardSnapshot.ease;
+        c.reps = cardSnapshot.reps;
+        c.lapses = cardSnapshot.lapses;
+        c.stepIndex = cardSnapshot.stepIndex;
+        c.lastReviewedAt = cardSnapshot.lastReviewedAt;
+        c.updatedAt = Date.now();
+      });
+
+      // Delete the review log entry
+      const logEntry = await db.collections.get<SrsReviewLog>(SRS_REVIEW_LOG_TABLE).find(reviewLogId);
+      await logEntry.destroyPermanently();
+    });
+
+    // Restore queue and current item
+    setSessionCards(previousQueue);
+    setCurrentIndex(previousIndex);
+
+    // Re-hydrate the card with fresh data
+    const freshCard = await db.collections.get<SrsCard>(SRS_CARD_TABLE).find(previousItem.card.id);
+    const rehydratedItem = await hydrateCard(freshCard);
+    setCurrentItem(rehydratedItem);
+    setShowBack(true); // Show back since user was rating
+
+    // Remove from completed if it was marked completed
+    if (wasCompleted) {
+      setCompletedCardIds((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(previousItem.card.id);
+        return newSet;
+      });
+    }
+
+    // Update remaining count
+    const remainingToday = await countCardsStillDueToday(db, {
+      cardIds: previousQueue.map((c) => c.id),
+      tomorrowStartMs,
+    });
+    setSessionStats((prev) => ({
+      ...prev,
+      remainingToday,
+    }));
+
+    // Clear undo state (only one level of undo)
+    setUndoState(null);
   };
 
   if (!deckId) {
@@ -417,7 +516,21 @@ export default function ReviewSessionScreen() {
         />
 
         {!showBack ? (
-          <Button text="Show Answer" onPress={() => setShowBack(true)} variant="secondary" />
+          <View style={styles.buttonRow}>
+            <Button
+              text="Undo"
+              onPress={handleUndo}
+              variant="secondary"
+              buttonState={undoState ? 'default' : 'disabled'}
+              style={styles.undoButton}
+            />
+            <Button
+              text="Show Answer"
+              onPress={() => setShowBack(true)}
+              variant="secondary"
+              style={styles.showAnswerButton}
+            />
+          </View>
         ) : (
           <RatingButtons onRate={handleRate} intervals={ratingIntervals} />
         )}
@@ -434,5 +547,16 @@ const styles = StyleSheet.create({
     padding: 20,
     flex: 1,
     gap: 20,
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  undoButton: {
+    flex: 1,
+  },
+  showAnswerButton: {
+    flexGrow: 1,
+    flex: 2,
   },
 });
