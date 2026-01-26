@@ -16,6 +16,7 @@ import {
   SRS_NEW_HARD_MS,
   SRS_RELEARN_STEPS_MS,
 } from './constants';
+import { getStudyDayStart } from './time';
 
 export type SrsCardSnapshot = {
   state: SrsCardState;
@@ -48,12 +49,24 @@ type Sm2Result = {
 
 const clampEase = (ease: number): number => Math.max(SRS_MIN_EASE, ease);
 
-const toMsFromDays = (days: number): number => days * 24 * 60 * 60 * 1000;
+/**
+ * Calculate the start of a future day (for scheduling cards due on that day).
+ * Cards scheduled for future days should be available from the start of that day,
+ * not at a specific time.
+ */
+const getFutureDayStartMs = (nowMs: number, intervalDays: number, dayStartHour: number): number => {
+  const now = new Date(nowMs);
+  const todayStart = getStudyDayStart(now, dayStartHour);
+  const futureDay = new Date(todayStart);
+  futureDay.setDate(futureDay.getDate() + intervalDays);
+  return futureDay.getTime();
+};
 
 export const scheduleSm2Review = (
   card: SrsCardSnapshot,
   rating: SrsRating,
-  nowMs: number
+  nowMs: number,
+  dayStartHour: number = 4
 ): Sm2Result => {
   const stateBefore = card.state;
   const intervalBefore = card.intervalDays;
@@ -86,7 +99,7 @@ export const scheduleSm2Review = (
         state = 'review';
         intervalDays = SRS_GRADUATING_INTERVAL_DAYS;
         stepIndex = 0;
-        dueAt = nowMs + toMsFromDays(intervalDays);
+        dueAt = getFutureDayStartMs(nowMs, intervalDays, dayStartHour);
       } else {
         // Use current step interval, then advance
         state = 'learning';
@@ -98,7 +111,7 @@ export const scheduleSm2Review = (
       state = 'review';
       intervalDays = SRS_EASY_INTERVAL_DAYS;
       stepIndex = 0;
-      dueAt = nowMs + toMsFromDays(intervalDays);
+      dueAt = getFutureDayStartMs(nowMs, intervalDays, dayStartHour);
     }
   } else if (state === 'relearning') {
     const steps = SRS_RELEARN_STEPS_MS;
@@ -113,7 +126,7 @@ export const scheduleSm2Review = (
         state = 'review';
         intervalDays = Math.max(1, intervalDays);
         stepIndex = 0;
-        dueAt = nowMs + toMsFromDays(intervalDays);
+        dueAt = getFutureDayStartMs(nowMs, intervalDays, dayStartHour);
       } else {
         dueAt = nowMs + steps[stepIndex];
       }
@@ -121,7 +134,7 @@ export const scheduleSm2Review = (
       state = 'review';
       intervalDays = Math.max(1, intervalDays);
       stepIndex = 0;
-      dueAt = nowMs + toMsFromDays(intervalDays);
+      dueAt = getFutureDayStartMs(nowMs, intervalDays, dayStartHour);
     }
   } else {
     reps += 1;
@@ -135,14 +148,14 @@ export const scheduleSm2Review = (
     } else if (rating === 'hard') {
       ease = clampEase(ease + SRS_EASE_HARD);
       intervalDays = Math.max(1, Math.round(intervalDays * SRS_HARD_FACTOR));
-      dueAt = nowMs + toMsFromDays(intervalDays);
+      dueAt = getFutureDayStartMs(nowMs, intervalDays, dayStartHour);
     } else if (rating === 'good') {
       intervalDays = Math.max(1, Math.round(intervalDays * ease));
-      dueAt = nowMs + toMsFromDays(intervalDays);
+      dueAt = getFutureDayStartMs(nowMs, intervalDays, dayStartHour);
     } else {
       ease = clampEase(ease + SRS_EASE_EASY);
       intervalDays = Math.max(1, Math.round(intervalDays * ease * SRS_EASY_BONUS));
-      dueAt = nowMs + toMsFromDays(intervalDays);
+      dueAt = getFutureDayStartMs(nowMs, intervalDays, dayStartHour);
     }
   }
 
@@ -179,10 +192,14 @@ export type RatingPreview = {
  * Calculate preview intervals for all rating options
  * Returns the time until next review for each rating
  */
-export const getRatingPreviews = (card: SrsCardSnapshot, nowMs: number): RatingPreview[] => {
+export const getRatingPreviews = (
+  card: SrsCardSnapshot,
+  nowMs: number,
+  dayStartHour: number = 4
+): RatingPreview[] => {
   const ratings: SrsRating[] = ['failed', 'hard', 'good', 'easy'];
   return ratings.map((rating) => {
-    const result = scheduleSm2Review(card, rating, nowMs);
+    const result = scheduleSm2Review(card, rating, nowMs, dayStartHour);
     const intervalMs = result.update.dueAt - nowMs;
     return { rating, intervalMs };
   });
