@@ -56,7 +56,7 @@ export default function SetDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const colors = useColors();
-  const { settings } = useSettings();
+  const { settings, updateSettings } = useSettings();
   const db = useDatabase();
 
   const [deckState, setDeckState] = useState<{ deck: Deck; _key: number } | null>(null);
@@ -180,7 +180,11 @@ export default function SetDetailScreen() {
     prevIsGeneratingRef.current = audioStatus.isGenerating;
   }, [audioStatus, audioInitialRemaining, id, loadPhrasesForDeck]);
 
-  const handleStartReview = () => {
+  const handleStartReview = async () => {
+    // Sync activeDeckId in settings so deck-specific settings (like autoPlayReviewAudio) are loaded
+    if (id && settings.activeDeckId !== id) {
+      await updateSettings({ activeDeckId: id });
+    }
     router.push(`/review/session?deckId=${id}` as any);
   };
 

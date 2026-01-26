@@ -42,7 +42,8 @@ Generate NEW phrases that are different but related to the same topic.`
 - For nouns, ALWAYS include the appropriate definite article (the, der/die/das, el/la, le/la, etc.)
 - Focus on concrete vocabulary items
 - Each entry should be a single word with its article, not a phrase or sentence`;
-    typeExample = 'For German: "der Apfel" (the apple), "die Katze" (the cat), "das Haus" (the house)';
+    typeExample =
+      'For German: "der Apfel" (the apple), "die Katze" (the cat), "das Haus" (the house)';
   } else if (phraseType === 'phrases') {
     typeInstructions = `Generate short PHRASES or common expressions (2-5 words).
 - Focus on useful expressions, collocations, or short idiomatic phrases

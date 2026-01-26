@@ -70,10 +70,7 @@ export function GenerateMoreSheet({ visible, onClose, onGenerate }: GenerateMore
                     onPress={() => setSelectedPhraseType(option.value)}
                   >
                     <Text
-                      style={[
-                        styles.segmentText,
-                        { color: isSelected ? '#fff' : colors.text },
-                      ]}
+                      style={[styles.segmentText, { color: isSelected ? '#fff' : colors.text }]}
                     >
                       {option.label}
                     </Text>
