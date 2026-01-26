@@ -312,7 +312,8 @@ export default function ReviewSessionScreen() {
         stepIndex: currentItem.card.stepIndex,
         lastReviewedAt: currentItem.card.lastReviewedAt,
       },
-      Date.now()
+      Date.now(),
+      settings.dayStartHour
     );
 
     return {
@@ -321,7 +322,7 @@ export default function ReviewSessionScreen() {
       good: formatInterval(previews[2].intervalMs),
       easy: formatInterval(previews[3].intervalMs),
     };
-  }, [currentItem, showBack]);
+  }, [currentItem, showBack, settings.dayStartHour]);
 
   const handleRate = async (rating: SrsRating) => {
     if (!currentItem || !deckId) return;
@@ -339,7 +340,7 @@ export default function ReviewSessionScreen() {
       lastReviewedAt: currentItem.card.lastReviewedAt,
     };
 
-    const { update, log } = scheduleSm2Review(cardSnapshot, rating, nowMs);
+    const { update, log } = scheduleSm2Review(cardSnapshot, rating, nowMs, settings.dayStartHour);
 
     // Update card in database and create review log
     let reviewLogId = '';
