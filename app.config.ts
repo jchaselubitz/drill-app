@@ -14,7 +14,6 @@ const config: AppConfig = {
   orientation: 'portrait',
   scheme: 'drillapp',
   userInterfaceStyle: 'automatic',
-  newArchEnabled: true,
   icon: './assets/images/1024.png',
   ios: {
     icon: './assets/images/1024.png',
@@ -48,6 +47,9 @@ const config: AppConfig = {
   },
   plugins: [
     'expo-router',
+    'expo-font',
+    'expo-background-task',
+    'expo-asset',
     [
       'expo-splash-screen',
       {
