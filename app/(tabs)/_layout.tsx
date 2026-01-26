@@ -1,4 +1,4 @@
-import { Icon, Label, NativeTabs } from 'expo-router/unstable-native-tabs';
+import { NativeTabs } from 'expo-router/unstable-native-tabs';
 import { StyleSheet } from 'react-native';
 
 import { NewLessonModalProvider } from '@/features/lessons/context/NewLessonModalContext';
@@ -23,8 +23,8 @@ function TabLayoutContent() {
           title: 'Lessons',
         }}
       >
-        <Icon sf="house.fill" drawable="custom_android_drawable" />
-        <Label>Lessons</Label>
+        <NativeTabs.Trigger.Icon sf="house.fill" drawable="custom_android_drawable" />
+        <NativeTabs.Trigger.Label>Lessons</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
 
       <NativeTabs.Trigger
@@ -33,8 +33,8 @@ function TabLayoutContent() {
           title: 'Library',
         }}
       >
-        <Icon sf="book.fill" drawable="custom_android_drawable" />
-        <Label>Library</Label>
+        <NativeTabs.Trigger.Icon sf="book.fill" drawable="custom_android_drawable" />
+        <NativeTabs.Trigger.Label>Library</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
 
       <NativeTabs.Trigger
@@ -43,8 +43,8 @@ function TabLayoutContent() {
           title: 'Review',
         }}
       >
-        <Icon sf="rectangle.stack.fill" drawable="custom_android_drawable" />
-        <Label>Review</Label>
+        <NativeTabs.Trigger.Icon sf="rectangle.stack.fill" drawable="custom_android_drawable" />
+        <NativeTabs.Trigger.Label>Review</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
 
       <NativeTabs.Trigger
@@ -53,8 +53,8 @@ function TabLayoutContent() {
           title: 'Settings',
         }}
       >
-        <Icon sf="gearshape.fill" drawable="custom_android_drawable" />
-        <Label>Settings</Label>
+        <NativeTabs.Trigger.Icon sf="gearshape.fill" drawable="custom_android_drawable" />
+        <NativeTabs.Trigger.Label>Settings</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
     </NativeTabs>
   );
