@@ -50,7 +50,7 @@ export default function SettingsScreen() {
   return (
     <SafeAreaView
       style={[styles.container, { backgroundColor: colors.background }]}
-      edges={['bottom']}
+      edges={['bottom', 'top']}
     >
       <ScrollView contentContainerStyle={styles.content}>
         <Card>

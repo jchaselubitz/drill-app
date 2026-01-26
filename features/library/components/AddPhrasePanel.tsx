@@ -1,34 +1,47 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useDatabase } from '@nozbe/watermelondb/react';
 import { useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import {
+  Alert,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/Button';
 import { LanguageChooser } from '@/components/LanguageChooser';
 import { TextInput } from '@/components/TextInput';
 import { Phrase } from '@/database/models';
+import { ModalHeader } from '@/features/lessons/components/ModalHeader';
 import { useColors } from '@/hooks';
 import { detectLanguage } from '@/lib/ai/translate';
 import type { LanguageCode } from '@/types';
 
 const AUTO_DETECT = 'auto' as const;
 
-type AddPhrasePanelProps = {
-  isExpanded: boolean;
-  onToggleExpanded: (expanded: boolean) => void;
+type AddPhraseModalProps = {
+  visible: boolean;
+  onClose: () => void;
   onPhraseAdded?: () => void;
 };
 
-export function AddPhrasePanel({
-  isExpanded,
-  onToggleExpanded,
-  onPhraseAdded,
-}: AddPhrasePanelProps) {
+export function AddPhraseModal({ visible, onClose, onPhraseAdded }: AddPhraseModalProps) {
   const colors = useColors();
   const db = useDatabase();
   const [text, setText] = useState('');
   const [lang, setLang] = useState<LanguageCode | typeof AUTO_DETECT>(AUTO_DETECT);
   const [isSaving, setIsSaving] = useState(false);
+
+  const handleClose = () => {
+    setText('');
+    setLang(AUTO_DETECT);
+    onClose();
+  };
 
   const handleSave = async () => {
     if (!text.trim()) return;
@@ -52,7 +65,8 @@ export function AddPhrasePanel({
       });
 
       setText('');
-      onToggleExpanded(false);
+      setLang(AUTO_DETECT);
+      onClose();
       onPhraseAdded?.();
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to add phrase.';
@@ -63,78 +77,71 @@ export function AddPhrasePanel({
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.card, borderColor: colors.border }]}>
-      <Pressable style={styles.header} onPress={() => onToggleExpanded(!isExpanded)}>
-        <View style={styles.headerContent}>
-          <Ionicons name="add-circle" size={20} color={colors.primary} />
-          <Text style={[styles.headerText, { color: colors.text }]}>Add</Text>
-        </View>
-        <Ionicons
-          name={isExpanded ? 'chevron-up' : 'chevron-down'}
-          size={20}
-          color={colors.textSecondary}
-        />
-      </Pressable>
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="pageSheet"
+      onRequestClose={handleClose}
+    >
+      <SafeAreaView
+        style={[styles.container, { backgroundColor: colors.background }]}
+        edges={['top']}
+      >
+        <ModalHeader title="Add Phrase" onClose={handleClose} />
 
-      {isExpanded && (
-        <View style={styles.form}>
-          <TextInput
-            placeholder="Enter a word or phrase..."
-            value={text}
-            onChangeText={setText}
-            autoFocus
-          />
-          <View style={styles.languageChooserContainer}>
-            <LanguageChooser
-              label="Language"
-              value={lang}
-              onValueChange={setLang}
-              includeAutoDetect
-              autoDetectValue={AUTO_DETECT}
-            />
-            <Button
-              text="Save"
-              onPress={handleSave}
-              buttonState={isSaving ? 'loading' : !text.trim() ? 'disabled' : 'default'}
-              loadingText="Saving..."
-            />
-          </View>
-        </View>
-      )}
-    </View>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.flex}
+        >
+          <ScrollView
+            style={styles.flex}
+            contentContainerStyle={styles.content}
+            keyboardShouldPersistTaps="handled"
+          >
+            <View style={styles.form}>
+              <TextInput
+                placeholder="Enter a word or phrase..."
+                value={text}
+                onChangeText={setText}
+                autoFocus
+              />
+              <View style={styles.languageChooserContainer}>
+                <LanguageChooser
+                  label="Language"
+                  value={lang}
+                  onValueChange={setLang}
+                  includeAutoDetect
+                  autoDetectValue={AUTO_DETECT}
+                />
+              </View>
+              <Button
+                text="Save"
+                onPress={handleSave}
+                buttonState={isSaving ? 'loading' : !text.trim() ? 'disabled' : 'default'}
+                loadingText="Saving..."
+              />
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </Modal>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    borderRadius: 12,
-    borderWidth: 1,
-    overflow: 'hidden',
+    flex: 1,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  flex: {
+    flex: 1,
+  },
+  content: {
     padding: 16,
-  },
-  headerContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  headerText: {
-    fontSize: 16,
-    fontWeight: '600',
   },
   form: {
-    padding: 16,
-    paddingTop: 0,
     gap: 16,
   },
   languageChooserContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
     gap: 8,
   },
 });

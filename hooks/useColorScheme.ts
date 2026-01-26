@@ -15,5 +15,5 @@ export function useColorScheme() {
 
 export function useColors() {
   const colorScheme = useColorScheme();
-  return Colors[colorScheme];
+  return Colors[colorScheme as keyof typeof Colors];
 }

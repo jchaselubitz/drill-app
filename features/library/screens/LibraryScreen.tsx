@@ -1,15 +1,19 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Q } from '@nozbe/watermelondb';
 import { useDatabase } from '@nozbe/watermelondb/react';
+import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import { useRouter } from 'expo-router';
+import type { ComponentProps } from 'react';
 import { useEffect, useMemo, useState } from 'react';
-import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Platform, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Select } from '@/components';
+import { Button } from '@/components/Button';
 import { Languages } from '@/constants';
 import { Phrase } from '@/database/models';
 import { PHRASE_TABLE } from '@/database/schema';
-import { AddPhrasePanel, LibraryEmptyState, PhraseCard } from '@/features/library/components';
+import { AddPhraseModal, LibraryEmptyState, PhraseCard } from '@/features/library/components';
 import { useColors } from '@/hooks';
 import type { LanguageCode } from '@/types';
 
@@ -20,25 +24,25 @@ export default function LibraryScreen() {
 
   const [phrases, setPhrases] = useState<Phrase[]>([]);
   const [allPhrases, setAllPhrases] = useState<Phrase[]>([]);
-  const [isPanelExpanded, setIsPanelExpanded] = useState(false);
+  const [isModalVisible, setIsModalVisible] = useState(false);
   const [languageFilter, setLanguageFilter] = useState<LanguageCode | 'all'>('all');
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   // Get unique languages from phrases
   const availableLanguages = useMemo(
     () => [...new Set(allPhrases.map((p) => p.lang))],
     [allPhrases]
   );
-  const languageOptions = [
-    { value: 'all' as const, label: 'All Languages', icon: '' },
-    ...Languages.filter((l) => availableLanguages.includes(l.code)).map((l) => ({
-      value: l.code,
-      label: l.name,
-      icon: l.icon,
-    })),
-  ];
-
-  const selectedLanguage = languageOptions.find((l) => l.value === languageFilter);
+  const languageOptions: Array<{
+    value: LanguageCode | 'all';
+    label?: string;
+    icon?: ComponentProps<typeof Ionicons>['name'];
+  }> = [
+      { value: 'all' as const, icon: 'filter' as const },
+      ...Languages.filter((l) => availableLanguages.includes(l.code)).map((l) => ({
+        value: l.code,
+        label: `${l.icon} ${l.name}`,
+      })),
+    ];
 
   // Reset filter if selected language no longer exists
   useEffect(() => {
@@ -86,58 +90,44 @@ export default function LibraryScreen() {
       edges={['top', 'bottom']}
     >
       <View style={styles.content}>
-        <View style={styles.panelContainer}>
-          <AddPhrasePanel isExpanded={isPanelExpanded} onToggleExpanded={setIsPanelExpanded} />
-          <View style={styles.filterContainer}>
-            <Pressable
-              style={[
-                styles.filterButton,
-                { backgroundColor: colors.card, borderColor: colors.border },
-              ]}
-              onPress={() => setIsFilterOpen(!isFilterOpen)}
-            >
-              <Text style={[styles.filterText, { color: colors.text }]}>
-                {selectedLanguage?.icon} {selectedLanguage?.label}
-              </Text>
-              <Ionicons
-                name={isFilterOpen ? 'chevron-up' : 'chevron-down'}
-                size={16}
-                color={colors.textSecondary}
+        {Platform.OS === 'ios' && isLiquidGlassAvailable() ? (
+          <GlassView style={styles.controlsContainer} glassEffectStyle="regular" >
+            <View style={styles.controlsRow}>
+              <Button
+                text="Add Phrase"
+                onPress={() => setIsModalVisible(true)}
+                icon={{ name: 'add-circle' }}
+                variant="primary"
               />
-            </Pressable>
-            {isFilterOpen && (
-              <View
-                style={[
-                  styles.filterDropdown,
-                  { backgroundColor: colors.card, borderColor: colors.border },
-                ]}
-              >
-                <ScrollView nestedScrollEnabled>
-                  {languageOptions.map((option) => (
-                    <Pressable
-                      key={option.value}
-                      style={[
-                        styles.filterOption,
-                        option.value === languageFilter && { backgroundColor: colors.background },
-                      ]}
-                      onPress={() => {
-                        setLanguageFilter(option.value);
-                        setIsFilterOpen(false);
-                      }}
-                    >
-                      <Text style={[styles.filterOptionText, { color: colors.text }]}>
-                        {option.icon} {option.label}
-                      </Text>
-                      {option.value === languageFilter && (
-                        <Ionicons name="checkmark" size={16} color={colors.primary} />
-                      )}
-                    </Pressable>
-                  ))}
-                </ScrollView>
+              <View style={styles.filterContainer}>
+                <Select
+                  placeholder={{ icon: 'filter', text: 'Filter' }}
+                  options={languageOptions}
+                  value={languageFilter}
+                  onValueChange={setLanguageFilter}
+                />
               </View>
-            )}
+            </View>
+          </GlassView>
+        ) : (
+          <View style={styles.controlsContainer}>
+            <View style={styles.controlsRow}>
+              <Button
+                text="Add Phrase"
+                onPress={() => setIsModalVisible(true)}
+                icon={{ name: 'add-circle' }}
+              />
+              <View style={styles.filterContainer}>
+                <Select
+                  placeholder={{ icon: 'filter', text: 'Filter' }}
+                  options={languageOptions}
+                  value={languageFilter}
+                  onValueChange={setLanguageFilter}
+                />
+              </View>
+            </View>
           </View>
-        </View>
+        )}
         <FlatList
           data={phrases}
           renderItem={({ item }) => <PhraseCard phrase={item} onPress={handlePhrasePress} />}
@@ -147,10 +137,11 @@ export default function LibraryScreen() {
             phrases.length === 0 && styles.emptyListContent,
           ]}
           ListEmptyComponent={() => (
-            <LibraryEmptyState onPressAdd={() => setIsPanelExpanded(true)} />
+            <LibraryEmptyState onPressAdd={() => setIsModalVisible(true)} />
           )}
         />
       </View>
+      <AddPhraseModal visible={isModalVisible} onClose={() => setIsModalVisible(false)} />
     </SafeAreaView>
   );
 }
@@ -161,47 +152,25 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+
   },
-  panelContainer: {
+  controlsContainer: {
     padding: 16,
-    paddingBottom: 0,
-    zIndex: 1,
+    paddingBottom: 16,
+    borderRadius: 16,
+    marginHorizontal: 16,
+    marginTop: 8,
+  },
+  controlsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
   },
   filterContainer: {
-    marginTop: 12,
-  },
-  filterButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    alignSelf: 'flex-start',
-  },
-  filterText: {
-    fontSize: 14,
-    marginRight: 4,
-  },
-  filterDropdown: {
-    position: 'absolute',
-    top: 40,
-    left: 0,
-    borderRadius: 8,
-    borderWidth: 1,
-    maxHeight: 200,
-    minWidth: 180,
-  },
-  filterOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-  },
-  filterOptionText: {
-    fontSize: 14,
+    width: 'auto',
   },
   listContent: {
     padding: 16,

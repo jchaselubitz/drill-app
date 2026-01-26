@@ -15,10 +15,9 @@ import {
   DECK_TABLE,
   DECK_TRANSLATION_TABLE,
   PHRASE_TABLE,
-  SRS_CARD_TABLE,
   TRANSLATION_TABLE,
 } from '@/database/schema';
-import { useAudioPlayback, useColors, useDeckAudioStatus } from '@/hooks';
+import { useAudioPlayback, useColors, useDeckAudioStatus, useDeckDueCount } from '@/hooks';
 import { generatePhraseSet } from '@/lib/ai/generatePhraseSet';
 import { isLanguageSupported } from '@/lib/audio/voiceMapping';
 import { queueDeckAudioGeneration } from '@/lib/backgroundAudioService';
@@ -61,7 +60,7 @@ export default function SetDetailScreen() {
 
   const [deckState, setDeckState] = useState<{ deck: Deck; _key: number } | null>(null);
   const [phrases, setPhrases] = useState<PhraseItem[]>([]);
-  const [dueCount, setDueCount] = useState(0);
+  const { dueCount } = useDeckDueCount(id);
   const [isLoading, setIsLoading] = useState(false);
   const [showGenerateMore, setShowGenerateMore] = useState(false);
   const audioStatus = useDeckAudioStatus(id);
@@ -134,22 +133,12 @@ export default function SetDetailScreen() {
         await loadPhrasesForDeck(id);
       });
 
-    // Subscribe to due cards count
-    const dueCardsSub = db.collections
-      .get(SRS_CARD_TABLE)
-      .query(Q.where('deck_id', id), Q.where('due_at', Q.lte(Date.now())))
-      .observeCount()
-      .subscribe((count) => {
-        setDueCount(count);
-      });
-
     // Initial load
     loadPhrasesForDeck(id);
 
     return () => {
       deckSub.unsubscribe();
       translationsSub.unsubscribe();
-      dueCardsSub.unsubscribe();
     };
   }, [id, db, loadPhrasesForDeck]);
 

@@ -5006,7 +5006,7 @@ __metadata:
     expo-constants: "npm:~55.0.1"
     expo-file-system: "npm:~55.0.1"
     expo-font: "npm:~55.0.1"
-    expo-glass-effect: "npm:~55.0.1"
+    expo-glass-effect: "npm:~55.0.2"
     expo-haptics: "npm:~55.0.1"
     expo-linking: "npm:~55.0.2"
     expo-mcp: "npm:~0.2.1"
@@ -5765,14 +5765,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"expo-glass-effect@npm:~55.0.1":
-  version: 55.0.1
-  resolution: "expo-glass-effect@npm:55.0.1"
+"expo-glass-effect@npm:~55.0.2":
+  version: 55.0.2
+  resolution: "expo-glass-effect@npm:55.0.2"
   peerDependencies:
     expo: "*"
     react: "*"
     react-native: "*"
-  checksum: 10c0/727429f6f57e2d74c5c475b1bef3ced4c9b32a44e00d609f0035cc042838ce2f667be6277077ae791f236c64f40ce648da91c000ed3fd6300cc2431c6bf4d3db
+  checksum: 10c0/1d44859fde6f4561cb5ed3944fb56ac0100402c454b4fc1ebc5b5294341b6d891236127968ff36b6460f55b6c7f48291409f9b7dddb70bb663240f680b0017ad
   languageName: node
   linkType: hard
 

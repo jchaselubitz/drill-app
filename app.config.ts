@@ -21,7 +21,7 @@ const config: AppConfig = {
     bundleIdentifier: 'com.drillapp.mobile',
     infoPlist: {
       ITSAppUsesNonExemptEncryption: false,
-      UIDesignRequiresCompatibility: true,
+      UIDesignRequiresCompatibility: false,
       UIBackgroundModes: ['processing'],
       BGTaskSchedulerPermittedIdentifiers: [
         'com.drillapp.mobile.background-review-fetch',
@@ -33,9 +33,9 @@ const config: AppConfig = {
     package: 'com.drillapp.mobile',
     adaptiveIcon: {
       backgroundColor: '#E6F4FE',
-      foregroundImage: './assets/images/android-icon-foreground.png',
-      backgroundImage: './assets/images/android-icon-background.png',
-      monochromeImage: './assets/images/android-icon-monochrome.png',
+      foregroundImage: './assets/images/1024.png',
+      backgroundImage: './assets/images/1024.png',
+      monochromeImage: './assets/images/1024.png',
     },
     edgeToEdgeEnabled: true,
     predictiveBackGestureEnabled: false,

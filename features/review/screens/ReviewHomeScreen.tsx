@@ -1,7 +1,7 @@
 import { Q } from '@nozbe/watermelondb';
 import { useDatabase } from '@nozbe/watermelondb/react';
 import { Stack, useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -9,11 +9,10 @@ import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { Select } from '@/components/Select';
 import { useSettings } from '@/contexts/SettingsContext';
-import { Deck, DeckTranslation, SrsCard } from '@/database/models';
-import { DECK_TABLE, DECK_TRANSLATION_TABLE, SRS_CARD_TABLE } from '@/database/schema';
-import { useColors } from '@/hooks';
+import { Deck, DeckTranslation } from '@/database/models';
+import { DECK_TABLE, DECK_TRANSLATION_TABLE } from '@/database/schema';
+import { useColors, useDeckReviewStats } from '@/hooks';
 import { ensureSrsCardsForTranslation } from '@/lib/srs/cards';
-import { getDailyLimitsRemaining } from '@/lib/srs/queue';
 
 export default function ReviewHomeScreen() {
   const colors = useColors();
@@ -22,13 +21,21 @@ export default function ReviewHomeScreen() {
   const { settings, updateSettings } = useSettings();
 
   const [decks, setDecks] = useState<Deck[]>([]);
-  const [dueReviews, setDueReviews] = useState(0);
-  const [dueNew, setDueNew] = useState(0);
-  const [newRemaining, setNewRemaining] = useState(0);
-  const [reviewsRemaining, setReviewsRemaining] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
-  const [isLoadingStats, setIsLoadingStats] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const {
+    dueReviews,
+    dueNew,
+    newRemaining,
+    reviewsRemaining,
+    isLoading: isLoadingStats,
+    refresh: refreshStats,
+  } = useDeckReviewStats(settings.activeDeckId ?? undefined, {
+    dayStartHour: settings.dayStartHour,
+    maxNewPerDay: settings.maxNewPerDay,
+    maxReviewsPerDay: settings.maxReviewsPerDay,
+  });
 
   useEffect(() => {
     const subscription = db.collections
@@ -54,58 +61,6 @@ export default function ReviewHomeScreen() {
     ensureDefault();
   }, [db, settings.activeDeckId, updateSettings]);
 
-  const loadStats = useCallback(async () => {
-    if (!settings.activeDeckId) {
-      setIsLoadingStats(false);
-      return;
-    }
-    setIsLoadingStats(true);
-    const now = new Date();
-    const { newRemaining, reviewsRemaining } = await getDailyLimitsRemaining(db, {
-      deckId: settings.activeDeckId,
-      now,
-      dayStartHour: settings.dayStartHour,
-      maxNewPerDay: settings.maxNewPerDay,
-      maxReviewsPerDay: settings.maxReviewsPerDay,
-    });
-
-    const cardCollection = db.collections.get<SrsCard>(SRS_CARD_TABLE);
-    const nowMs = now.getTime();
-    const dueReviews = await cardCollection
-      .query(
-        Q.where('deck_id', settings.activeDeckId),
-        Q.where('suspended', false),
-        Q.where('state', Q.oneOf(['learning', 'review', 'relearning'])),
-        Q.where('due_at', Q.lte(nowMs))
-      )
-      .fetchCount();
-
-    const dueNew = await cardCollection
-      .query(
-        Q.where('deck_id', settings.activeDeckId),
-        Q.where('suspended', false),
-        Q.where('state', 'new'),
-        Q.where('due_at', Q.lte(nowMs))
-      )
-      .fetchCount();
-
-    setDueReviews(dueReviews);
-    setDueNew(dueNew);
-    setNewRemaining(newRemaining);
-    setReviewsRemaining(reviewsRemaining);
-    setIsLoadingStats(false);
-  }, [
-    db,
-    settings.activeDeckId,
-    settings.dayStartHour,
-    settings.maxNewPerDay,
-    settings.maxReviewsPerDay,
-  ]);
-
-  useEffect(() => {
-    loadStats();
-  }, [loadStats]);
-
   const handleRefresh = async () => {
     if (!settings.activeDeckId || isRefreshing) return;
     setIsRefreshing(true);
@@ -124,7 +79,7 @@ export default function ReviewHomeScreen() {
         });
       }
 
-      await loadStats();
+      await refreshStats();
     } finally {
       setIsRefreshing(false);
     }
@@ -135,7 +90,10 @@ export default function ReviewHomeScreen() {
     decks.find((deck) => deck.id === settings.activeDeckId)?.name ?? 'Select deck';
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: colors.background }]}
+      edges={['bottom']}
+    >
       <Stack.Screen
         options={{
           title: 'Review',
@@ -161,11 +119,7 @@ export default function ReviewHomeScreen() {
           )}
 
           <View style={styles.deckActions}>
-            <Button
-              text="Manage Decks"
-              variant="secondary"
-              onPress={() => router.push('/review/decks')}
-            />
+            <Button text="Manage Decks" variant="secondary" onPress={() => router.push('/decks')} />
             <Button
               text="Refresh"
               variant="secondary"
@@ -226,7 +180,7 @@ export default function ReviewHomeScreen() {
 
         <Button
           text="Start Review"
-          onPress={() => router.push(`/review/session?deckId=${settings.activeDeckId}`)}
+          onPress={() => router.push(`/session?deckId=${settings.activeDeckId}`)}
           buttonState={
             isLoadingStats || dueReviews + dueNew === 0 || !settings.activeDeckId
               ? 'disabled'

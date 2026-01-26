@@ -1,34 +1,14 @@
 import 'react-native-gesture-handler';
 
 import { DatabaseProvider } from '@nozbe/watermelondb/react';
-import { Stack } from 'expo-router';
+import { NativeTabs } from 'expo-router/unstable-native-tabs';
 import { StatusBar } from 'expo-status-bar';
-import { LogBox } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { SettingsProvider } from '@/contexts/SettingsContext';
 import database from '@/database';
-import { useColorScheme, usePendingAudioRequests, usePendingRequests } from '@/hooks';
-
-// Suppress WatermelonDB NONE property warnings (known non-fatal issue with Hermes)
-LogBox.ignoreLogs([
-  "Cannot assign to read-only property 'NONE'",
-  "Cannot assign to read only property 'NONE'",
-]);
-
-// Also suppress console errors for this specific warning
-if (__DEV__) {
-  const originalError = console.error;
-  console.error = (...args) => {
-    if (
-      typeof args[0] === 'string' &&
-      args[0].includes("Cannot assign to read-only property 'NONE'")
-    ) {
-      return;
-    }
-    originalError(...args);
-  };
-}
+import { NewLessonModalProvider } from '@/features/lessons/context/NewLessonModalContext';
+import { useColors, useColorScheme, usePendingAudioRequests, usePendingRequests } from '@/hooks';
 
 function BackgroundRequestHandler({ children }: { children: React.ReactNode }) {
   usePendingRequests();
@@ -38,12 +18,42 @@ function BackgroundRequestHandler({ children }: { children: React.ReactNode }) {
 
 function AppContent() {
   const colorScheme = useColorScheme();
+  const colors = useColors();
 
   return (
-    <BackgroundRequestHandler>
+    <NewLessonModalProvider>
       <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-      <Stack screenOptions={{ headerShown: false }} />
-    </BackgroundRequestHandler>
+      <NativeTabs
+        iconColor={{
+          default: colors.textSecondary,
+          selected: colors.primary,
+        }}
+        labelStyle={{
+          default: { color: colors.textSecondary },
+          selected: { color: colors.primary },
+        }}
+      >
+        <NativeTabs.Trigger name="(lessons)">
+          <NativeTabs.Trigger.Icon sf="house.fill" drawable="custom_android_drawable" />
+          <NativeTabs.Trigger.Label>Lessons</NativeTabs.Trigger.Label>
+        </NativeTabs.Trigger>
+
+        <NativeTabs.Trigger name="library">
+          <NativeTabs.Trigger.Icon sf="book.fill" drawable="custom_android_drawable" />
+          <NativeTabs.Trigger.Label>Library</NativeTabs.Trigger.Label>
+        </NativeTabs.Trigger>
+
+        <NativeTabs.Trigger name="(review)">
+          <NativeTabs.Trigger.Icon sf="rectangle.stack.fill" drawable="custom_android_drawable" />
+          <NativeTabs.Trigger.Label>Review</NativeTabs.Trigger.Label>
+        </NativeTabs.Trigger>
+
+        <NativeTabs.Trigger name="settings">
+          <NativeTabs.Trigger.Icon sf="gearshape.fill" drawable="custom_android_drawable" />
+          <NativeTabs.Trigger.Label>Settings</NativeTabs.Trigger.Label>
+        </NativeTabs.Trigger>
+      </NativeTabs>
+    </NewLessonModalProvider>
   );
 }
 
@@ -52,7 +62,9 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <DatabaseProvider database={database}>
         <SettingsProvider>
-          <AppContent />
+          <BackgroundRequestHandler>
+            <AppContent />
+          </BackgroundRequestHandler>
         </SettingsProvider>
       </DatabaseProvider>
     </SafeAreaProvider>
