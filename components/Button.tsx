@@ -37,6 +37,7 @@ type ButtonProps = {
   setButtonState?: (state: ButtonState) => void;
   style?: StyleProp<ViewStyle>;
   tintColor?: string;
+  disableGlass?: boolean;
 };
 
 export function Button({
@@ -53,9 +54,10 @@ export function Button({
   setButtonState,
   style,
   tintColor: customTintColor,
+  disableGlass = false,
 }: ButtonProps) {
   const colors = useColors();
-  const useGlass = Platform.OS === 'ios' && isLiquidGlassAvailable();
+  const useGlass = !disableGlass && Platform.OS === 'ios' && isLiquidGlassAvailable();
 
   const [internalState, setInternalState] = useState<ButtonState>(buttonStateProp);
 

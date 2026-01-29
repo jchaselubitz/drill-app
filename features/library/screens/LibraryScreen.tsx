@@ -1,15 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Q } from '@nozbe/watermelondb';
 import { useDatabase } from '@nozbe/watermelondb/react';
-import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
+import { GlassContainer } from 'expo-glass-effect';
 import { useRouter } from 'expo-router';
 import type { ComponentProps } from 'react';
 import { useEffect, useMemo, useState } from 'react';
-import { FlatList, Platform, StyleSheet, View } from 'react-native';
+import { FlatList, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Select } from '@/components';
-import { Button } from '@/components/Button';
+import { Button, getGlassAvailable, GlassCompatibleView, Select } from '@/components';
 import { Languages } from '@/constants';
 import { Phrase } from '@/database/models';
 import { PHRASE_TABLE } from '@/database/schema';
@@ -37,12 +36,12 @@ export default function LibraryScreen() {
     label?: string;
     icon?: ComponentProps<typeof Ionicons>['name'];
   }> = [
-      { value: 'all' as const, icon: 'filter' as const },
-      ...Languages.filter((l) => availableLanguages.includes(l.code)).map((l) => ({
-        value: l.code,
-        label: `${l.icon} ${l.name}`,
-      })),
-    ];
+    { value: 'all' as const, icon: 'filter' as const },
+    ...Languages.filter((l) => availableLanguages.includes(l.code)).map((l) => ({
+      value: l.code,
+      label: `${l.icon} ${l.name}`,
+    })),
+  ];
 
   // Reset filter if selected language no longer exists
   useEffect(() => {
@@ -84,50 +83,38 @@ export default function LibraryScreen() {
     router.push(`/phrase/${phraseId}` as any);
   };
 
+  const useGlass = getGlassAvailable();
+  const GlassWrapper = useGlass ? GlassContainer : View;
+
   return (
     <SafeAreaView
       style={[styles.container, { backgroundColor: colors.background }]}
       edges={['top', 'bottom']}
     >
-      <View style={styles.content}>
-        {Platform.OS === 'ios' && isLiquidGlassAvailable() ? (
-          <GlassView style={styles.controlsContainer} glassEffectStyle="regular" >
-            <View style={styles.controlsRow}>
-              <Button
-                text="Add Phrase"
-                onPress={() => setIsModalVisible(true)}
-                icon={{ name: 'add-circle' }}
-                variant="primary"
-              />
-              <View style={styles.filterContainer}>
-                <Select
-                  placeholder={{ icon: 'filter', text: 'Filter' }}
-                  options={languageOptions}
-                  value={languageFilter}
-                  onValueChange={setLanguageFilter}
-                />
-              </View>
-            </View>
-          </GlassView>
-        ) : (
-          <View style={styles.controlsContainer}>
-            <View style={styles.controlsRow}>
-              <Button
-                text="Add Phrase"
-                onPress={() => setIsModalVisible(true)}
-                icon={{ name: 'add-circle' }}
-              />
-              <View style={styles.filterContainer}>
-                <Select
-                  placeholder={{ icon: 'filter', text: 'Filter' }}
-                  options={languageOptions}
-                  value={languageFilter}
-                  onValueChange={setLanguageFilter}
-                />
-              </View>
-            </View>
+      <GlassWrapper style={styles.glassWrapper} {...(useGlass ? { spacing: 12 } : {})}>
+        <GlassCompatibleView
+          style={styles.controlsContainer}
+          fallbackStyle={{ borderColor: colors.border, borderWidth: 1 }}
+          glassEffectStyle="regular"
+          colorScheme="auto"
+        >
+          <Button
+            text="Add Phrase"
+            onPress={() => setIsModalVisible(true)}
+            icon={{ name: 'add-circle' }}
+            variant="primary"
+            disableGlass={useGlass}
+          />
+          <View style={styles.filterContainer}>
+            <Select
+              placeholder={{ icon: 'filter', text: 'Filter' }}
+              options={languageOptions}
+              value={languageFilter}
+              onValueChange={setLanguageFilter}
+            />
           </View>
-        )}
+        </GlassCompatibleView>
+
         <FlatList
           data={phrases}
           renderItem={({ item }) => <PhraseCard phrase={item} onPress={handlePhrasePress} />}
@@ -140,7 +127,7 @@ export default function LibraryScreen() {
             <LibraryEmptyState onPressAdd={() => setIsModalVisible(true)} />
           )}
         />
-      </View>
+      </GlassWrapper>
       <AddPhraseModal visible={isModalVisible} onClose={() => setIsModalVisible(false)} />
     </SafeAreaView>
   );
@@ -150,30 +137,25 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  content: {
-    flex: 1,
-
-  },
-  controlsContainer: {
-    padding: 16,
-    paddingBottom: 16,
-    borderRadius: 16,
+  glassWrapper: {
     marginHorizontal: 16,
     marginTop: 8,
   },
-  controlsRow: {
+  controlsContainer: {
+    padding: 16,
+    borderRadius: 16,
     flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: 12,
     alignItems: 'center',
     justifyContent: 'space-between',
     width: '100%',
   },
+
   filterContainer: {
     width: 'auto',
   },
   listContent: {
-    padding: 16,
+    paddingTop: 16,
     gap: 12,
   },
   emptyListContent: {

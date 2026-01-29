@@ -477,7 +477,7 @@ export default function PhraseDetailScreen() {
   return (
     <SafeAreaView
       style={[styles.container, { backgroundColor: colors.background }]}
-      edges={['top']}
+      edges={['bottom']}
     >
       <Stack.Screen
         options={{
@@ -515,7 +515,7 @@ export default function PhraseDetailScreen() {
                   autoFocus
                   multiline
                   returnKeyType="done"
-                  blurOnSubmit
+                  submitBehavior="blurAndSubmit"
                 />
               ) : (
                 <Pressable onPress={handleStartEditText} style={styles.phraseTextPressable}>

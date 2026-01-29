@@ -38,6 +38,8 @@ model, and study flow.
   - `deck_id`, `translation_id`, `direction`
   - `state` (`new`, `learning`, `review`, `relearning`)
   - `due_at`, `interval_days`, `ease`, `reps`, `lapses`, `step_index`
+  - `last_reviewed_at` (timestamp of last review)
+  - `suspended` (boolean; suspended cards are excluded from review queues)
   - `stability`, `difficulty` (nullable; reserved for future FSRS)
 - `srs_review_log`
   - `srs_card_id`, `deck_id`, `translation_id`, `direction`
@@ -50,18 +52,22 @@ model, and study flow.
 - **Learning phase (new cards)**:
   - Failed: 1 minute (resets to step 0)
   - Hard: 5 minutes (stays at current step, doesn't advance)
-  - Good: 10 minutes → 1 day (first press: 10m, second press: graduates to 1 day)
-  - Easy: 4 days (immediately graduates)
-- **Relearn steps**: `10m` (after lapsing a review card)
+  - Good: Single step of 10 minutes, then graduates to 1 day (after completing the step)
+  - Easy: 4 days (immediately graduates to review state)
+- **Relearning phase** (after lapsing a review card):
+  - Failed: Reset to step 0 (10 minutes)
+  - Hard: Stay at current step (10 minutes)
+  - Good: Advance through steps, then return to review state with interval reset to max(1 day, previous interval)
+  - Easy: Immediately return to review state with interval reset to max(1 day, previous interval)
 - **Review phase**:
-  - Failed: -0.20 ease penalty, interval resets to 1 day, enters relearning
-  - Hard: -0.15 ease, interval × 1.2
-  - Good: interval × ease (no ease change)
-  - Easy: +0.15 ease, interval × ease × 1.3
-- Ease factor is clamped to minimum 1.3 (matching Anki).
-- The next due time is stored as a timestamp to support intra-day learning
-  steps.
-- Review history is logged for each rating event.
+  - Failed: -0.20 ease penalty, interval resets to 1 day (via multiplier of 0), enters relearning
+  - Hard: -0.15 ease, interval × 1.2 (minimum 1 day)
+  - Good: interval × ease (no ease change, minimum 1 day)
+  - Easy: +0.15 ease, interval × ease × 1.3 (minimum 1 day)
+- Ease factor defaults to 2.5 and is clamped to minimum 1.3 (matching Anki).
+- **Future day scheduling**: Cards scheduled for future days (after graduating from learning or in review phase) are scheduled at the start of that day (`dayStartHour`), not at a specific time. This ensures cards are available throughout the entire day.
+- Learning/relearning steps use precise timestamps to support intra-day intervals (minutes).
+- Review history is logged for each rating event with before/after snapshots.
 
 ## Daily Limits and Rollover
 
@@ -74,9 +80,11 @@ model, and study flow.
 - Counts are derived from `srs_review_log` using the day start boundary:
   - New cards are counted by `state_before = 'new'` in the review log
   - Reviews are counted by `state_before != 'new'` in the review log
+- `getDailyLimitsRemaining()` returns `{ newRemaining, reviewsRemaining, newDone, reviewsDone }`
 - **Important**: Daily limits are applied when the session queue is initially
   built. Cards reinserted later in the same session (because they are still due
   today) are not re-checked against daily limits.
+- Suspended cards (`suspended = true`) are excluded from all review queues.
 
 ## Study Queue
 
@@ -84,19 +92,22 @@ The queue is built per deck following these rules:
 
 1. **New cards**: Only shown if under the daily limit (`maxNewPerDay`)
    - Fetches cards in 'new' state that are due (`due_at <= now`)
+   - Excludes suspended cards (`suspended = false`)
    - Limited to `maxNewPerDay - newCardsReviewedToday`
    - Sorted by `created_at` ascending (oldest first)
 
 2. **Review cards**: Only shows cards that are actually due
    - Fetches cards in 'learning', 'review', or 'relearning' states where
      `due_at <= now`
+   - Excludes suspended cards (`suspended = false`)
    - Limited to `maxReviewsPerDay - reviewsCompletedToday`
    - Sorted by `due_at` ascending (most overdue first)
 
 3. **Queue behavior**:
    - New and review cards are combined
-   - The combined list is sorted by `due_at` and then adjusted to avoid adjacent
-     cards with the same `translation_id`
+   - The combined list is sorted by `due_at` and then adjusted to maintain
+     minimum spacing between cards with the same `translation_id` (see
+     Translation Pair Separation section)
    - During a session, the in-memory queue is updated in place (no automatic
      reload when exhausted)
 
@@ -110,8 +121,8 @@ Assume a deck with:
 **Day 1 (First Session)**:
 
 - User sees 20 new cards (maxNewPerDay limit)
-- Each card reviewed with 'good' transitions to 'learning' state with first step
-  (10 minutes)
+- Each card reviewed with 'good' transitions to 'learning' state with a single
+  step (10 minutes)
 - Remaining 24 new cards are NOT shown - they wait for subsequent days
 - Session ends once no cards remain due today in the in-memory queue
 
@@ -120,7 +131,8 @@ Assume a deck with:
 - The 20 'learning' cards are now due for their next review
 - User starts a new session and sees those 20 cards again (as reviews, not new
   cards)
-- After completing learning steps, cards graduate to 'review' state
+- After completing the learning step (rating 'good' again), cards graduate to
+  'review' state and are scheduled for the start of tomorrow
 
 **Day 2**:
 
@@ -176,7 +188,7 @@ initializeSession()
 │   ├── Query srs_review_log for reviews since day start
 │   ├── Count new cards reviewed (state_before = 'new')
 │   ├── Count reviews completed (state_before != 'new')
-│   └── Return { newRemaining, reviewsRemaining }
+│   └── Return { newRemaining, reviewsRemaining, newDone, reviewsDone }
 ├── getReviewQueue(db, { deckId, nowMs, reviewsRemaining, newRemaining })
 │   ├── Fetch review cards (learning/review/relearning) where due_at <= now
 │   ├── Fetch new cards where due_at <= now (up to newRemaining)
@@ -230,8 +242,9 @@ When the user rates a card, `handleRate(rating)` executes:
 
 ```
 handleRate(rating)
-├── scheduleSm2Review(cardState, rating, nowMs)
-│   └── Compute new { state, dueAt, intervalDays, ease, reps, lapses, stepIndex }
+├── scheduleSm2Review(cardState, rating, nowMs, dayStartHour)
+│   ├── Compute new { state, dueAt, intervalDays, ease, reps, lapses, stepIndex }
+│   └── For future days, use getFutureDayStartMs() to schedule at day start
 ├── db.write()
 │   ├── Update srs_card with new scheduling fields
 │   └── Create srs_review_log entry with before/after snapshots
@@ -270,35 +283,44 @@ applyCardRescheduleToQueue({ queue, currentCardId, refreshedCard, tomorrowStartM
 
 ### Translation Pair Separation
 
-To avoid showing both directions of a translation pair back-to-back (e.g., "dog
-→ perro" then "perro → dog"), two algorithms maintain separation:
+To avoid showing both directions of a translation pair too close together (e.g., "dog
+→ perro" then "perro → dog"), two algorithms maintain minimum spacing:
+
+- **Minimum spacing**: Cards with the same `translation_id` must be at least
+  `MIN_CARD_SPACING` (4) positions apart in the queue.
 
 **`sortCardsMaintainingSeparation(cards)`** - Initial queue sorting:
 
 ```
 1. Sort cards by due_at ascending
-2. Iterate looking for adjacent pairs with same translation_id
-3. For each pair found:
-   a. Look ahead up to 5 positions for a swap candidate
-   b. Swap only if urgency difference < 1 hour
-   c. If no forward candidate, look backward up to 5 positions
-4. Repeat until no swaps made or max iterations reached
+2. Iterate looking for spacing violations (cards with same translation_id within MIN_CARD_SPACING positions)
+3. For each violation found:
+   a. Look ahead up to searchRange (max(10, MIN_CARD_SPACING * 2)) positions for a swap candidate
+   b. Swap only if:
+      - Candidate has different translation_id
+      - Swap won't create new violations
+      - Urgency difference < 1 hour (maintains reasonable order)
+   c. If no forward candidate, look backward up to searchRange positions
+   d. Fallback: Swap forward even if it creates new violations (to make progress)
+4. Repeat until no violations found or max iterations reached (queue.length * 3)
 ```
 
 **`insertCardMaintainingSeparation(queue, card)`** - Reinsertion during session:
 
 ```
 1. Find ideal position based on card.dueAt (maintain urgency order)
-2. Check if insertion creates adjacent pair (same translation_id as neighbors)
-3. If pair would be created:
-   a. Search forward for next valid position
-   b. Insert at first position with no adjacent pair
-4. If no valid position found → Append to end
+2. Check if insertion would violate spacing (same translation_id within MIN_CARD_SPACING positions)
+3. If violation would occur:
+   a. Search forward for next valid position that maintains spacing
+   b. If no forward position found, search backward
+   c. Insert at first valid position found
+4. If no valid position found (edge case: all cards have same translation_id) → Append to end
 ```
 
-**Note**: If translation pairs are naturally more than 1 hour apart in `due_at`
-with no other cards between them, they may appear sequentially. This is
-acceptable since they're temporally distant anyway.
+**Note**: The spacing algorithm prioritizes maintaining urgency order (by `due_at`)
+while ensuring translation pairs are well-separated. If pairs are naturally far
+apart temporally, they may appear closer in the queue, but this is acceptable
+since they're not due at similar times anyway.
 
 ### Session Statistics
 

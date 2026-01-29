@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { FavoriteButton } from '@/components/FavoriteButton';
+import { FavoriteButton, GlassCompatibleView } from '@/components';
 import { Languages } from '@/constants';
 import { Phrase } from '@/database/models';
 import { useColors } from '@/hooks';
@@ -12,35 +12,38 @@ type PhraseCardProps = {
 
 export function PhraseCard({ phrase, onPress }: PhraseCardProps) {
   const colors = useColors();
-
   const language = Languages.find((l) => l.code === phrase.lang);
   const languageDisplay = language ? `${language.icon} ${language.name}` : phrase.lang;
 
   return (
-    <Pressable
-      style={[styles.container, { backgroundColor: colors.card, borderColor: colors.border }]}
-      onPress={() => onPress?.(phrase.id)}
-    >
-      <View style={styles.content}>
-        <Text style={[styles.text, { color: colors.text }]}>{phrase.text}</Text>
-        <Text style={[styles.language, { color: colors.textSecondary }]}>{languageDisplay}</Text>
-      </View>
-      <FavoriteButton phrase={phrase} size={22} hitSlop={8} />
+    <Pressable onPress={() => onPress?.(phrase.id)}>
+      <GlassCompatibleView
+        style={styles.container}
+        glassEffectStyle="regular"
+        isInteractive
+        fallbackStyle={{ borderColor: colors.border, borderWidth: 1 }}
+      >
+        <View style={styles.content}>
+          <Text style={[styles.text, { color: colors.text }]}>{phrase.text}</Text>
+          <Text style={[styles.language, { color: colors.textSecondary }]}>{languageDisplay}</Text>
+        </View>
+        <FavoriteButton phrase={phrase} size={22} hitSlop={8} />
+      </GlassCompatibleView>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    borderRadius: 12,
+    overflow: 'hidden',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: 12,
     padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
   },
   content: {
-    flex: 1,
     gap: 4,
   },
   text: {
