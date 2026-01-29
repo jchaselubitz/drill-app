@@ -3,6 +3,7 @@
   "main": "expo-router/entry",
   "version": "1.1.4",
   "scripts": {
+    "claude:update": "git submodule update --remote",
     "start:expo": "expo start",
     "start:expo:tunnel": "expo start --tunnel",
     "new": "rm -rf node_modules && rm -rf .expo && rm -rf ios && rm -rf android && yarn cache clean && yarn install",
