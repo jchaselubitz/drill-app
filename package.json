@@ -1,7 +1,7 @@
 {
   "name": "drill-app",
   "main": "expo-router/entry",
-  "version": "1.1.4",
+  "version": "1.1.5",
   "scripts": {
     "start:expo": "expo start",
     "start:expo:tunnel": "expo start --tunnel",

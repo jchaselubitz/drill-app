@@ -27,7 +27,7 @@ export function LessonSettingsDisplay({
     if (onSettingsPress) {
       onSettingsPress();
     }
-    router.push('/(tabs)/settings' as any);
+    router.push('/settings' as any);
   };
 
   return (

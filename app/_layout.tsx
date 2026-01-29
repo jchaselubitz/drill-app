@@ -38,7 +38,7 @@ function AppContent() {
           <NativeTabs.Trigger.Label>Lessons</NativeTabs.Trigger.Label>
         </NativeTabs.Trigger>
 
-        <NativeTabs.Trigger name="library">
+        <NativeTabs.Trigger name="(library)">
           <NativeTabs.Trigger.Icon sf="book.fill" drawable="custom_android_drawable" />
           <NativeTabs.Trigger.Label>Library</NativeTabs.Trigger.Label>
         </NativeTabs.Trigger>
