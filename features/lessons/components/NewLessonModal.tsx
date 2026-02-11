@@ -21,6 +21,7 @@ import { useNewLessonModal } from '@/features/lessons/context/NewLessonModalCont
 import { useColors } from '@/hooks';
 import { generatePhraseSet } from '@/lib/ai/generatePhraseSet';
 import { changePromptLength, generateTutorPrompt } from '@/lib/ai/tutor';
+import { createUnifiedSubject } from '@/lib/services/subjectService';
 import { ensureSrsCardsForTranslation } from '@/lib/srs/cards';
 import type { GeneratedPhrase, PhraseType } from '@/types';
 
@@ -33,7 +34,7 @@ import { SetPreviewCard } from './SetPreviewCard';
 
 const geminiApiKey = Constants.expoConfig?.extra?.geminiApiKey as string | undefined;
 
-type ModalMode = 'lesson' | 'set';
+type ModalMode = 'unified' | 'lesson' | 'set';
 
 type NewLessonModalProps = {
   visible: boolean;
@@ -46,15 +47,21 @@ export function NewLessonModal({ visible, onClose }: NewLessonModalProps) {
   const { settings } = useSettings();
   const { initialMode } = useNewLessonModal();
 
-  const [mode, setMode] = useState<ModalMode>(initialMode);
-  // Lesson mode state
+  // Default to unified mode
+  const [mode, setMode] = useState<ModalMode>('unified');
+  // Unified mode state
+  const [unifiedTopic, setUnifiedTopic] = useState('');
+  const [unifiedPhraseType, setUnifiedPhraseType] = useState<PhraseType>('phrases');
+  const [isCreatingUnified, setIsCreatingUnified] = useState(false);
+
+  // Legacy lesson mode state
   const [lessonTopic, setLessonTopic] = useState('');
   const [phrases, setPhrases] = useState('');
   const [prompt, setPrompt] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Set mode state
+  // Legacy set mode state
   const [phraseSetTopic, setPhraseSetTopic] = useState('');
   const [phraseType, setPhraseType] = useState<PhraseType>('phrases');
   const [generatedPhrases, setGeneratedPhrases] = useState<GeneratedPhrase[]>([]);
@@ -62,21 +69,65 @@ export function NewLessonModal({ visible, onClose }: NewLessonModalProps) {
   // Sync mode when modal opens
   useEffect(() => {
     if (visible) {
-      setMode(initialMode);
+      // Map initialMode to new mode system - default to unified
+      if (initialMode === 'lesson') {
+        setMode('lesson');
+      } else if (initialMode === 'set') {
+        setMode('set');
+      } else {
+        setMode('unified');
+      }
     }
   }, [visible, initialMode]);
 
   const handleClose = () => {
+    setUnifiedTopic('');
+    setUnifiedPhraseType('phrases');
     setLessonTopic('');
     setPhrases('');
     setPrompt('');
     setPhraseSetTopic('');
     setPhraseType('phrases');
     setGeneratedPhrases([]);
-    setMode('lesson');
+    setMode('unified');
     onClose();
   };
 
+  // Unified mode handler
+  const handleCreateUnifiedSubject = async () => {
+    if (!unifiedTopic.trim()) {
+      Alert.alert('Error', 'Please enter a topic');
+      return;
+    }
+
+    if (!geminiApiKey) {
+      Alert.alert('API Key Required', 'Please set the geminiApiKey in app.config.ts');
+      return;
+    }
+
+    setIsCreatingUnified(true);
+    try {
+      const result = await createUnifiedSubject(database, {
+        topic: unifiedTopic.trim(),
+        phraseType: unifiedPhraseType,
+        primaryLang: settings.topicLanguage,
+        secondaryLang: settings.userLanguage,
+        level: settings.level,
+        phraseCount: 20,
+      });
+
+      handleClose();
+      // Navigate to the new subject detail screen
+      router.push(`/subject/${result.subject.id}` as any);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to create topic. Please try again.');
+      console.error(error);
+    } finally {
+      setIsCreatingUnified(false);
+    }
+  };
+
+  // Legacy lesson mode handlers
   const handleGeneratePrompt = async () => {
     if (!lessonTopic.trim()) {
       Alert.alert('Error', 'Please enter a topic');
@@ -169,6 +220,7 @@ export function NewLessonModal({ visible, onClose }: NewLessonModalProps) {
         prompt,
         lang: settings.topicLanguage,
         level: settings.level,
+        promptLanguage: 'user',
       });
       handleClose();
       router.push(`/lesson/${lesson.id}` as any);
@@ -263,13 +315,23 @@ export function NewLessonModal({ visible, onClose }: NewLessonModalProps) {
   const renderModeSelector = () => (
     <View style={[styles.modeSelector, { backgroundColor: colors.card }]}>
       <Pressable
+        style={[styles.modeTab, mode === 'unified' && { backgroundColor: colors.primary }]}
+        onPress={() => setMode('unified')}
+      >
+        <Text
+          style={[styles.modeTabText, { color: mode === 'unified' ? '#fff' : colors.textSecondary }]}
+        >
+          New Topic
+        </Text>
+      </Pressable>
+      <Pressable
         style={[styles.modeTab, mode === 'lesson' && { backgroundColor: colors.primary }]}
         onPress={() => setMode('lesson')}
       >
         <Text
           style={[styles.modeTabText, { color: mode === 'lesson' ? '#fff' : colors.textSecondary }]}
         >
-          Writing Prompt
+          Prompt Only
         </Text>
       </Pressable>
       <Pressable
@@ -279,11 +341,40 @@ export function NewLessonModal({ visible, onClose }: NewLessonModalProps) {
         <Text
           style={[styles.modeTabText, { color: mode === 'set' ? '#fff' : colors.textSecondary }]}
         >
-          Phrase Set
+          Set Only
         </Text>
       </Pressable>
     </View>
   );
+
+  const renderUnifiedForm = () => (
+    <View style={styles.formContainer}>
+      <Text style={[styles.formDescription, { color: colors.textSecondary }]}>
+        Create a complete learning topic with vocabulary flashcards and a writing prompt.
+      </Text>
+
+      <NewSetForm
+        topic={unifiedTopic}
+        onTopicChange={setUnifiedTopic}
+        phraseType={unifiedPhraseType}
+        onPhraseTypeChange={setUnifiedPhraseType}
+        onGenerate={handleCreateUnifiedSubject}
+        isLoading={isCreatingUnified}
+        buttonLabel="Create Topic"
+      />
+    </View>
+  );
+
+  const getModalTitle = () => {
+    switch (mode) {
+      case 'unified':
+        return 'New Learning Topic';
+      case 'lesson':
+        return 'New Writing Prompt';
+      case 'set':
+        return 'New Phrase Set';
+    }
+  };
 
   return (
     <Modal
@@ -293,10 +384,7 @@ export function NewLessonModal({ visible, onClose }: NewLessonModalProps) {
       onRequestClose={handleClose}
     >
       <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
-        <ModalHeader
-          title={mode === 'lesson' ? 'New Lesson' : 'New Phrase Set'}
-          onClose={handleClose}
-        />
+        <ModalHeader title={getModalTitle()} onClose={handleClose} />
 
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -315,7 +403,9 @@ export function NewLessonModal({ visible, onClose }: NewLessonModalProps) {
               onSettingsPress={handleClose}
             />
 
-            {mode === 'lesson' ? (
+            {mode === 'unified' && renderUnifiedForm()}
+
+            {mode === 'lesson' && (
               <>
                 <NewLessonForm
                   topic={lessonTopic}
@@ -335,7 +425,9 @@ export function NewLessonModal({ visible, onClose }: NewLessonModalProps) {
                   />
                 )}
               </>
-            ) : (
+            )}
+
+            {mode === 'set' && (
               <>
                 <NewSetForm
                   topic={phraseSetTopic}
@@ -386,12 +478,20 @@ const styles = StyleSheet.create({
   modeTab: {
     flex: 1,
     paddingVertical: 10,
-    paddingHorizontal: 12,
+    paddingHorizontal: 8,
     borderRadius: 8,
     alignItems: 'center',
   },
   modeTabText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
+  },
+  formContainer: {
+    gap: 16,
+  },
+  formDescription: {
+    fontSize: 14,
+    lineHeight: 20,
+    textAlign: 'center',
   },
 });

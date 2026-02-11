@@ -1,15 +1,20 @@
-import { Model, Q } from '@nozbe/watermelondb';
+import { Model, Q, Relation } from '@nozbe/watermelondb';
 import Database from '@nozbe/watermelondb/Database';
-import { field, writer } from '@nozbe/watermelondb/decorators';
+import { field, immutableRelation, writer } from '@nozbe/watermelondb/decorators';
 
 import type { CEFRLevel, LanguageCode } from '@/types';
 
-import { DECK_TABLE } from '../schema';
+import { DECK_TABLE, SUBJECT_TABLE } from '../schema';
+import type Subject from './Subject';
 
 export type DeckSource = 'manual' | 'ai_generated';
 
 export default class Deck extends Model {
   static table = DECK_TABLE;
+
+  static associations = {
+    [SUBJECT_TABLE]: { type: 'belongs_to' as const, key: 'subject_id' },
+  };
 
   @field('created_at') createdAt!: number;
   @field('updated_at') updatedAt!: number;
@@ -24,6 +29,9 @@ export default class Deck extends Model {
   @field('level') level!: string | null;
   @field('max_new_per_day') maxNewPerDay!: number | null;
   @field('max_reviews_per_day') maxReviewsPerDay!: number | null;
+  @field('subject_id') subjectId!: string | null;
+
+  @immutableRelation(SUBJECT_TABLE, 'subject_id') subject!: Relation<Subject>;
 
   static async getDefault(db: Database): Promise<Deck | null> {
     const decks = await db.collections
@@ -80,12 +88,14 @@ export default class Deck extends Model {
       primaryLang,
       secondaryLang,
       level,
+      subjectId,
     }: {
       name: string;
       topic: string;
       primaryLang: LanguageCode;
       secondaryLang: LanguageCode;
       level: CEFRLevel;
+      subjectId?: string | null;
     }
   ): Promise<Deck> {
     return await db.write(async () => {
@@ -99,6 +109,7 @@ export default class Deck extends Model {
         deck.primaryLang = primaryLang;
         deck.secondaryLang = secondaryLang;
         deck.level = level;
+        deck.subjectId = subjectId ?? null;
         deck.createdAt = Date.now();
         deck.updatedAt = Date.now();
       });

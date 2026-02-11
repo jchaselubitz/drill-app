@@ -14,6 +14,7 @@ export default function LessonsLayout() {
       }}
     >
       <Stack.Screen name="index" options={{ headerShown: false }} />
+      <Stack.Screen name="subject/[id]" options={{ headerShown: true }} />
       <Stack.Screen name="set/[id]" options={{ headerShown: true }} />
       <Stack.Screen name="lesson/[id]" options={{ headerShown: true }} />
       <Stack.Screen name="review/session" options={{ headerShown: false }} />

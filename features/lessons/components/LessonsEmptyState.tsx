@@ -12,9 +12,23 @@ type LessonsEmptyStateProps = {
 export function LessonsEmptyState({ activeTab }: LessonsEmptyStateProps) {
   const colors = useColors();
 
-  const isWriteTab = activeTab === 'lessons';
-  const title = isWriteTab ? 'No writing prompts yet' : 'No study sets yet';
-  const subtitle = isWriteTab ? 'Create your first writing prompt' : 'Create your first study set';
+  let title = '';
+  let subtitle = '';
+
+  switch (activeTab) {
+    case 'topics':
+      title = 'No learning topics yet';
+      subtitle = 'Create your first topic to start learning with vocabulary and writing prompts';
+      break;
+    case 'lessons':
+      title = 'No standalone prompts';
+      subtitle = 'Writing prompts created with topics appear there instead';
+      break;
+    case 'sets':
+      title = 'No standalone sets';
+      subtitle = 'Vocabulary sets created with topics appear there instead';
+      break;
+  }
 
   return (
     <View style={styles.emptyState}>

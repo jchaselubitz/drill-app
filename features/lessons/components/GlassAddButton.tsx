@@ -11,12 +11,26 @@ export function GlassAddButton({ activeTab }: GlassAddButtonProps) {
   const { open } = useNewLessonModal();
 
   const handlePress = () => {
-    open(activeTab === 'lessons' ? 'lesson' : 'set');
+    // Map the active tab to the appropriate modal mode
+    if (activeTab === 'topics') {
+      open('unified');
+    } else if (activeTab === 'lessons') {
+      open('lesson');
+    } else {
+      open('set');
+    }
   };
+
+  let buttonText = 'Create Topic';
+  if (activeTab === 'lessons') {
+    buttonText = 'Create Prompt';
+  } else if (activeTab === 'sets') {
+    buttonText = 'Create Set';
+  }
 
   return (
     <Button
-      text="Create Lesson"
+      text={buttonText}
       onPress={handlePress}
       variant="secondary"
       icon={{ name: 'add', size: 24, position: 'left' }}

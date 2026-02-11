@@ -11,6 +11,7 @@ type NewSetFormProps = {
   onPhraseTypeChange: (type: PhraseType) => void;
   onGenerate: () => void;
   isLoading: boolean;
+  buttonLabel?: string;
 };
 
 const PHRASE_TYPE_OPTIONS: { value: PhraseType; label: string }[] = [
@@ -26,6 +27,7 @@ export function NewSetForm({
   onPhraseTypeChange,
   onGenerate,
   isLoading,
+  buttonLabel = 'Generate Phrases',
 }: NewSetFormProps) {
   const colors = useColors();
 
@@ -67,10 +69,10 @@ export function NewSetForm({
       />
 
       <Button
-        text="Generate Phrases"
+        text={buttonLabel}
         onPress={onGenerate}
         buttonState={isLoading ? 'loading' : !topic.trim() ? 'disabled' : 'default'}
-        loadingText="Generating..."
+        loadingText="Creating..."
       />
     </View>
   );

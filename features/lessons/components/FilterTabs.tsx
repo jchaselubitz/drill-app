@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useColors } from '@/hooks';
 
-export type FilterTab = 'lessons' | 'sets';
+export type FilterTab = 'topics' | 'lessons' | 'sets';
 
 type FilterTabsProps = {
   activeTab: FilterTab;
@@ -10,8 +10,9 @@ type FilterTabsProps = {
 };
 
 const tabs: { key: FilterTab; label: string }[] = [
-  { key: 'lessons', label: 'Write' },
-  { key: 'sets', label: 'Drill' },
+  { key: 'topics', label: 'Topics' },
+  { key: 'lessons', label: 'Prompts' },
+  { key: 'sets', label: 'Sets' },
 ];
 
 export function FilterTabs({ activeTab, onTabChange }: FilterTabsProps) {
