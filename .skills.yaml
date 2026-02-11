@@ -1,0 +1,14 @@
+sources:
+  - name: "local"
+    kind: "local"
+install_path: ".skills"
+skills:
+  - slug: "expo-audio"
+  - slug: "expo-glass-effect"
+  - slug: "expo-router"
+  - slug: "rn-button-component"
+  - slug: "spaced-repetition"
+  - slug: "watermelondb"
+  - slug: "code-review"
+  - slug: "gemini-api"
+  - slug: "zod-v4-patterns"
