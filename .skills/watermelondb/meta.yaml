@@ -1,0 +1,8 @@
+slug: watermelondb
+name: watermelondb
+description: WatermelonDB models, observation patterns, and React integration.
+  Use when writing or debugging model code, observers (findAndObserve,
+  query.observe), or screens that display live-updating DB data.
+tags: []
+compat: []
+sha256: 4cbe96fd56ab037b5efec0c940eecf9994da197c2a20d4b66d581005186ed5d8
