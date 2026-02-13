@@ -183,5 +183,32 @@ export default schemaMigrations({
         }),
       ],
     },
+    {
+      toVersion: 11,
+      steps: [
+        // Update Subject table - recreate with new columns
+        addColumns({
+          table: 'subject',
+          columns: [
+            { name: 'primary_lang', type: 'string' },
+            { name: 'secondary_lang', type: 'string' },
+            { name: 'deck_id', type: 'string', isOptional: true },
+          ],
+        }),
+        // Add subject_id and prompt_language to Lesson
+        addColumns({
+          table: 'lesson',
+          columns: [
+            { name: 'subject_id', type: 'string', isOptional: true },
+            { name: 'prompt_language', type: 'string' },
+          ],
+        }),
+        // Add subject_id to Deck
+        addColumns({
+          table: 'deck',
+          columns: [{ name: 'subject_id', type: 'string', isOptional: true }],
+        }),
+      ],
+    },
   ],
 });

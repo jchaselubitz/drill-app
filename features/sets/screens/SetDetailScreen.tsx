@@ -7,7 +7,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Button, Card } from '@/components';
+import { Button, Card, Select } from '@/components';
+import { CollapsibleSection } from '@/components/CollapsibleSection';
 import { useSettings } from '@/contexts/SettingsContext';
 import database from '@/database';
 import { Deck, DeckTranslation, Phrase, Translation } from '@/database/models';
@@ -27,6 +28,8 @@ import type { CEFRLevel, GeneratedPhrase, LanguageCode, PhraseType } from '@/typ
 import { GenerateMoreSheet } from '../components/GenerateMoreSheet';
 
 const geminiApiKey = Constants.expoConfig?.extra?.geminiApiKey as string | undefined;
+const MAX_NEW_PER_DAY_OPTIONS = [5, 10, 20, 30, 50];
+const MAX_REVIEWS_PER_DAY_OPTIONS = [25, 50, 100, 150, 200];
 
 type PhraseItem = {
   id: string;
@@ -70,6 +73,30 @@ export default function SetDetailScreen() {
   const { togglePlayPause, isPlayingFile } = useAudioPlayback();
 
   const deck = deckState?.deck ?? null;
+  const effectiveMaxNewPerDay = deck?.maxNewPerDay ?? settings.maxNewPerDay;
+  const effectiveMaxReviewsPerDay = deck?.maxReviewsPerDay ?? settings.maxReviewsPerDay;
+
+  const maxNewPerDayOptions = [
+    {
+      value: 'default',
+      label: `Use default (${settings.maxNewPerDay} per day)`,
+    },
+    ...MAX_NEW_PER_DAY_OPTIONS.map((value) => ({
+      value: String(value),
+      label: `${value} per day`,
+    })),
+  ];
+
+  const maxReviewsPerDayOptions = [
+    {
+      value: 'default',
+      label: `Use default (${settings.maxReviewsPerDay} per day)`,
+    },
+    ...MAX_REVIEWS_PER_DAY_OPTIONS.map((value) => ({
+      value: String(value),
+      label: `${value} per day`,
+    })),
+  ];
 
   const loadPhrasesForDeck = useCallback(
     async (deckId: string) => {
@@ -170,11 +197,35 @@ export default function SetDetailScreen() {
   }, [audioStatus, audioInitialRemaining, id, loadPhrasesForDeck]);
 
   const handleStartReview = async () => {
-    // Sync activeDeckId in settings so deck-specific settings (like autoPlayReviewAudio) are loaded
+    // Keep active deck aligned with the current set.
     if (id && settings.activeDeckId !== id) {
       await updateSettings({ activeDeckId: id });
     }
     router.push(`/review/session?deckId=${id}` as any);
+  };
+
+  const handleDeckLimitChange = async (updates: {
+    maxNewPerDay?: number | null;
+    maxReviewsPerDay?: number | null;
+  }) => {
+    if (!deck) return;
+
+    try {
+      await database.write(async () => {
+        await deck.update((record) => {
+          if (updates.maxNewPerDay !== undefined) {
+            record.maxNewPerDay = updates.maxNewPerDay;
+          }
+          if (updates.maxReviewsPerDay !== undefined) {
+            record.maxReviewsPerDay = updates.maxReviewsPerDay;
+          }
+          record.updatedAt = Date.now();
+        });
+      });
+    } catch (error) {
+      Alert.alert('Error', 'Failed to update deck review settings. Please try again.');
+      console.error(error);
+    }
   };
 
   const handleGenerateMore = async (count: number, phraseType: PhraseType) => {
@@ -461,6 +512,38 @@ export default function SetDetailScreen() {
               </View>
             </Card>
 
+            <CollapsibleSection
+              title="Flashcard Settings"
+              icon="options-outline"
+              preview={`${effectiveMaxNewPerDay} new, ${effectiveMaxReviewsPerDay} reviews`}
+            >
+              <Text style={[styles.deckSettingsDescription, { color: colors.textSecondary }]}>
+                These settings apply only to this deck. Defaults come from the Settings tab.
+              </Text>
+              <View style={styles.deckSettingsForm}>
+                <Select
+                  label="New cards per day"
+                  options={maxNewPerDayOptions}
+                  value={deck.maxNewPerDay === null ? 'default' : String(deck.maxNewPerDay)}
+                  onValueChange={(value: string) =>
+                    handleDeckLimitChange({
+                      maxNewPerDay: value === 'default' ? null : Number(value),
+                    })
+                  }
+                />
+                <Select
+                  label="Reviews per day"
+                  options={maxReviewsPerDayOptions}
+                  value={deck.maxReviewsPerDay === null ? 'default' : String(deck.maxReviewsPerDay)}
+                  onValueChange={(value: string) =>
+                    handleDeckLimitChange({
+                      maxReviewsPerDay: value === 'default' ? null : Number(value),
+                    })
+                  }
+                />
+              </View>
+            </CollapsibleSection>
+
             <View style={styles.actions}>
               {dueCount > 0 && (
                 <Button
@@ -555,6 +638,13 @@ const styles = StyleSheet.create({
   },
   statsCard: {
     padding: 16,
+  },
+  deckSettingsDescription: {
+    fontSize: 13,
+    marginBottom: 12,
+  },
+  deckSettingsForm: {
+    gap: 12,
   },
   statsRow: {
     flexDirection: 'row',

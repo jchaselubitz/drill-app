@@ -1,5 +1,3 @@
-export { type FilterTab, FilterTabs } from './FilterTabs';
-export { LessonCard } from './LessonCard';
 export { LessonsEmptyState } from './LessonsEmptyState';
 export { LessonSettingsDisplay } from './LessonSettingsDisplay';
 export { ModalHeader } from './ModalHeader';

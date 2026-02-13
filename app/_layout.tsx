@@ -43,11 +43,6 @@ function AppContent() {
           <NativeTabs.Trigger.Label>Library</NativeTabs.Trigger.Label>
         </NativeTabs.Trigger>
 
-        <NativeTabs.Trigger name="(review)">
-          <NativeTabs.Trigger.Icon sf="rectangle.stack.fill" drawable="custom_android_drawable" />
-          <NativeTabs.Trigger.Label>Review</NativeTabs.Trigger.Label>
-        </NativeTabs.Trigger>
-
         <NativeTabs.Trigger name="settings">
           <NativeTabs.Trigger.Icon sf="gearshape.fill" drawable="custom_android_drawable" />
           <NativeTabs.Trigger.Label>Settings</NativeTabs.Trigger.Label>

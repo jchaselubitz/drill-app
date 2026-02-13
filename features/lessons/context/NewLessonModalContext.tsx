@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useState } from 'react';
 
-type ModalMode = 'lesson' | 'set';
+type ModalMode = 'unified' | 'lesson' | 'set';
 
 type NewLessonModalContextType = {
   isVisible: boolean;
@@ -13,9 +13,9 @@ const NewLessonModalContext = createContext<NewLessonModalContextType | undefine
 
 export function NewLessonModalProvider({ children }: { children: React.ReactNode }) {
   const [isVisible, setIsVisible] = useState(false);
-  const [initialMode, setInitialMode] = useState<ModalMode>('lesson');
+  const [initialMode, setInitialMode] = useState<ModalMode>('unified');
 
-  const open = useCallback((mode: ModalMode = 'lesson') => {
+  const open = useCallback((mode: ModalMode = 'unified') => {
     setInitialMode(mode);
     setIsVisible(true);
   }, []);

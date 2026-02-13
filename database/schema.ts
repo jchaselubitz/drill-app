@@ -19,7 +19,7 @@ export const PENDING_REQUEST_TABLE = 'pending_request';
 export const PENDING_AUDIO_REQUEST_TABLE = 'pending_audio_request';
 
 const schema = appSchema({
-  version: 10,
+  version: 11,
   tables: [
     tableSchema({
       name: PHRASE_TABLE,
@@ -69,9 +69,11 @@ const schema = appSchema({
       columns: [
         { name: 'created_at', type: 'number' },
         { name: 'updated_at', type: 'number' },
-        { name: 'name', type: 'string', isOptional: true },
-        { name: 'level', type: 'string', isOptional: true },
-        { name: 'lang', type: 'string' },
+        { name: 'name', type: 'string' },
+        { name: 'level', type: 'string' },
+        { name: 'primary_lang', type: 'string' },
+        { name: 'secondary_lang', type: 'string' },
+        { name: 'deck_id', type: 'string', isOptional: true },
       ],
     }),
     tableSchema({
@@ -117,6 +119,7 @@ const schema = appSchema({
         { name: 'level', type: 'string', isOptional: true },
         { name: 'max_new_per_day', type: 'number', isOptional: true },
         { name: 'max_reviews_per_day', type: 'number', isOptional: true },
+        { name: 'subject_id', type: 'string', isOptional: true },
       ],
     }),
     tableSchema({
@@ -181,6 +184,8 @@ const schema = appSchema({
         { name: 'lang', type: 'string' },
         { name: 'user_language', type: 'string' },
         { name: 'level', type: 'string' },
+        { name: 'subject_id', type: 'string', isOptional: true },
+        { name: 'prompt_language', type: 'string' },
       ],
     }),
     tableSchema({

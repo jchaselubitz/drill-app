@@ -9,6 +9,7 @@ type LessonCardProps = {
   lesson: Lesson;
   attemptCount: number;
   onPress: (lessonId: string) => void;
+  onLinkPress?: (lesson: Lesson) => void;
 };
 
 const formatDate = (timestamp: number) => {
@@ -19,8 +20,9 @@ const formatDate = (timestamp: number) => {
   });
 };
 
-export function LessonCard({ lesson, attemptCount, onPress }: LessonCardProps) {
+export function LessonCard({ lesson, attemptCount, onPress, onLinkPress }: LessonCardProps) {
   const colors = useColors();
+  const isFree = !lesson.subjectId;
 
   return (
     <Pressable onPress={() => onPress(lesson.id)}>
@@ -29,7 +31,20 @@ export function LessonCard({ lesson, attemptCount, onPress }: LessonCardProps) {
           <Text style={[styles.lessonTopic, { color: colors.text }]} numberOfLines={1}>
             {lesson.topic}
           </Text>
-          <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+          <View style={styles.headerActions}>
+            {isFree && onLinkPress && (
+              <Pressable
+                onPress={(e) => {
+                  e.stopPropagation();
+                  onLinkPress(lesson);
+                }}
+                hitSlop={8}
+              >
+                <Ionicons name="link-outline" size={20} color={colors.primary} />
+              </Pressable>
+            )}
+            <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+          </View>
         </View>
         <Text style={[styles.lessonPrompt, { color: colors.textSecondary }]} numberOfLines={2}>
           {lesson.prompt}
@@ -64,6 +79,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   lessonTopic: {
     fontSize: 17,
