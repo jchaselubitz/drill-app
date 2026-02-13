@@ -1,7 +1,7 @@
 sources:
   - name: "local"
     kind: "local"
-install_path: ".skills"
+install_path: ".claude/skills"
 skills:
   - slug: "expo-audio"
   - slug: "expo-glass-effect"
@@ -12,4 +12,3 @@ skills:
   - slug: "code-review"
   - slug: "gemini-api"
   - slug: "zod-v4-patterns"
-  - slug: "brainstorm"
