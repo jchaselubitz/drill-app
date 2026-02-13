@@ -13,15 +13,12 @@ type SubjectPromptCardProps = {
   onGenerateNew: (promptType: PromptLanguageType) => void;
 };
 
-export function SubjectPromptCard({
-  lesson,
-  isGenerating,
-  onGenerateNew,
-}: SubjectPromptCardProps) {
+export function SubjectPromptCard({ lesson, isGenerating, onGenerateNew }: SubjectPromptCardProps) {
   const colors = useColors();
   const [showMenu, setShowMenu] = useState(false);
 
-  const promptTypeLabel = lesson.promptLanguage === 'learning' ? 'Learning Language' : 'Your Language';
+  const promptTypeLabel =
+    lesson.promptLanguage === 'learning' ? 'Learning Language' : 'Your Language';
 
   const handleMenuOption = (promptType: PromptLanguageType) => {
     setShowMenu(false);
@@ -63,7 +60,9 @@ export function SubjectPromptCard({
           </Pressable>
 
           {showMenu && (
-            <View style={[styles.menu, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View
+              style={[styles.menu, { backgroundColor: colors.card, borderColor: colors.border }]}
+            >
               <Pressable
                 style={({ pressed }) => [
                   styles.menuItem,
@@ -73,9 +72,7 @@ export function SubjectPromptCard({
               >
                 <Ionicons name="person-outline" size={18} color={colors.text} />
                 <View style={styles.menuItemContent}>
-                  <Text style={[styles.menuItemTitle, { color: colors.text }]}>
-                    Your Language
-                  </Text>
+                  <Text style={[styles.menuItemTitle, { color: colors.text }]}>Your Language</Text>
                   <Text style={[styles.menuItemDescription, { color: colors.textSecondary }]}>
                     Prompt in your native language
                   </Text>

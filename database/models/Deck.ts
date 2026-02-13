@@ -5,6 +5,7 @@ import { field, immutableRelation, writer } from '@nozbe/watermelondb/decorators
 import type { CEFRLevel, LanguageCode } from '@/types';
 
 import { DECK_TABLE, SUBJECT_TABLE } from '../schema';
+
 import type Subject from './Subject';
 
 export type DeckSource = 'manual' | 'ai_generated';

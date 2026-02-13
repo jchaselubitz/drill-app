@@ -1,5 +1,5 @@
 # .skills.lock — auto-generated, commit to repo
-locked_at: 2026-02-11T16:14:17.029Z
+locked_at: 2026-02-13T16:12:00.906Z
 skills:
   - slug: expo-audio
     sha256: 60d33cb791cb9770abacff047976a1aafb6fe951ae068d8e1c5ee8aedad94002
@@ -19,3 +19,7 @@ skills:
     sha256: 5b9ebbded56eccc9e2f6c413ffcde683615895c967aecae184f04c64fc6dc8a0
   - slug: zod-v4-patterns
     sha256: e43ec9383a90fb3cca3a0fcdbebbd7e3f28e504948e721dfb2b39462eb715804
+  - slug: brainstorming
+    sha256: d4aff6758a1bd39d122f7be66c1e61ccd0250c2c1aa67bcfdc05ab5dd958776c
+  - slug: brainstorm
+    sha256: d4aff6758a1bd39d122f7be66c1e61ccd0250c2c1aa67bcfdc05ab5dd958776c

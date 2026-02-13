@@ -5,6 +5,7 @@ import Constants from 'expo-constants';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Platform,
@@ -18,11 +19,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useSettings } from '@/contexts/SettingsContext';
 import database from '@/database';
-import { Attempt, Lesson } from '@/database/models';
-import { ATTEMPT_TABLE, LESSON_TABLE } from '@/database/schema';
+import { Attempt, Deck, Lesson, Subject } from '@/database/models';
+import { ATTEMPT_TABLE, DECK_TABLE, LESSON_TABLE, SUBJECT_TABLE } from '@/database/schema';
 import { AttemptForm, AttemptHistory, PromptCard } from '@/features/lesson/components';
 import { useColors } from '@/hooks';
 import { submitAttemptForReview } from '@/lib/backgroundReviewService';
+import { generateNewPromptForSubject } from '@/lib/services/subjectService';
 import { LanguageCode } from '@/types';
 
 const geminiApiKey = Constants.expoConfig?.extra?.geminiApiKey as string | undefined;
@@ -40,6 +42,23 @@ function DeleteButton({ onPress, disabled }: { onPress: () => void; disabled: bo
   );
 }
 
+function NewPromptButton({ onPress, isLoading }: { onPress: () => void; isLoading: boolean }) {
+  const colors = useColors();
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [styles.deleteButton, { opacity: pressed ? 0.5 : 1 }]}
+      disabled={isLoading}
+    >
+      {isLoading ? (
+        <ActivityIndicator size="small" color={colors.primary} />
+      ) : (
+        <Ionicons name="refresh-outline" size={20} color={colors.primary} />
+      )}
+    </Pressable>
+  );
+}
+
 export default function LessonDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
@@ -53,13 +72,13 @@ export default function LessonDetailScreen() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [expandedAttemptId, setExpandedAttemptId] = useState<string | null>(null);
   const [abortController, setAbortController] = useState<AbortController | null>(null);
+  const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false);
 
   const lesson = lessonState?.lesson ?? null;
 
   useEffect(() => {
     if (!id) return;
 
-    // Subscribe to lesson (wrapper ensures re-render when model updates — see watermelondb-model skill)
     const lessonSub = db.collections
       .get<Lesson>(LESSON_TABLE)
       .findAndObserve(id)
@@ -67,7 +86,6 @@ export default function LessonDetailScreen() {
         setLessonState({ lesson: result, _key: result.updatedAt });
       });
 
-    // Subscribe to attempts for this lesson
     const attemptsSub = db.collections
       .get<Attempt>(ATTEMPT_TABLE)
       .query(Q.where('lesson_id', id), Q.sortBy('created_at', Q.desc))
@@ -100,7 +118,6 @@ export default function LessonDetailScreen() {
     setIsSubmitting(true);
 
     try {
-      // Submit for background processing - returns immediately with pending attempt
       await submitAttemptForReview({
         db: database,
         lessonId: lesson.id,
@@ -159,6 +176,35 @@ export default function LessonDetailScreen() {
     );
   };
 
+  const handleNewPrompt = async () => {
+    if (!lesson?.subjectId || isGeneratingPrompt) return;
+
+    if (!geminiApiKey) {
+      Alert.alert('API Key Required', 'Please set the geminiApiKey in app.config.ts');
+      return;
+    }
+
+    setIsGeneratingPrompt(true);
+    try {
+      const subject = await db.collections.get<Subject>(SUBJECT_TABLE).find(lesson.subjectId);
+
+      if (!subject.deckId) {
+        Alert.alert('Error', 'No vocabulary deck linked to this topic.');
+        return;
+      }
+
+      const deck = await db.collections.get<Deck>(DECK_TABLE).find(subject.deckId);
+
+      const newLesson = await generateNewPromptForSubject(database, subject, deck, 'learning');
+      router.replace(`/lesson/${newLesson.id}` as any);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to generate prompt. Please try again.');
+      console.error(error);
+    } finally {
+      setIsGeneratingPrompt(false);
+    }
+  };
+
   if (!lesson) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
@@ -180,7 +226,14 @@ export default function LessonDetailScreen() {
           title: lesson.topic,
           headerShown: true,
           headerBackTitle: 'Lessons',
-          headerRight: () => <DeleteButton onPress={handleDeleteLesson} disabled={isSubmitting} />,
+          headerRight: () => (
+            <View style={styles.headerButtons}>
+              {lesson.subjectId && (
+                <NewPromptButton onPress={handleNewPrompt} isLoading={isGeneratingPrompt} />
+              )}
+              <DeleteButton onPress={handleDeleteLesson} disabled={isSubmitting} />
+            </View>
+          ),
           headerStyle: { backgroundColor: colors.background },
           headerTintColor: colors.text,
           headerTitleStyle: { color: colors.text },
@@ -231,6 +284,10 @@ const styles = StyleSheet.create({
   content: {
     padding: 16,
     gap: 24,
+  },
+  headerButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   deleteButton: {
     padding: 8,

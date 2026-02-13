@@ -5,6 +5,7 @@ import { children, field, immutableRelation } from '@nozbe/watermelondb/decorato
 import type { CEFRLevel, LanguageCode } from '@/types';
 
 import { DECK_TABLE, LESSON_TABLE, SUBJECT_TABLE } from '../schema';
+
 import type Deck from './Deck';
 import type Lesson from './Lesson';
 

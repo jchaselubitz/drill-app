@@ -3,67 +3,34 @@ import { Q } from '@nozbe/watermelondb';
 import { useDatabase } from '@nozbe/watermelondb/react';
 import Constants from 'expo-constants';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
-import {
-  Alert,
-  FlatList,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { useEffect, useState } from 'react';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Button, Card } from '@/components';
-import { useSettings } from '@/contexts/SettingsContext';
+import { Card } from '@/components';
 import database from '@/database';
-import {
-  Attempt,
-  Deck,
-  DeckTranslation,
-  Lesson,
-  Phrase,
-  Subject,
-  Translation,
-} from '@/database/models';
-import type { PromptLanguageType } from '@/database/models/Lesson';
+import { Deck, Lesson, Subject } from '@/database/models';
 import {
   ATTEMPT_TABLE,
   DECK_TABLE,
   DECK_TRANSLATION_TABLE,
   LESSON_TABLE,
-  PHRASE_TABLE,
   SUBJECT_TABLE,
-  TRANSLATION_TABLE,
 } from '@/database/schema';
-import { useAudioPlayback, useColors, useDeckDueCount } from '@/hooks';
+import { useColors, useDeckDueCount } from '@/hooks';
 import { generateNewPromptForSubject } from '@/lib/services/subjectService';
-import { submitAttemptForReview } from '@/lib/backgroundReviewService';
-import type { CEFRLevel, LanguageCode } from '@/types';
+import type { CEFRLevel } from '@/types';
 
-import { SubjectPromptCard } from '../components/SubjectPromptCard';
-import { AttemptForm } from '@/features/lesson/components';
+import { LessonTypeCard } from '../components/LessonTypeCard';
 
 const geminiApiKey = Constants.expoConfig?.extra?.geminiApiKey as string | undefined;
 
-type PhraseItem = {
-  id: string;
-  primaryPhraseId: string;
-  primary: string;
-  secondary: string;
-  partOfSpeech: string | null;
-  primaryFilename: string | null;
-};
-
-function DeleteButton({ onPress, disabled }: { onPress: () => void; disabled: boolean }) {
+function DeleteButton({ onPress }: { onPress: () => void }) {
   const colors = useColors();
   return (
     <Pressable
       onPress={onPress}
       style={({ pressed }) => [styles.deleteButton, { opacity: pressed ? 0.5 : 1 }]}
-      disabled={disabled}
     >
       <Ionicons name="trash-outline" size={20} color={colors.textSecondary} />
     </Pressable>
@@ -74,217 +41,104 @@ export default function SubjectDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const colors = useColors();
-  const { settings, updateSettings } = useSettings();
   const db = useDatabase();
 
-  const [subjectState, setSubjectState] = useState<{ subject: Subject; _key: number } | null>(null);
+  const [subject, setSubject] = useState<Subject | null>(null);
   const [deck, setDeck] = useState<Deck | null>(null);
-  const [currentLesson, setCurrentLesson] = useState<Lesson | null>(null);
-  const [attempts, setAttempts] = useState<Attempt[]>([]);
-  const [phrases, setPhrases] = useState<PhraseItem[]>([]);
-
-  const [paragraph, setParagraph] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [phraseCount, setPhraseCount] = useState(0);
+  const [lessonCount, setLessonCount] = useState(0);
+  const [attemptCount, setAttemptCount] = useState(0);
   const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false);
-  const [abortController, setAbortController] = useState<AbortController | null>(null);
 
-  const { togglePlayPause, isPlayingFile } = useAudioPlayback();
+  const { dueCount } = useDeckDueCount(deck?.id ?? undefined);
 
-  const subject = subjectState?.subject ?? null;
-  const { dueCount } = useDeckDueCount(deck?.id ?? null);
-
-  const loadPhrasesForDeck = useCallback(
-    async (deckId: string) => {
-      const deckTranslations = await db.collections
-        .get(DECK_TRANSLATION_TABLE)
-        .query(Q.where('deck_id', deckId))
-        .fetch();
-
-      const phraseItems: PhraseItem[] = [];
-
-      for (const dt of deckTranslations as DeckTranslation[]) {
-        try {
-          const translation = await db.collections
-            .get<Translation>(TRANSLATION_TABLE)
-            .find(dt.translationId);
-
-          const primaryPhrase = await db.collections
-            .get<Phrase>(PHRASE_TABLE)
-            .find(translation.phrasePrimaryId);
-
-          const secondaryPhrase = await db.collections
-            .get<Phrase>(PHRASE_TABLE)
-            .find(translation.phraseSecondaryId);
-
-          phraseItems.push({
-            id: dt.id,
-            primaryPhraseId: primaryPhrase.id,
-            primary: primaryPhrase.text,
-            secondary: secondaryPhrase.text,
-            partOfSpeech: primaryPhrase.partSpeech,
-            primaryFilename: primaryPhrase.filename,
-          });
-        } catch (error) {
-          console.error('Error fetching phrase:', error);
-        }
-      }
-
-      setPhrases(phraseItems);
-    },
-    [db]
-  );
-
+  // Subscribe to subject
   useEffect(() => {
     if (!id) return;
 
-    // Subscribe to subject
-    const subjectSub = db.collections
+    const sub = db.collections
       .get<Subject>(SUBJECT_TABLE)
       .findAndObserve(id)
-      .subscribe((result) => {
-        setSubjectState({ subject: result, _key: result.updatedAt });
-      });
+      .subscribe((result) => setSubject(result));
 
-    return () => {
-      subjectSub.unsubscribe();
-    };
+    return () => sub.unsubscribe();
   }, [id, db]);
 
-  // Load deck when subject changes
+  // Subscribe to deck + phrase count
   useEffect(() => {
     if (!subject?.deckId) return;
 
     const deckSub = db.collections
       .get<Deck>(DECK_TABLE)
       .findAndObserve(subject.deckId)
-      .subscribe((result) => {
-        setDeck(result);
-      });
+      .subscribe((result) => setDeck(result));
 
-    // Load phrases
-    loadPhrasesForDeck(subject.deckId);
-
-    // Subscribe to deck translations for changes
-    const translationsSub = db.collections
+    const phraseSub = db.collections
       .get(DECK_TRANSLATION_TABLE)
       .query(Q.where('deck_id', subject.deckId))
-      .observe()
-      .subscribe(async () => {
-        await loadPhrasesForDeck(subject.deckId!);
-      });
+      .observeCount()
+      .subscribe((count) => setPhraseCount(count));
 
     return () => {
       deckSub.unsubscribe();
-      translationsSub.unsubscribe();
+      phraseSub.unsubscribe();
     };
-  }, [subject?.deckId, db, loadPhrasesForDeck]);
+  }, [subject?.deckId, db]);
 
-  // Load most recent lesson for this subject
+  // Subscribe to lesson count + attempt count
   useEffect(() => {
     if (!id) return;
 
     const lessonSub = db.collections
       .get<Lesson>(LESSON_TABLE)
-      .query(Q.where('subject_id', id), Q.sortBy('created_at', Q.desc), Q.take(1))
-      .observe()
-      .subscribe((results) => {
-        if (results.length > 0) {
-          setCurrentLesson(results[0]);
-        }
-      });
+      .query(Q.where('subject_id', id))
+      .observeCount()
+      .subscribe((count) => setLessonCount(count));
+
+    const attemptSub = db.collections
+      .get(ATTEMPT_TABLE)
+      .query(Q.on(LESSON_TABLE, Q.where('subject_id', id)))
+      .observeCount()
+      .subscribe((count) => setAttemptCount(count));
 
     return () => {
       lessonSub.unsubscribe();
+      attemptSub.unsubscribe();
     };
   }, [id, db]);
 
-  // Load attempts for current lesson
-  useEffect(() => {
-    if (!currentLesson?.id) return;
-
-    const attemptsSub = db.collections
-      .get<Attempt>(ATTEMPT_TABLE)
-      .query(Q.where('lesson_id', currentLesson.id), Q.sortBy('created_at', Q.desc))
-      .observe()
-      .subscribe((results) => {
-        setAttempts(results);
-      });
-
-    return () => {
-      attemptsSub.unsubscribe();
-    };
-  }, [currentLesson?.id, db]);
-
-  const handleGenerateNewPrompt = async (promptType: PromptLanguageType) => {
+  const handleWritingPromptsPress = async () => {
     if (!subject || !deck) return;
 
-    if (!geminiApiKey) {
-      Alert.alert('API Key Required', 'Please set the geminiApiKey in app.config.ts');
-      return;
-    }
+    // Find most recent lesson for this subject
+    const lessons = await db.collections
+      .get<Lesson>(LESSON_TABLE)
+      .query(Q.where('subject_id', subject.id), Q.sortBy('created_at', Q.desc), Q.take(1))
+      .fetch();
 
-    setIsGeneratingPrompt(true);
-    try {
-      const newLesson = await generateNewPromptForSubject(database, subject, deck, promptType);
-      setCurrentLesson(newLesson);
-    } catch (error) {
-      Alert.alert('Error', 'Failed to generate new prompt. Please try again.');
-      console.error(error);
-    } finally {
-      setIsGeneratingPrompt(false);
-    }
-  };
+    if (lessons.length > 0) {
+      router.push(`/lesson/${lessons[0].id}` as any);
+    } else {
+      // Generate a new prompt and navigate to it
+      if (!geminiApiKey) {
+        Alert.alert('API Key Required', 'Please set the geminiApiKey in app.config.ts');
+        return;
+      }
 
-  const handleSubmitAttempt = async () => {
-    if (isSubmitting) return;
-    if (!paragraph.trim() || !currentLesson) {
-      Alert.alert('Error', 'Please write something to submit');
-      return;
-    }
-
-    if (!geminiApiKey) {
-      Alert.alert('API Key Required', 'Please set the geminiApiKey in app.config.ts');
-      return;
-    }
-
-    const controller = new AbortController();
-    setAbortController(controller);
-    setIsSubmitting(true);
-
-    try {
-      await submitAttemptForReview({
-        db: database,
-        lessonId: currentLesson.id,
-        paragraph,
-        topicLanguage: settings.topicLanguage as LanguageCode,
-        userLanguage: subject?.secondaryLang as LanguageCode,
-        level: currentLesson.level,
-        abortSignal: controller.signal,
-      });
-
-      setParagraph('');
-    } catch (error) {
-      Alert.alert('Error', 'Failed to submit attempt. Please try again.');
-      console.error(error);
-    } finally {
-      setIsSubmitting(false);
+      setIsGeneratingPrompt(true);
+      try {
+        const newLesson = await generateNewPromptForSubject(database, subject, deck, 'learning');
+        router.push(`/lesson/${newLesson.id}` as any);
+      } catch (error) {
+        Alert.alert('Error', 'Failed to generate prompt. Please try again.');
+        console.error(error);
+      } finally {
+        setIsGeneratingPrompt(false);
+      }
     }
   };
 
-  const handleCancelAttempt = () => {
-    abortController?.abort();
-    setAbortController(null);
-  };
-
-  const handleStartReview = async () => {
-    if (!deck?.id) return;
-    if (settings.activeDeckId !== deck.id) {
-      await updateSettings({ activeDeckId: deck.id });
-    }
-    router.push(`/review/session?deckId=${deck.id}` as any);
-  };
-
-  const handleViewVocabulary = () => {
+  const handleFlashcardsPress = () => {
     if (!deck?.id) return;
     router.push(`/set/${deck.id}` as any);
   };
@@ -303,7 +157,6 @@ export default function SubjectDetailScreen() {
           onPress: async () => {
             try {
               await database.write(async () => {
-                // Delete associated lessons
                 const lessons = await database.collections
                   .get<Lesson>(LESSON_TABLE)
                   .query(Q.where('subject_id', subject.id))
@@ -312,12 +165,10 @@ export default function SubjectDetailScreen() {
                   await lesson.destroyPermanently();
                 }
 
-                // Delete deck if exists
                 if (deck) {
                   await deck.destroyPermanently();
                 }
 
-                // Delete subject
                 await subject.destroyPermanently();
               });
               router.back();
@@ -328,35 +179,6 @@ export default function SubjectDetailScreen() {
           },
         },
       ]
-    );
-  };
-
-  const renderPhrasePreview = ({ item }: { item: PhraseItem }) => {
-    const hasAudio = item.primaryFilename !== null;
-    const isPlaying = hasAudio && isPlayingFile(item.primaryFilename!);
-
-    return (
-      <View style={[styles.phrasePreviewItem, { backgroundColor: colors.card }]}>
-        <View style={styles.phrasePreviewContent}>
-          <Text style={[styles.phrasePreviewPrimary, { color: colors.text }]} numberOfLines={1}>
-            {item.primary}
-          </Text>
-          <Text
-            style={[styles.phrasePreviewSecondary, { color: colors.textSecondary }]}
-            numberOfLines={1}
-          >
-            {item.secondary}
-          </Text>
-        </View>
-        {hasAudio && (
-          <Pressable
-            onPress={() => togglePlayPause(item.primaryFilename!)}
-            style={({ pressed }) => [styles.playButton, { opacity: pressed ? 0.5 : 1 }]}
-          >
-            <Ionicons name={isPlaying ? 'pause' : 'play'} size={16} color={colors.primary} />
-          </Pressable>
-        )}
-      </View>
     );
   };
 
@@ -381,122 +203,69 @@ export default function SubjectDetailScreen() {
           title: subject.name,
           headerShown: true,
           headerBackTitle: 'Back',
-          headerRight: () => (
-            <DeleteButton onPress={handleDeleteSubject} disabled={isSubmitting} />
-          ),
+          headerRight: () => <DeleteButton onPress={handleDeleteSubject} />,
           headerStyle: { backgroundColor: colors.background },
           headerTintColor: colors.text,
           headerTitleStyle: { color: colors.text },
         }}
       />
 
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.flex}
-      >
-        <FlatList
-          data={[]}
-          renderItem={null}
-          keyboardShouldPersistTaps="handled"
-          contentContainerStyle={styles.content}
-          ListHeaderComponent={() => (
-            <View style={styles.mainContent}>
-              {/* Stats Card */}
-              <Card style={styles.statsCard}>
-                <View style={styles.statsRow}>
-                  <View style={styles.statItem}>
-                    <Text style={[styles.statValue, { color: colors.text }]}>{phrases.length}</Text>
-                    <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Phrases</Text>
-                  </View>
-                  <View style={styles.statItem}>
-                    <Text
-                      style={[
-                        styles.statValue,
-                        { color: dueCount > 0 ? colors.primary : colors.text },
-                      ]}
-                    >
-                      {dueCount}
-                    </Text>
-                    <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Due</Text>
-                  </View>
-                  <View style={styles.statItem}>
-                    <Text style={[styles.statValue, { color: colors.text }]}>
-                      {subject.level as CEFRLevel}
-                    </Text>
-                    <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Level</Text>
-                  </View>
-                </View>
-              </Card>
-
-              {/* Current Prompt */}
-              {currentLesson && (
-                <SubjectPromptCard
-                  lesson={currentLesson}
-                  isGenerating={isGeneratingPrompt}
-                  onGenerateNew={handleGenerateNewPrompt}
-                />
-              )}
-
-              {/* Writing Form */}
-              {currentLesson && (
-                <AttemptForm
-                  paragraph={paragraph}
-                  onChangeText={setParagraph}
-                  onSubmit={handleSubmitAttempt}
-                  isLoading={isSubmitting}
-                  onCancel={handleCancelAttempt}
-                />
-              )}
-
-              {/* Vocabulary Section */}
-              <View style={styles.vocabularySection}>
-                <View style={styles.sectionHeader}>
-                  <Text style={[styles.sectionTitle, { color: colors.text }]}>Vocabulary</Text>
-                  <Pressable onPress={handleViewVocabulary}>
-                    <Text style={[styles.viewAllLink, { color: colors.primary }]}>View All</Text>
-                  </Pressable>
-                </View>
-
-                {dueCount > 0 && (
-                  <Button
-                    text={`Review ${dueCount} cards`}
-                    onPress={handleStartReview}
-                    buttonState="default"
-                  />
-                )}
-
-                <FlatList
-                  data={phrases.slice(0, 6)}
-                  renderItem={renderPhrasePreview}
-                  keyExtractor={(item) => item.id}
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.phrasePreviewList}
-                />
-              </View>
-
-              {/* Recent Attempts */}
-              {attempts.length > 0 && (
-                <View style={styles.attemptsSection}>
-                  <Text style={[styles.sectionTitle, { color: colors.text }]}>Recent Attempts</Text>
-                  <Text style={[styles.attemptCount, { color: colors.textSecondary }]}>
-                    {attempts.length} attempt{attempts.length !== 1 ? 's' : ''} on this prompt
-                  </Text>
-                </View>
-              )}
+      <ScrollView contentContainerStyle={styles.content}>
+        {/* Stats Card */}
+        <Card style={styles.statsCard}>
+          <View style={styles.statsRow}>
+            <View style={styles.statItem}>
+              <Text style={[styles.statValue, { color: colors.text }]}>{phraseCount}</Text>
+              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Phrases</Text>
             </View>
+            <View style={styles.statItem}>
+              <Text
+                style={[styles.statValue, { color: dueCount > 0 ? colors.primary : colors.text }]}
+              >
+                {dueCount}
+              </Text>
+              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Due</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={[styles.statValue, { color: colors.text }]}>
+                {subject.level as CEFRLevel}
+              </Text>
+              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Level</Text>
+            </View>
+          </View>
+        </Card>
+
+        {/* Lesson Type Cards */}
+        <View style={styles.lessonTypes}>
+          <LessonTypeCard
+            icon="create-outline"
+            title={isGeneratingPrompt ? 'Generating...' : 'Writing Prompts'}
+            stats={[
+              { label: 'prompts', value: lessonCount },
+              { label: 'attempts', value: attemptCount },
+            ]}
+            onPress={handleWritingPromptsPress}
+          />
+
+          {deck && (
+            <LessonTypeCard
+              icon="albums-outline"
+              title="Flashcards"
+              stats={[
+                { label: 'phrases', value: phraseCount },
+                { label: 'due', value: dueCount, highlight: dueCount > 0 },
+              ]}
+              onPress={handleFlashcardsPress}
+            />
           )}
-        />
-      </KeyboardAvoidingView>
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-  },
-  flex: {
     flex: 1,
   },
   loadingContainer: {
@@ -506,8 +275,6 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 16,
-  },
-  mainContent: {
     gap: 20,
   },
   statsCard: {
@@ -528,53 +295,8 @@ const styles = StyleSheet.create({
   statLabel: {
     fontSize: 12,
   },
-  vocabularySection: {
+  lessonTypes: {
     gap: 12,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  sectionTitle: {
-    fontSize: 17,
-    fontWeight: '600',
-  },
-  viewAllLink: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  phrasePreviewList: {
-    gap: 10,
-  },
-  phrasePreviewItem: {
-    padding: 12,
-    borderRadius: 10,
-    minWidth: 140,
-    maxWidth: 180,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  phrasePreviewContent: {
-    flex: 1,
-    gap: 2,
-  },
-  phrasePreviewPrimary: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  phrasePreviewSecondary: {
-    fontSize: 12,
-  },
-  playButton: {
-    padding: 4,
-  },
-  attemptsSection: {
-    gap: 8,
-  },
-  attemptCount: {
-    fontSize: 14,
   },
   deleteButton: {
     padding: 8,

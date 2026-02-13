@@ -1,7 +1,7 @@
 import { useFocusEffect } from '@react-navigation/native';
 import Constants from 'expo-constants';
 import { useCallback } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Card, LanguageChooser, Select } from '@/components';
@@ -97,20 +97,41 @@ export default function SettingsScreen() {
 
         <Card>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Spaced Repetition</Text>
+          <Text style={[styles.sectionDescription, { color: colors.textSecondary }]}>
+            These are default limits for decks that do not have custom flashcard settings.
+          </Text>
           <View style={styles.settingsForm}>
             <Select
-              label="New cards per day"
+              label="Default new cards per day"
               options={maxNewOptions}
               value={String(settings.maxNewPerDay)}
               onValueChange={(value: string) => updateSettings({ maxNewPerDay: Number(value) })}
             />
 
             <Select
-              label="Reviews per day"
+              label="Default reviews per day"
               options={maxReviewOptions}
               value={String(settings.maxReviewsPerDay)}
               onValueChange={(value: string) => updateSettings({ maxReviewsPerDay: Number(value) })}
             />
+
+            <View style={styles.settingRow}>
+              <View style={styles.settingText}>
+                <Text style={[styles.settingLabel, { color: colors.text }]}>
+                  Auto-play review audio
+                </Text>
+                <Text style={[styles.settingDescription, { color: colors.textSecondary }]}>
+                  Play audio automatically when a phrase appears.
+                </Text>
+              </View>
+              <Switch
+                value={settings.autoPlayReviewAudio}
+                onValueChange={(value) => updateSettings({ autoPlayReviewAudio: value })}
+                trackColor={{ false: colors.border, true: colors.primary }}
+                thumbColor={colors.background}
+                ios_backgroundColor={colors.border}
+              />
+            </View>
           </View>
         </Card>
 
@@ -167,6 +188,23 @@ const styles = StyleSheet.create({
   settingsForm: {
     gap: 16,
     marginTop: 12,
+  },
+  settingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 16,
+  },
+  settingText: {
+    flex: 1,
+    gap: 4,
+  },
+  settingLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  settingDescription: {
+    fontSize: 13,
   },
   aboutText: {
     fontSize: 14,

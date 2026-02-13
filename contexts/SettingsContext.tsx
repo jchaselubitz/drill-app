@@ -3,9 +3,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 
 import { DEFAULT_SETTINGS } from '@/constants';
-import Deck from '@/database/models/Deck';
 import Profile from '@/database/models/Profile';
-import { DECK_TABLE, PROFILE_TABLE } from '@/database/schema';
+import { PROFILE_TABLE } from '@/database/schema';
 import type { CEFRLevel, LanguageCode, UserSettings } from '@/types';
 
 const APP_SETTINGS_KEY = '@drill_app_settings';
@@ -15,6 +14,17 @@ type AppSettings = {
   dayStartHour: number;
   autoPlayReviewAudio: boolean;
   activeDeckId: string | null;
+  maxNewPerDay: number;
+  maxReviewsPerDay: number;
+};
+
+const DEFAULT_APP_SETTINGS: AppSettings = {
+  theme: DEFAULT_SETTINGS.theme,
+  dayStartHour: DEFAULT_SETTINGS.dayStartHour,
+  autoPlayReviewAudio: DEFAULT_SETTINGS.autoPlayReviewAudio,
+  activeDeckId: DEFAULT_SETTINGS.activeDeckId,
+  maxNewPerDay: DEFAULT_SETTINGS.maxNewPerDay,
+  maxReviewsPerDay: DEFAULT_SETTINGS.maxReviewsPerDay,
 };
 
 type SettingsContextType = {
@@ -59,31 +69,11 @@ export function SettingsProvider({ children }: { children: React.ReactNode }): R
 
       // Load app settings from AsyncStorage
       const storedAppSettings = await AsyncStorage.getItem(APP_SETTINGS_KEY);
-      const appSettings: AppSettings = storedAppSettings
-        ? JSON.parse(storedAppSettings)
-        : {
-            theme: DEFAULT_SETTINGS.theme,
-            dayStartHour: DEFAULT_SETTINGS.dayStartHour,
-            autoPlayReviewAudio: DEFAULT_SETTINGS.autoPlayReviewAudio,
-            activeDeckId: DEFAULT_SETTINGS.activeDeckId,
-          };
-
-      // Load deck settings
-      let activeDeck: Deck | null = null;
-      if (appSettings.activeDeckId) {
-        try {
-          activeDeck = await database.collections
-            .get<Deck>(DECK_TABLE)
-            .find(appSettings.activeDeckId);
-        } catch {
-          // Deck not found, will use defaults
-        }
-      }
-
-      // If no active deck, try to get the default deck
-      if (!activeDeck) {
-        activeDeck = await Deck.getDefault(database);
-      }
+      const parsedAppSettings = storedAppSettings ? JSON.parse(storedAppSettings) : {};
+      const appSettings: AppSettings = {
+        ...DEFAULT_APP_SETTINGS,
+        ...parsedAppSettings,
+      };
 
       const mergedSettings: UserSettings = {
         userLanguage: (profile.userLanguage as LanguageCode) || DEFAULT_SETTINGS.userLanguage,
@@ -93,8 +83,8 @@ export function SettingsProvider({ children }: { children: React.ReactNode }): R
         dayStartHour: appSettings.dayStartHour,
         autoPlayReviewAudio: appSettings.autoPlayReviewAudio,
         activeDeckId: appSettings.activeDeckId,
-        maxNewPerDay: activeDeck?.maxNewPerDay ?? DEFAULT_SETTINGS.maxNewPerDay,
-        maxReviewsPerDay: activeDeck?.maxReviewsPerDay ?? DEFAULT_SETTINGS.maxReviewsPerDay,
+        maxNewPerDay: appSettings.maxNewPerDay,
+        maxReviewsPerDay: appSettings.maxReviewsPerDay,
       };
 
       setSettings(mergedSettings);
@@ -103,7 +93,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }): R
     } finally {
       setIsLoading(false);
     }
-  }, [database, getOrCreateProfile]);
+  }, [getOrCreateProfile]);
 
   useEffect(() => {
     loadSettings();
@@ -141,53 +131,21 @@ export function SettingsProvider({ children }: { children: React.ReactNode }): R
           });
         }
 
-        // Update Deck fields
-        if (updates.maxNewPerDay !== undefined || updates.maxReviewsPerDay !== undefined) {
-          let activeDeck: Deck | null = null;
-
-          if (settings.activeDeckId) {
-            try {
-              activeDeck = await database.collections
-                .get<Deck>(DECK_TABLE)
-                .find(settings.activeDeckId);
-            } catch {
-              // Deck not found
-            }
-          }
-
-          if (!activeDeck) {
-            activeDeck = await Deck.getOrCreateDefault(database);
-          }
-
-          await database.write(async () => {
-            await activeDeck!.update((deck) => {
-              if (updates.maxNewPerDay !== undefined) {
-                deck.maxNewPerDay = updates.maxNewPerDay;
-              }
-              if (updates.maxReviewsPerDay !== undefined) {
-                deck.maxReviewsPerDay = updates.maxReviewsPerDay;
-              }
-              deck.updatedAt = Date.now();
-            });
-          });
-        }
-
         // Update app settings in AsyncStorage
         if (
           updates.theme !== undefined ||
           updates.dayStartHour !== undefined ||
           updates.autoPlayReviewAudio !== undefined ||
-          updates.activeDeckId !== undefined
+          updates.activeDeckId !== undefined ||
+          updates.maxNewPerDay !== undefined ||
+          updates.maxReviewsPerDay !== undefined
         ) {
           const storedAppSettings = await AsyncStorage.getItem(APP_SETTINGS_KEY);
-          const appSettings: AppSettings = storedAppSettings
-            ? JSON.parse(storedAppSettings)
-            : {
-                theme: DEFAULT_SETTINGS.theme,
-                dayStartHour: DEFAULT_SETTINGS.dayStartHour,
-                autoPlayReviewAudio: DEFAULT_SETTINGS.autoPlayReviewAudio,
-                activeDeckId: DEFAULT_SETTINGS.activeDeckId,
-              };
+          const parsedAppSettings = storedAppSettings ? JSON.parse(storedAppSettings) : {};
+          const appSettings: AppSettings = {
+            ...DEFAULT_APP_SETTINGS,
+            ...parsedAppSettings,
+          };
 
           const newAppSettings: AppSettings = {
             ...appSettings,
@@ -197,6 +155,10 @@ export function SettingsProvider({ children }: { children: React.ReactNode }): R
               autoPlayReviewAudio: updates.autoPlayReviewAudio,
             }),
             ...(updates.activeDeckId !== undefined && { activeDeckId: updates.activeDeckId }),
+            ...(updates.maxNewPerDay !== undefined && { maxNewPerDay: updates.maxNewPerDay }),
+            ...(updates.maxReviewsPerDay !== undefined && {
+              maxReviewsPerDay: updates.maxReviewsPerDay,
+            }),
           };
 
           await AsyncStorage.setItem(APP_SETTINGS_KEY, JSON.stringify(newAppSettings));

@@ -7,8 +7,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/Button';
 import { useSettings } from '@/contexts/SettingsContext';
-import { Phrase, SrsCard, SrsReviewLog, Translation } from '@/database/models';
+import { Deck, Phrase, SrsCard, SrsReviewLog, Translation } from '@/database/models';
 import {
+  DECK_TABLE,
   PHRASE_TABLE,
   SRS_CARD_TABLE,
   SRS_REVIEW_LOG_TABLE,
@@ -203,6 +204,21 @@ export default function ReviewSessionScreen() {
     if (!deckId) return;
     setIsLoading(true);
 
+    let resolvedDeckLimits = {
+      maxNewPerDay: settings.maxNewPerDay,
+      maxReviewsPerDay: settings.maxReviewsPerDay,
+    };
+
+    try {
+      const deck = await db.collections.get<Deck>(DECK_TABLE).find(deckId);
+      resolvedDeckLimits = {
+        maxNewPerDay: deck.maxNewPerDay ?? settings.maxNewPerDay,
+        maxReviewsPerDay: deck.maxReviewsPerDay ?? settings.maxReviewsPerDay,
+      };
+    } catch (error) {
+      console.warn('Failed to load deck settings for review session:', error);
+    }
+
     const now = new Date();
 
     // Calculate tomorrow's start time (session completion threshold)
@@ -214,8 +230,8 @@ export default function ReviewSessionScreen() {
       deckId,
       now,
       dayStartHour: settings.dayStartHour,
-      maxNewPerDay: settings.maxNewPerDay,
-      maxReviewsPerDay: settings.maxReviewsPerDay,
+      maxNewPerDay: resolvedDeckLimits.maxNewPerDay,
+      maxReviewsPerDay: resolvedDeckLimits.maxReviewsPerDay,
     });
 
     // Fetch initial cards (daily limits apply here only)
@@ -519,7 +535,7 @@ export default function ReviewSessionScreen() {
         options={{
           title: 'Review',
           headerShown: true,
-          headerBackTitle: 'Decks',
+          headerBackTitle: 'Back',
           headerStyle: { backgroundColor: colors.background },
           headerTintColor: colors.text,
           headerTitleStyle: { color: colors.text },

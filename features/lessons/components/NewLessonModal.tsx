@@ -319,7 +319,10 @@ export function NewLessonModal({ visible, onClose }: NewLessonModalProps) {
         onPress={() => setMode('unified')}
       >
         <Text
-          style={[styles.modeTabText, { color: mode === 'unified' ? '#fff' : colors.textSecondary }]}
+          style={[
+            styles.modeTabText,
+            { color: mode === 'unified' ? '#fff' : colors.textSecondary },
+          ]}
         >
           New Topic
         </Text>

@@ -10,6 +10,8 @@ type SetCardProps = {
   phraseCount: number;
   dueCount: number;
   onPress: (deckId: string) => void;
+  subjectName?: string | null;
+  onLinkPress?: (deck: Deck) => void;
 };
 
 const formatDate = (timestamp: number) => {
@@ -20,7 +22,14 @@ const formatDate = (timestamp: number) => {
   });
 };
 
-export function SetCard({ deck, phraseCount, dueCount, onPress }: SetCardProps) {
+export function SetCard({
+  deck,
+  phraseCount,
+  dueCount,
+  onPress,
+  subjectName,
+  onLinkPress,
+}: SetCardProps) {
   const colors = useColors();
 
   return (
@@ -33,7 +42,20 @@ export function SetCard({ deck, phraseCount, dueCount, onPress }: SetCardProps) 
               {deck.name}
             </Text>
           </View>
-          <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+          <View style={styles.headerActions}>
+            {!subjectName && onLinkPress && (
+              <Pressable
+                onPress={(e) => {
+                  e.stopPropagation();
+                  onLinkPress(deck);
+                }}
+                hitSlop={8}
+              >
+                <Ionicons name="link-outline" size={20} color={colors.primary} />
+              </Pressable>
+            )}
+            <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+          </View>
         </View>
 
         <View style={styles.meta}>
@@ -60,6 +82,17 @@ export function SetCard({ deck, phraseCount, dueCount, onPress }: SetCardProps) 
               <Text style={[styles.levelText, { color: colors.primary }]}>{deck.level}</Text>
             </View>
           )}
+          {subjectName && (
+            <View style={[styles.topicBadge, { backgroundColor: colors.textSecondary + '20' }]}>
+              <Ionicons name="link" size={10} color={colors.textSecondary} />
+              <Text
+                style={[styles.topicBadgeText, { color: colors.textSecondary }]}
+                numberOfLines={1}
+              >
+                {subjectName}
+              </Text>
+            </View>
+          )}
         </View>
       </Card>
     </Pressable>
@@ -74,6 +107,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   titleRow: {
     flexDirection: 'row',
@@ -109,5 +147,18 @@ const styles = StyleSheet.create({
   levelText: {
     fontSize: 12,
     fontWeight: '600',
+  },
+  topicBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4,
+    maxWidth: 120,
+  },
+  topicBadgeText: {
+    fontSize: 11,
+    flexShrink: 1,
   },
 });

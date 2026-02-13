@@ -208,28 +208,76 @@ export async function generateNewPromptForSubject(
 }
 
 /**
+ * Converts an orphan deck (no subject) into a full topic (Subject).
+ * Creates a Subject from the deck's metadata and links them bidirectionally.
+ */
+export async function convertDeckToSubject(db: Database, deck: Deck): Promise<Subject> {
+  const subject = await Subject.createSubject(db, {
+    name: deck.name,
+    level: (deck.level as CEFRLevel) ?? 'A1',
+    primaryLang: (deck.primaryLang as LanguageCode) ?? 'ja',
+    secondaryLang: (deck.secondaryLang as LanguageCode) ?? 'en',
+    deckId: deck.id,
+  });
+
+  await db.write(async () => {
+    await deck.update((d) => {
+      d.subjectId = subject.id;
+      d.updatedAt = Date.now();
+    });
+  });
+
+  return subject;
+}
+
+/**
+ * Links a free (unlinked) lesson and deck into a new topic (Subject).
+ * Creates a Subject using the lesson's metadata, then updates both the lesson and deck to point to it.
+ */
+export async function linkFreeItemsToTopic(
+  db: Database,
+  { lesson, deck }: { lesson: Lesson; deck: Deck }
+): Promise<Subject> {
+  // Create a new Subject from the lesson's metadata
+  const subject = await Subject.createSubject(db, {
+    name: lesson.topic,
+    level: lesson.level as CEFRLevel,
+    primaryLang: lesson.lang as LanguageCode,
+    secondaryLang: deck.secondaryLang as LanguageCode,
+    deckId: deck.id,
+  });
+
+  // Update the deck and lesson to point to the new subject
+  await db.write(async () => {
+    await deck.update((d) => {
+      d.subjectId = subject.id;
+      d.updatedAt = Date.now();
+    });
+    await lesson.update((l) => {
+      l.subjectId = subject.id;
+      l.updatedAt = Date.now();
+    });
+  });
+
+  return subject;
+}
+
+/**
  * Helper to get vocabulary items from a deck's translations
  */
 export async function getVocabularyFromDeck(
   db: Database,
   deckId: string
 ): Promise<VocabularyItem[]> {
-  const deckTranslations = await db.collections
-    .get(DECK_TRANSLATION_TABLE)
-    .query()
-    .fetch();
+  const deckTranslations = await db.collections.get(DECK_TRANSLATION_TABLE).query().fetch();
 
-  const relevantDeckTranslations = deckTranslations.filter(
-    (dt: any) => dt.deckId === deckId
-  );
+  const relevantDeckTranslations = deckTranslations.filter((dt: any) => dt.deckId === deckId);
 
   const vocabulary: VocabularyItem[] = [];
 
   for (const dt of relevantDeckTranslations) {
     try {
-      const translation = await db.collections
-        .get('translation')
-        .find((dt as any).translationId);
+      const translation = await db.collections.get('translation').find((dt as any).translationId);
 
       const primaryPhrase = await db.collections
         .get('phrase')
