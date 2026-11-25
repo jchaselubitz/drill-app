@@ -1,4 +1,3 @@
-import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
@@ -21,6 +20,7 @@ import { useNewLessonModal } from '@/features/lessons/context/NewLessonModalCont
 import { useColors } from '@/hooks';
 import { generatePhraseSet } from '@/lib/ai/generatePhraseSet';
 import { changePromptLength, generateTutorPrompt } from '@/lib/ai/tutor';
+import { isAiConfigured } from '@/lib/openRouter';
 import { createUnifiedSubject } from '@/lib/services/subjectService';
 import { ensureSrsCardsForTranslation } from '@/lib/srs/cards';
 import type { GeneratedPhrase, PhraseType } from '@/types';
@@ -31,8 +31,6 @@ import { NewLessonForm } from './NewLessonForm';
 import { NewSetForm } from './NewSetForm';
 import { PromptCard } from './PromptCard';
 import { SetPreviewCard } from './SetPreviewCard';
-
-const geminiApiKey = Constants.expoConfig?.extra?.geminiApiKey as string | undefined;
 
 type ModalMode = 'unified' | 'lesson' | 'set';
 
@@ -100,8 +98,8 @@ export function NewLessonModal({ visible, onClose }: NewLessonModalProps) {
       return;
     }
 
-    if (!geminiApiKey) {
-      Alert.alert('API Key Required', 'Please set the geminiApiKey in app.config.ts');
+    if (!isAiConfigured()) {
+      Alert.alert('AI Unavailable', 'Drill’s AI service is unavailable.');
       return;
     }
 
@@ -134,8 +132,8 @@ export function NewLessonModal({ visible, onClose }: NewLessonModalProps) {
       return;
     }
 
-    if (!geminiApiKey) {
-      Alert.alert('API Key Required', 'Please set the geminiApiKey in app.config.ts');
+    if (!isAiConfigured()) {
+      Alert.alert('AI Unavailable', 'Drill’s AI service is unavailable.');
       return;
     }
 
@@ -166,8 +164,8 @@ export function NewLessonModal({ visible, onClose }: NewLessonModalProps) {
       return;
     }
 
-    if (!geminiApiKey) {
-      Alert.alert('API Key Required', 'Please set the geminiApiKey in app.config.ts');
+    if (!isAiConfigured()) {
+      Alert.alert('AI Unavailable', 'Drill’s AI service is unavailable.');
       return;
     }
 

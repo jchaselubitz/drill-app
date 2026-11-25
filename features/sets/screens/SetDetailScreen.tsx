@@ -1,7 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Q } from '@nozbe/watermelondb';
 import { useDatabase } from '@nozbe/watermelondb/react';
-import Constants from 'expo-constants';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
@@ -22,12 +21,12 @@ import { useAudioPlayback, useColors, useDeckAudioStatus, useDeckDueCount } from
 import { generatePhraseSet } from '@/lib/ai/generatePhraseSet';
 import { isLanguageSupported } from '@/lib/audio/voiceMapping';
 import { queueDeckAudioGeneration } from '@/lib/backgroundAudioService';
+import { isAiConfigured } from '@/lib/openRouter';
 import { ensureSrsCardsForTranslation } from '@/lib/srs/cards';
 import type { CEFRLevel, GeneratedPhrase, LanguageCode, PhraseType } from '@/types';
 
 import { GenerateMoreSheet } from '../components/GenerateMoreSheet';
 
-const geminiApiKey = Constants.expoConfig?.extra?.geminiApiKey as string | undefined;
 const MAX_NEW_PER_DAY_OPTIONS = [5, 10, 20, 30, 50];
 const MAX_REVIEWS_PER_DAY_OPTIONS = [25, 50, 100, 150, 200];
 
@@ -229,7 +228,7 @@ export default function SetDetailScreen() {
   };
 
   const handleGenerateMore = async (count: number, phraseType: PhraseType) => {
-    if (!deck || !geminiApiKey) {
+    if (!deck || !isAiConfigured()) {
       Alert.alert('Error', 'Unable to generate more phrases');
       return;
     }

@@ -1,7 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Q } from '@nozbe/watermelondb';
 import { useDatabase } from '@nozbe/watermelondb/react';
-import Constants from 'expo-constants';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
@@ -24,10 +23,9 @@ import { ATTEMPT_TABLE, DECK_TABLE, LESSON_TABLE, SUBJECT_TABLE } from '@/databa
 import { AttemptForm, AttemptHistory, PromptCard } from '@/features/lesson/components';
 import { useColors } from '@/hooks';
 import { submitAttemptForReview } from '@/lib/backgroundReviewService';
+import { isAiConfigured } from '@/lib/openRouter';
 import { generateNewPromptForSubject } from '@/lib/services/subjectService';
 import { LanguageCode } from '@/types';
-
-const geminiApiKey = Constants.expoConfig?.extra?.geminiApiKey as string | undefined;
 
 function DeleteButton({ onPress, disabled }: { onPress: () => void; disabled: boolean }) {
   const colors = useColors();
@@ -109,8 +107,8 @@ export default function LessonDetailScreen() {
       return;
     }
 
-    if (!geminiApiKey) {
-      Alert.alert('API Key Required', 'Please set the geminiApiKey in app.config.ts');
+    if (!isAiConfigured()) {
+      Alert.alert('AI Unavailable', 'Drill’s AI service is unavailable.');
       return;
     }
     const controller = new AbortController();
@@ -179,8 +177,8 @@ export default function LessonDetailScreen() {
   const handleNewPrompt = async () => {
     if (!lesson?.subjectId || isGeneratingPrompt) return;
 
-    if (!geminiApiKey) {
-      Alert.alert('API Key Required', 'Please set the geminiApiKey in app.config.ts');
+    if (!isAiConfigured()) {
+      Alert.alert('AI Unavailable', 'Drill’s AI service is unavailable.');
       return;
     }
 

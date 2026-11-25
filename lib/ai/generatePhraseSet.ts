@@ -1,4 +1,4 @@
-import { GeminiModel, getModel, Languages } from '@/constants';
+import { Languages, OpenRouterModel } from '@/constants';
 import {
   type GeneratedPhrase,
   type GeneratePhraseSetParams,
@@ -6,9 +6,9 @@ import {
   phraseSetSchema,
 } from '@/types';
 
-import { generateJSON } from '../gemini';
+import { generateJSON } from '../openRouter';
 
-const model = getModel(GeminiModel.FLASH_3);
+const model = OpenRouterModel.FLASH_LITE;
 
 function getLanguageName(code: LanguageCode): string {
   return Languages.find((l) => l.code === code)?.name ?? code;
@@ -101,7 +101,6 @@ Match the complexity to CEFR level ${level}.${existingPhrasesSection}`;
     return validated.phrases;
   } catch (error) {
     console.error('Error parsing phrase set response:', error);
-    console.error('Raw response:', response);
     throw new Error(
       'Failed to parse phrase set response. The AI may have returned an invalid format.'
     );

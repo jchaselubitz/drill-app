@@ -2,10 +2,43 @@ import type { ExpoConfig } from '@expo/config-types';
 
 type AppConfig = ExpoConfig & {
   extra: {
-    geminiApiKey?: string;
-    googleCloudTtsApiKey?: string;
+    appStoreBuild: boolean;
+    openRouterApiKey?: string;
+    drillAiUrl?: string;
   };
 };
+
+const appStoreBuild = process.env.DRILL_APP_STORE === '1';
+const privateBuild = process.env.DRILL_PRIVATE_BUILD === '1' && !appStoreBuild;
+function readBackendOrigin(value: string | undefined): string | undefined {
+  if (!value?.trim()) return undefined;
+  try {
+    const url = new URL(value.trim());
+    if (
+      url.protocol === 'https:' &&
+      !url.username &&
+      !url.password &&
+      url.pathname === '/' &&
+      !url.search &&
+      !url.hash
+    ) {
+      return url.origin;
+    }
+  } catch {
+    // Report configuration errors without printing the supplied value.
+  }
+  throw new Error('Set EXPO_PUBLIC_DRILL_AI_URL to a public HTTPS origin.');
+}
+
+const drillAiUrl = appStoreBuild
+  ? undefined
+  : readBackendOrigin(process.env.EXPO_PUBLIC_DRILL_AI_URL);
+const appStoreApiKey = appStoreBuild
+  ? process.env.DRILL_APP_STORE_OPENROUTER_API_KEY?.trim()
+  : undefined;
+if (appStoreBuild && !appStoreApiKey) {
+  throw new Error('Set DRILL_APP_STORE_OPENROUTER_API_KEY to the capped release key.');
+}
 
 const config: AppConfig = {
   name: 'Drill',
@@ -19,6 +52,13 @@ const config: AppConfig = {
     icon: './assets/images/1024.png',
     supportsTablet: true,
     bundleIdentifier: 'com.drillapp.mobile',
+    buildNumber: process.env.DRILL_IOS_BUILD_NUMBER,
+    entitlements: drillAiUrl
+      ? {
+          'com.apple.developer.devicecheck.appattest-environment':
+            process.env.DRILL_APP_ATTEST_PRODUCTION === '1' ? 'production' : 'development',
+        }
+      : undefined,
     infoPlist: {
       ITSAppUsesNonExemptEncryption: false,
       UIDesignRequiresCompatibility: false,
@@ -37,7 +77,6 @@ const config: AppConfig = {
       backgroundImage: './assets/images/1024.png',
       monochromeImage: './assets/images/1024.png',
     },
-    edgeToEdgeEnabled: true,
     predictiveBackGestureEnabled: false,
   },
   web: {
@@ -47,6 +86,8 @@ const config: AppConfig = {
   },
   plugins: [
     'expo-router',
+    ['expo-build-properties', { ios: { deploymentTarget: '18.0' } }],
+    './plugins/withIosSceneLifecycle.cjs',
     'expo-font',
     'expo-background-task',
     'expo-asset',
@@ -75,11 +116,11 @@ const config: AppConfig = {
   },
   extra: {
     version: process.env.EXPO_PUBLIC_VERSION,
-    geminiApiKey: process.env.EXPO_PUBLIC_GEMINI_API_KEY,
-    googleCloudTtsApiKey: process.env.EXPO_PUBLIC_GEMINI_API_KEY,
-    supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,
-    supabasePublishableKey: process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
-    openAiProxyUrl: process.env.EXPO_PUBLIC_OPENAI_PROXY_URL,
+    appStoreBuild,
+    drillAiUrl,
+    openRouterApiKey:
+      appStoreApiKey ??
+      (privateBuild && !drillAiUrl ? process.env.EXPO_PUBLIC_OPENROUTER_API_KEY : undefined),
     eas: {
       projectId: process.env.EXPO_PUBLIC_EAS_PROJECT_ID,
     },

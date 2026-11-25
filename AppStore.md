@@ -1,5 +1,10 @@
 # Drill - App Store Listing
 
+## What’s New in 1.2.0
+
+Upgraded the AI models behind writing feedback, language skill analysis,
+translations, and spoken pronunciation.
+
 ## Promotional Text
 
 Master any language through AI-powered writing practice and spaced repetition.
@@ -47,11 +52,11 @@ contextual practice.
 Organize phrases into sets and review them using scientifically-proven spaced
 repetition. The SuperMemo 2 algorithm schedules reviews at optimal
 intervals—showing you words right before you forget them. Hear native
-pronunciation with AI-generated audio for every phrase.
+pronunciation with AI-generated audio for supported languages.
 
 **Audio-Enhanced Learning**
 
-Listen to AI-generated native pronunciation for any phrase. Auto-play mode lets
+Listen to AI-generated pronunciation for phrases in supported languages. Auto-play mode lets
 you focus on listening and learning without manual controls. Perfect for
 auditory learners and pronunciation practice.
 
@@ -64,11 +69,12 @@ auditory learners and pronunciation practice.
 - Attempt history to visualize your progress
 - Personal vocabulary library with translations
 - Spaced repetition review sets with SuperMemo 2 algorithm
-- AI-generated native pronunciation audio for all phrases
+- AI-generated pronunciation audio for supported languages
 - Auto-play audio mode for hands-free learning
 - Support for multiple languages
 - Light and dark mode
-- Privacy-focused: your data stays on your device
+- Study history is stored on your device. When you enable AI features, Drill sends
+  the text needed to generate results to its AI providers.
 
 **Perfect For**
 
@@ -87,3 +93,25 @@ perfect blend of writing practice and spaced repetition.
 
 Language app, Spaced repetition, AI tutor, language tutor, writing feedback,
 vocabulary review, pronunciation
+
+## App Review Preparation
+
+Drill asks for explicit permission before sending writing, phrases, or study
+context directly to OpenRouter for processing by Google’s Gemini models. Reviewers
+can exercise writing feedback by creating a lesson, entering a short paragraph,
+and allowing third-party AI. Existing study content and downloaded audio stay
+available on the device when AI access is off.
+
+Before attaching a build, verify AI access from a signed iOS build,
+update the published privacy policy to describe third-party processing, and
+reconcile the existing App Privacy answers with actual retention. Retain the existing app record for
+`com.drillapp.mobile`. The update requires iOS 18.
+
+### Draft privacy policy language
+
+Drill saves your library, lesson history, and downloaded audio on your device.
+If you allow third-party AI, Drill sends the text and study context needed for
+the feature you use directly to OpenRouter for processing by Google’s Gemini
+models. This may include writing attempts, phrases, and related feedback. You
+can turn AI access off in Settings. The selected OpenRouter routes use zero data
+retention for inference. [OpenRouter privacy policy](https://openrouter.ai/privacy/)

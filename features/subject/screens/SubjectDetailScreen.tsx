@@ -1,7 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Q } from '@nozbe/watermelondb';
 import { useDatabase } from '@nozbe/watermelondb/react';
-import Constants from 'expo-constants';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -18,12 +17,11 @@ import {
   SUBJECT_TABLE,
 } from '@/database/schema';
 import { useColors, useDeckDueCount } from '@/hooks';
+import { isAiConfigured } from '@/lib/openRouter';
 import { generateNewPromptForSubject } from '@/lib/services/subjectService';
 import type { CEFRLevel } from '@/types';
 
 import { LessonTypeCard } from '../components/LessonTypeCard';
-
-const geminiApiKey = Constants.expoConfig?.extra?.geminiApiKey as string | undefined;
 
 function DeleteButton({ onPress }: { onPress: () => void }) {
   const colors = useColors();
@@ -120,8 +118,8 @@ export default function SubjectDetailScreen() {
       router.push(`/lesson/${lessons[0].id}` as any);
     } else {
       // Generate a new prompt and navigate to it
-      if (!geminiApiKey) {
-        Alert.alert('API Key Required', 'Please set the geminiApiKey in app.config.ts');
+      if (!isAiConfigured()) {
+        Alert.alert('AI Unavailable', 'Drill’s AI service is unavailable.');
         return;
       }
 

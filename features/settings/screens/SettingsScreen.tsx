@@ -1,7 +1,7 @@
 import { useFocusEffect } from '@react-navigation/native';
 import Constants from 'expo-constants';
-import { useCallback } from 'react';
-import { ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { useCallback, useState } from 'react';
+import { Alert, Linking, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Card, LanguageChooser, Select } from '@/components';
@@ -9,18 +9,48 @@ import { SkillAnalysisCard, SkillsList } from '@/components/skills';
 import { CEFR_LEVELS } from '@/constants';
 import { useSettings } from '@/contexts/SettingsContext';
 import { useColors, useSkillAnalysis } from '@/hooks';
+import { AI_DISCLOSURE, AI_PRIVACY_URL, hasAiConsent, setAiConsent } from '@/lib/ai/consent';
+import { requiresAiConsent } from '@/lib/openRouter';
 import type { CEFRLevel, LanguageCode, ThemeMode } from '@/types';
 
 export default function SettingsScreen() {
   const colors = useColors();
+  const [isAiAllowed, setIsAiAllowed] = useState(false);
+  const [isSavingAiConsent, setIsSavingAiConsent] = useState(false);
   const { settings, updateSettings, refreshSettings, isLoading } = useSettings();
   const { skills, isAnalyzing, error, runAnalysis, lastAnalyzedAt, staleDays } = useSkillAnalysis();
 
   useFocusEffect(
     useCallback(() => {
       refreshSettings();
+      if (requiresAiConsent()) {
+        void hasAiConsent()
+          .then(setIsAiAllowed)
+          .catch(() => setIsAiAllowed(false));
+      }
     }, [refreshSettings])
   );
+
+  const updateAiConsent = async (allowed: boolean) => {
+    setIsSavingAiConsent(true);
+    try {
+      await setAiConsent(allowed);
+      setIsAiAllowed(allowed);
+    } catch {
+      Alert.alert('Unable to Save', 'Please try changing your AI preference again.');
+    } finally {
+      setIsSavingAiConsent(false);
+    }
+  };
+
+  const analyzeWithConsent = async () => {
+    await runAnalysis();
+    if (requiresAiConsent()) {
+      void hasAiConsent()
+        .then(setIsAiAllowed)
+        .catch(() => setIsAiAllowed(false));
+    }
+  };
 
   const levelOptions = CEFR_LEVELS.map((level) => ({
     value: level.level,
@@ -138,7 +168,7 @@ export default function SettingsScreen() {
         <Card>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Skills to Improve</Text>
           <SkillAnalysisCard
-            onAnalyze={runAnalysis}
+            onAnalyze={analyzeWithConsent}
             isAnalyzing={isAnalyzing}
             error={error}
             lastAnalyzedAt={lastAnalyzedAt}
@@ -147,6 +177,40 @@ export default function SettingsScreen() {
           />
           <SkillsList skills={skills} />
         </Card>
+
+        {requiresAiConsent() && (
+          <Card>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>AI Privacy</Text>
+            <Text style={[styles.sectionDescription, { color: colors.textSecondary }]}>
+              {AI_DISCLOSURE}
+            </Text>
+            <View style={styles.settingRow}>
+              <Text style={[styles.settingLabel, { color: colors.text }]}>
+                Allow third-party AI
+              </Text>
+              <Switch
+                accessibilityLabel="Allow third-party AI"
+                disabled={isSavingAiConsent}
+                value={isAiAllowed}
+                onValueChange={updateAiConsent}
+                trackColor={{ false: colors.border, true: colors.primary }}
+                thumbColor={colors.background}
+                ios_backgroundColor={colors.border}
+              />
+            </View>
+            <Text
+              accessibilityRole="link"
+              style={[styles.aboutText, { color: colors.primary }]}
+              onPress={() => {
+                void Linking.openURL(AI_PRIVACY_URL).catch(() =>
+                  Alert.alert('Unable to Open', 'Please try opening the privacy policy again.')
+                );
+              }}
+            >
+              Privacy Policy
+            </Text>
+          </Card>
+        )}
 
         <Card>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>About</Text>

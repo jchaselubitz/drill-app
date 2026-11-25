@@ -1,4 +1,4 @@
-import { GeminiModel, getModel, Languages } from '@/constants';
+import { Languages, OpenRouterModel } from '@/constants';
 import {
   type LanguageCode,
   type ReviewResponse,
@@ -6,10 +6,9 @@ import {
   type TutorPromptParams,
 } from '@/types';
 
-import { generateJSON, generateText } from '../gemini';
+import { generateJSON, generateText } from '../openRouter';
 
-const model2_5_lite = getModel(GeminiModel.FLASH_2_5_LITE);
-const model3_flash = getModel(GeminiModel.FLASH_3);
+const model = OpenRouterModel.FLASH_LITE;
 
 function getLanguageName(code: LanguageCode): string {
   return Languages.find((l) => l.code === code)?.name ?? code;
@@ -45,7 +44,7 @@ ${
 
 Return ONLY the prompt text in ${userLangName}, nothing else.`;
 
-  return generateText({ prompt, modelName: model2_5_lite, systemPrompt });
+  return generateText({ prompt, modelName: model, systemPrompt });
 }
 
 export async function changePromptLength({
@@ -63,7 +62,7 @@ Make it ${
 
 Return ONLY the modified prompt text, nothing else.`;
 
-  return generateText({ prompt, modelName: model2_5_lite, systemPrompt: '' });
+  return generateText({ prompt, modelName: model, systemPrompt: '' });
 }
 
 export async function reviewParagraph({
@@ -121,7 +120,7 @@ Guidelines:
 
   const response = await generateJSON({
     prompt,
-    modelName: model3_flash,
+    modelName: model,
     systemPrompt,
     schema: reviewSchema,
     abortSignal,
@@ -134,7 +133,6 @@ Guidelines:
     return validated as ReviewResponse;
   } catch (error) {
     console.error('Error parsing or validating review response:', error);
-    console.error('Raw response:', response);
     throw new Error('Failed to parse review response. The AI may have returned an invalid format.');
   }
 }

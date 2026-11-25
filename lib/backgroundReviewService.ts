@@ -5,6 +5,7 @@ import { ATTEMPT_TABLE, PENDING_REQUEST_TABLE } from '@/database/schema';
 import type { LanguageCode } from '@/types';
 
 import { reviewParagraph } from './ai/tutor';
+import { canRunAiInBackground } from './openRouter';
 
 // Track in-flight requests by attemptId
 const activeRequests = new Map<string, AbortController>();
@@ -154,6 +155,8 @@ export function hasActiveRequest(attemptId: string): boolean {
  * Retries all pending requests. Call this when the app comes to foreground.
  */
 export async function retryPendingRequests(db: Database): Promise<void> {
+  if (!(await canRunAiInBackground())) return;
+
   const pendingRequests = await PendingRequest.getAllPending(db);
 
   for (const pendingRequest of pendingRequests) {

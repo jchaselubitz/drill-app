@@ -1,9 +1,9 @@
-import { GeminiModel, getModel, Languages } from '@/constants';
+import { Languages, OpenRouterModel } from '@/constants';
 import { type LanguageCode, type SkillAnalysisResponse, skillAnalysisSchema } from '@/types';
 
-import { generateJSON } from '../gemini';
+import { generateJSON } from '../openRouter';
 
-const model = getModel(GeminiModel.THREE_PRO);
+const model = OpenRouterModel.FLASH;
 
 function getLanguageName(code: LanguageCode): string {
   return Languages.find((l) => l.code === code)?.name ?? code;
@@ -73,7 +73,6 @@ Guidelines:
     return validated as SkillAnalysisResponse;
   } catch (error) {
     console.error('Error parsing skill analysis response:', error);
-    console.error('Raw response:', response);
     throw new Error(
       'Failed to parse skill analysis response. The AI may have returned an invalid format.'
     );

@@ -35,24 +35,17 @@ export function getAudioFilePath(filename: string): string {
 }
 
 /**
- * Saves base64-encoded audio data to a file.
+ * Saves MP3 bytes to a file.
  * Returns the filename (not full path) for storage in the database.
  */
-export async function saveAudioFile(phraseId: string, audioBase64: string): Promise<string> {
+export async function saveAudioFile(phraseId: string, audioBytes: Uint8Array): Promise<string> {
   await ensureAudioDirectory();
 
   const filename = generateAudioFilename(phraseId);
   const audioDir = getAudioDirectory();
   const file = new File(audioDir, filename);
 
-  // Convert base64 to bytes and write
-  const binaryString = atob(audioBase64);
-  const bytes = new Uint8Array(binaryString.length);
-  for (let i = 0; i < binaryString.length; i++) {
-    bytes[i] = binaryString.charCodeAt(i);
-  }
-
-  await file.write(bytes);
+  file.write(audioBytes);
 
   return filename;
 }

@@ -4,10 +4,10 @@ A React Native mobile app for language learning with AI-powered tutoring.
 
 ## Tech Stack
 
-- **React Native** with Expo SDK 54
+- **React Native** with Expo SDK 55
 - **Expo Router** with native tabs (`expo-router/unstable-native-tabs`)
 - **WatermelonDB** for local database with reactive queries
-- **Google Gemini Flash** (gemini-3.0-flash) for AI features
+- **OpenRouter** with Gemini 3.1 Flash Lite and Gemini 3.6 Flash for AI features
 - **Expo Audio** for audio playback and text-to-speech
 - **Expo Vector Icons** for iconography
 - **TypeScript** for type safety
@@ -19,7 +19,7 @@ drill-app/
 ├── app/           # Expo Router routes (thin wrappers importing from features/)
 ├── features/      # Feature modules with screens/, components/, context/
 ├── database/      # WatermelonDB schema, migrations, and models/
-├── lib/           # Gemini client and ai/ functions (tutor, explain, translate, analyzeSkills)
+├── lib/           # OpenRouter client and ai/ functions (tutor, explain, translate, analyzeSkills)
 ├── components/    # Shared UI components
 ├── contexts/      # React contexts
 ├── hooks/         # Custom hooks
@@ -66,17 +66,27 @@ Organized vocabulary practice using spaced repetition:
 - Auto-play audio during reviews
 - Review sessions adapt based on performance
 
-### 7. Audio Generation (`lib/ai/audio.ts`)
+### 7. Audio Generation (`lib/audio/textToSpeech.ts`)
 Text-to-speech audio generation:
-- Powered by Google Gemini Flash with audio output
+- Powered by Gemini 3.8 Flash Lite TTS through OpenRouter
 - Generates native pronunciation for phrases
-- Caches audio files locally for offline playback
+- Encodes PCM responses as MP3 and caches them locally for offline playback
 - Supports multiple languages
 
 ## Environment Variables
 
 ```bash
-EXPO_PUBLIC_GEMINI_API_KEY=your_gemini_api_key
+# App Store build with a dedicated, capped OpenRouter key
+DRILL_APP_STORE=1
+DRILL_APP_STORE_OPENROUTER_API_KEY=your_capped_release_key
+DRILL_IOS_BUILD_NUMBER=4
+
+# Optional hosted AI development build
+EXPO_PUBLIC_DRILL_AI_URL=https://your-drill-backend
+
+# Private direct-to-OpenRouter builds only
+DRILL_PRIVATE_BUILD=1
+EXPO_PUBLIC_OPENROUTER_API_KEY=your_openrouter_api_key
 ```
 
 ## Commands
@@ -115,7 +125,7 @@ yarn new
 - **Feature-based architecture**: Screens and their related components live in `features/` modules
 - **Thin route files**: Files in `app/` are thin wrappers that import screens from `features/`
 - Use `expo-router/unstable-native-tabs` for native tab bar with icons
-- Gemini API calls go through `lib/gemini.ts` client
+- Text, structured generation, and speech use the OpenRouter client in `lib/openRouter.ts`
 - All AI functions return typed responses
 - Prefer functional components with hooks
 - Use Expo Vector Icons (`@expo/vector-icons`) for all icons

@@ -1,9 +1,9 @@
-import { GeminiModel, getModel, Languages } from '@/constants';
+import { Languages, OpenRouterModel } from '@/constants';
 import type { CEFRLevel, LanguageCode } from '@/types';
 
-import { generateText } from '../gemini';
+import { generateText } from '../openRouter';
 
-const model = getModel(GeminiModel.FLASH_2_5_LITE);
+const model = OpenRouterModel.FLASH_LITE;
 
 function getLanguageName(code: LanguageCode): string {
   return Languages.find((l) => l.code === code)?.name ?? code;

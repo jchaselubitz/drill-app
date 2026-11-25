@@ -6,6 +6,8 @@ import type { LanguageCode } from '@/types';
 
 import { saveAudioFile } from './audio/storage';
 import { synthesizeSpeech } from './audio/textToSpeech';
+import { isLanguageSupported } from './audio/voiceMapping';
+import { canRunAiInBackground } from './openRouter';
 
 // Track in-flight requests by phraseId
 const activeRequests = new Map<string, AbortController>();
@@ -67,14 +69,14 @@ async function processAudioRequest({
     await pendingRequest.markProcessing(db);
 
     // Call TTS API
-    const result = await synthesizeSpeech({
+    const audioBytes = await synthesizeSpeech({
       text: phraseText,
       languageCode: pendingRequest.languageCode,
       abortSignal: controller.signal,
     });
 
     // Save audio file
-    const filename = await saveAudioFile(pendingRequest.phraseId, result.audioBase64);
+    const filename = await saveAudioFile(pendingRequest.phraseId, audioBytes);
 
     // Update phrase with filename
     const phrase = await db.collections.get<Phrase>(PHRASE_TABLE).find(pendingRequest.phraseId);
@@ -167,11 +169,18 @@ export function hasActiveAudioRequest(phraseId: string): boolean {
  * Retries all pending audio requests. Call this when the app comes to foreground.
  */
 export async function retryPendingAudioRequests(db: Database): Promise<void> {
+  if (!(await canRunAiInBackground())) return;
+
   const pendingRequests = await PendingAudioRequest.getAllPending(db);
 
   for (const pendingRequest of pendingRequests) {
     // Skip if already processing
     if (activeRequests.has(pendingRequest.phraseId)) {
+      continue;
+    }
+
+    if (!isLanguageSupported(pendingRequest.languageCode)) {
+      await pendingRequest.markFailed(db, 'Audio generation is not available for this language.');
       continue;
     }
 

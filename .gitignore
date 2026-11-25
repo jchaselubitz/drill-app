@@ -41,9 +41,3 @@ app-example
 # generated native folders
 /ios
 /android
-
-/supabase/.env.local
-/supabase/.env.development.local
-/supabase/.env.production.local
-/supabase/.env.test.local
-/supabase/.env.test.local

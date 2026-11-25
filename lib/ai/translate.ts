@@ -1,9 +1,9 @@
-import { GeminiModel, getModel, Languages } from '@/constants';
+import { Languages, OpenRouterModel } from '@/constants';
 import { languageCodeSchema, TranslationResponse, translationResponseSchema } from '@/types';
 
-import { generateJSON } from '../gemini';
+import { generateJSON } from '../openRouter';
 
-const model = getModel(GeminiModel.FLASH_2_5_LITE);
+const model = OpenRouterModel.FLASH_LITE;
 
 export async function translatePhrase({
   text,
@@ -36,7 +36,6 @@ export async function translatePhrase({
     return validated;
   } catch (error) {
     console.error('Error parsing translation response:', error);
-    console.error('Raw response:', response);
     throw new Error('Failed to parse translation response');
   }
 }
@@ -62,7 +61,6 @@ Only return the JSON object, nothing else.`;
     return validated.language_code;
   } catch (error) {
     console.error('Error parsing language detection response:', error);
-    console.error('Raw response:', response);
     throw new Error('Failed to detect language');
   }
 }

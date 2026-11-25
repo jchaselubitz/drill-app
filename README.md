@@ -34,13 +34,29 @@ architecture and data model.
 
 ## Tech Stack
 
-- React Native + Expo SDK 54
+- React Native + Expo SDK 55
 - Expo Router with native tabs
 - WatermelonDB for local-first data
-- Google Gemini Flash for AI features
+- OpenRouter for AI features
 - TypeScript
 
 ## Getting Started
+
+Use Node.js 22, as specified in `.nvmrc`.
+
+For a private direct-to-OpenRouter build, set `DRILL_PRIVATE_BUILD=1` and
+`EXPO_PUBLIC_OPENROUTER_API_KEY` in `.env.local`. Expo bundles the key into this
+build, so keep it private.
+
+For App Store builds, set `DRILL_APP_STORE=1`, `DRILL_IOS_BUILD_NUMBER` to the
+version’s next build number, and `DRILL_APP_STORE_OPENROUTER_API_KEY` to a
+dedicated key with a low credit limit. Set the key in the build environment or
+the ignored `.env.local` file. The public app sends AI requests directly to
+OpenRouter. The key is extractable from the build and the cap is shared across
+all installations. AI requests stop when the key reaches its cap.
+
+Drill uses Gemini 3.8 Flash Lite TTS for pronunciation and converts the PCM
+response to MP3 on the device for compact offline storage.
 
 ```bash
 # Install dependencies
@@ -55,5 +71,8 @@ yarn android
 ```
 
 ## Credits
+
+MP3 encoding uses [LAME](https://lame.sourceforge.io/) via the unmodified
+[@breezystack/lamejs](https://github.com/shijinyu/lamejs) package (LGPL-3.0).
 
 Built with collaboration from Claude, ChatGPT, and Cursor.

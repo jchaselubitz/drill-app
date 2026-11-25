@@ -1,11 +1,11 @@
 import { z } from 'zod';
 
-import { GeminiModel, getModel, Languages } from '@/constants';
+import { Languages, OpenRouterModel } from '@/constants';
 import type { ExplanationResponse, LanguageCode } from '@/types';
 
-import { generateJSON } from '../gemini';
+import { generateJSON } from '../openRouter';
 
-const MODEL = getModel(GeminiModel.FLASH_3);
+const MODEL = OpenRouterModel.FLASH_LITE;
 
 const explanationSchema = z.object({
   type: z.enum(['message', 'translation', 'list']),
@@ -51,5 +51,5 @@ Keep the explanation clear and educational.`;
     systemPrompt,
     schema: explanationSchema,
   });
-  return JSON.parse(response) as ExplanationResponse;
+  return explanationSchema.parse(JSON.parse(response));
 }
